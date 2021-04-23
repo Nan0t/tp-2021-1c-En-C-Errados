@@ -1,52 +1,23 @@
-# Prerequisites
-*.d
+#vs files and folder
+.vs*
 
-# Object files
-*.o
-*.ko
-*.obj
-*.elf
+#Makefiles
+*Makefile
 
-# Linker output
-*.ilk
-*.map
-*.exp
+#log files
+*.log
 
-# Precompiled Headers
-*.gch
-*.pch
+#Eclipse files
+*.cproject
+*.project
+*.xml
 
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
+#CLion files
+.idea
+.Idea
 
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
+#output folder
+outputs
 
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
-
-# Debug files
-*.dSYM/
-*.su
-*.idb
-*.pdb
-
-# Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
+#pregen script
+*/pregen.sh
