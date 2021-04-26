@@ -12,4 +12,6 @@
 
 #define private static
 
+#define UTILS_PRINT_FORMAT(...)  __attribute__((format(printf, __VA_ARGS__)))
+
 #endif
