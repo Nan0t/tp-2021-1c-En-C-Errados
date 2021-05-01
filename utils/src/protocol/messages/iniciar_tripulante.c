@@ -1,6 +1,8 @@
 #include "utils/protocol/messages/iniciar_tripulante.h"
 #include "utils/memory/allocator.h"
 
+#include <commons/string.h>
+
 u_msg_iniciar_tripulante_t* u_msg_iniciar_tripulante_crear(uint32_t _patota_id, uint32_t _tripulante_id){
     u_msg_iniciar_tripulante_t* msg = u_malloc(sizeof(u_msg_iniciar_tripulante_t));
 
@@ -40,3 +42,9 @@ void u_msg_iniciar_tripulante_eliminar(u_msg_iniciar_tripulante_t* _msg) {
 	u_free(_msg);
 }
 
+char* u_msg_iniciar_tripulante_to_string(const u_msg_iniciar_tripulante_t* msg) {
+    return string_from_format(
+        "MSG_INICIAR_TRIPULANTE: { PID: %d | TID: %d}",
+        msg->patota_id, msg->tripulante_id
+    );
+}

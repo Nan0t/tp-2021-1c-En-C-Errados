@@ -36,3 +36,9 @@ void u_msg_resuelve_sabotaje_eliminar(u_msg_resuelve_sabotaje_t* _msg) {
 	u_free(_msg);
 }
 
+char* u_msg_resuelve_sabotaje_to_string(const u_msg_resuelve_sabotaje_t* msg) {
+    return string_from_format(
+        "MSG_RESUELVE_SABOTAJE: { TID: %d }",
+        msg->tripulante_id
+    );
+}

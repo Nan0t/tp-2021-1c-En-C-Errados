@@ -36,3 +36,9 @@ void u_msg_obtener_bitacora_eliminar(u_msg_obtener_bitacora_t* _msg) {
 	u_free(_msg);
 }
 
+char* u_msg_obtener_bitacora_to_string(const u_msg_obtener_bitacora_t* msg) {
+    string_from_format(
+        "MSG_OBTENER_BITACORA: { TID: %d }",
+        msg->tripulante_id
+    );
+}

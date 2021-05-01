@@ -1,6 +1,8 @@
 #include "utils/protocol/messages/desplazamiento_tripulante.h"
 #include "utils/memory/allocator.h"
 
+#include <commons/string.h>
+
 u_msg_desplazamiento_tripulante_t* u_msg_desplazamiento_tripulante_crear(uint32_t _tripulante_id,uint32_t _pos_x, uint32_t _pos_y){
     u_msg_desplazamiento_tripulante_t* msg = u_malloc(sizeof(u_msg_desplazamiento_tripulante_t));
 
@@ -42,4 +44,11 @@ u_msg_desplazamiento_tripulante_t* u_msg_desplazamiento_tripulante_deserializar(
 
 void u_msg_desplazamiento_tripulante_eliminar(u_msg_desplazamiento_tripulante_t* _msg) {
 	u_free(_msg);
+}
+
+char* u_msg_desplazamineto_tripulante_to_string(const u_msg_desplazamiento_tripulante_t* msg) {
+    return string_from_format(
+        "MSG_DESPALZAMIENTO_TRIPULANTE: { TID: %d | Pos_X: %d | Pos_Y: %d }",
+        msg->tripulante_id, msg->pos_x, msg->pos_y
+    );
 }

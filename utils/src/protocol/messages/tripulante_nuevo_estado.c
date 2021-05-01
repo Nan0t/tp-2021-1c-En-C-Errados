@@ -40,3 +40,9 @@ void u_msg_tripulante_nuevo_estado_eliminar(u_msg_tripulante_nuevo_estado_t* _ms
 	u_free(_msg);
 }
 
+char* u_msg_tripulante_nuevo_estado_to_string(const u_msg_tripulante_nuevo_estado_t* msg) {
+    return string_from_format(
+        "MSG_TRIPULANTE_NUEVO_ESTADO: { TID: %d | Estado: %d }",
+        msg->tripulante_id, msg->nuevo_estado
+    );
+}

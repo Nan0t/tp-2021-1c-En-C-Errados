@@ -40,3 +40,9 @@ void u_msg_proxima_tarea_eliminar(u_msg_proxima_tarea_t* _msg) {
 	u_free(_msg);
 }
 
+char* u_msg_proxima_tarea_to_string(const u_msg_proxima_tarea_t* msg) {
+    return string_from_format(
+        "MSG_PROXIMA_TAREA: { PID: %d | TID: %d }",
+        msg->patota_id, msg->tripulante_id
+    );
+}

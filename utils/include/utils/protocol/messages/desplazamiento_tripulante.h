@@ -50,5 +50,16 @@ u_msg_desplazamiento_tripulante_t* u_msg_desplazamiento_tripulante_deserializar(
  */
 void u_msg_desplazamiento_tripulante_eliminar(u_msg_desplazamiento_tripulante_t* _msg);
 
+/**
+ * @NAME: u_msg_desplazamineto_tripulante_to_string
+ * @DESC: Crea un string representativo del mensaje
+ * @PARAMS:
+ *          [in] const u_msg_desplazamineto_tripulante_t* msg - mensaje del cual se quiere obtener una representacion en string.
+ * @RETURN: Un string representando el contenido del mensaje.
+ * 
+ * @NOTA: El string debe ser liberado posteriormente.
+ */
+char* u_msg_desplazamineto_tripulante_to_string(const u_msg_desplazamiento_tripulante_t* msg);
+
 
 #endif

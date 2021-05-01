@@ -1,6 +1,8 @@
 #include "utils/protocol/messages/informar_sabotaje.h"
 #include "utils/memory/allocator.h"
 
+#include <commons/string.h>
+
 u_msg_posicion_sabotaje_t* u_msg_sabotaje_crear(uint32_t _pos_x, uint32_t _pos_y){
     u_msg_posicion_sabotaje_t* msg = u_malloc(sizeof(u_msg_posicion_sabotaje_t));
 
@@ -40,3 +42,9 @@ void u_msg_informar_sabotaje_eliminar(u_msg_posicion_sabotaje_t* _msg) {
 	u_free(_msg);
 }
 
+char* u_msg_informar_sabotaje_to_string(const u_msg_posicion_sabotaje_t* msg) {
+    return string_from_format(
+        "MSG_INFORMAR_SABOTAJE: { Pos_X: %d | Pos_Y: %d }",
+        msg->pos_x, msg->pos_y
+    );
+}

@@ -1,6 +1,8 @@
 #include "utils/protocol/messages/inicio_tarea.h"
 #include "utils/memory/allocator.h"
 
+#include <commons/string.h>
+
 u_msg_inicio_tarea_t* u_msg_inicio_tarea_crear(uint32_t _tripulante_id, const char* _tarea){
     u_msg_inicio_tarea_t* msg = u_malloc(sizeof(u_msg_inicio_tarea_t));
 
@@ -43,4 +45,11 @@ u_msg_inicio_tarea_t* u_msg_inicio_tarea_deserializar(const u_buffer_t* _buffer)
 void u_msg_inicio_tarea_eliminar(u_msg_inicio_tarea_t* _msg) {
     u_free((void*)_msg->tarea);
 	u_free(_msg);
+}
+
+char* u_msg_inicio_tarea_to_string(const u_msg_inicio_tarea_t* msg) {
+    return string_from_format(
+        "MSG_INICIO_TAREA: { TID: %d | Tarea: %s }",
+        msg->tripulante_id, msg->tarea
+    );
 }

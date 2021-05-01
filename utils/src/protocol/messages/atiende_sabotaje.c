@@ -1,6 +1,8 @@
 #include "utils/protocol/messages/atiende_sabotaje.h"
 #include "utils/memory/allocator.h"
 
+#include <commons/string.h>
+
 u_msg_atender_sabotaje_t* u_msg_atiende_sabotaje_crear(uint32_t _tripulante_id){
     u_msg_atender_sabotaje_t* msg = u_malloc(sizeof(u_msg_atender_sabotaje_t));
 
@@ -36,3 +38,8 @@ void u_msg_atiende_sabotaje_eliminar(u_msg_atender_sabotaje_t* _msg) {
 	u_free(_msg);
 }
 
+char* u_msg_atiende_sabotaje_to_string(const u_msg_atender_sabotaje_t* msg) {
+    return string_from_format(
+        "MSG_ATIENDE_SABOTAJE: { TID: %d }", msg->tripulante_id
+    );
+}

@@ -1,6 +1,8 @@
 #include "utils/protocol/messages/eliminar_tripulante.h"
 #include "utils/memory/allocator.h"
 
+#include <commons/string.h>
+
 u_msg_eliminar_tripulante_t* u_msg_eliminar_tripulante_crear(uint32_t _tripulante_id){
     u_msg_eliminar_tripulante_t* msg = u_malloc(sizeof(u_msg_eliminar_tripulante_t));
 
@@ -36,3 +38,9 @@ void u_msg_eliminar_tripulante_eliminar(u_msg_eliminar_tripulante_t* _msg) {
 	u_free(_msg);
 }
 
+char* u_msg_eliminar_tripulante_to_string(const u_msg_eliminar_tripulante_t* msg) {
+    return string_from_format(
+        "MSG_ELIMINAR_TRIPULANTE: { TID: %d }",
+        msg->tripulante_id
+    );
+}
