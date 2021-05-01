@@ -16,7 +16,7 @@ u_paquete_t* u_msg_inicio_tarea_serializar(const u_msg_inicio_tarea_t* _msg){
 
     u_buffer_write(buffer, &_msg->tripulante_id, sizeof(uint32_t));
     u_buffer_write(buffer, &_msg->largo_nombre_tarea, sizeof(uint32_t));
-    u_buffer_write(buffer, &_msg->tarea, _msg->largo_nombre_tarea);
+    u_buffer_write(buffer, _msg->tarea, _msg->largo_nombre_tarea);
 
     u_paquete_t* paquete = u_malloc(sizeof(u_paquete_t));
     paquete->opCodeMsg = INICIO_TAREA;
@@ -33,7 +33,7 @@ u_msg_inicio_tarea_t* u_msg_inicio_tarea_deserializar(const u_buffer_t* _buffer)
     offset += sizeof(uint32_t);
     u_buffer_read(_buffer, &inicio_tarea->largo_nombre_tarea, sizeof(uint32_t), offset);
     offset += sizeof(uint32_t);
-    inicio_tarea->tarea = u_malloc(sizeof(inicio_tarea->largo_nombre_tarea));
+    inicio_tarea->tarea = u_malloc(inicio_tarea->largo_nombre_tarea);
     u_buffer_read(_buffer, inicio_tarea->tarea, inicio_tarea->largo_nombre_tarea, offset);
 
     return inicio_tarea;

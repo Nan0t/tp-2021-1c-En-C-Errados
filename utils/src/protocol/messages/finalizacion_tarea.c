@@ -16,7 +16,7 @@ u_paquete_t* u_msg_finalizacion_tarea_serializar(const u_msg_finalizacion_tarea_
 
     u_buffer_write(buffer, &_msg->tripulante_id, sizeof(uint32_t));
     u_buffer_write(buffer, &_msg->largo_nombre_tarea, sizeof(uint32_t));
-    u_buffer_write(buffer, &_msg->tarea, _msg->largo_nombre_tarea);
+    u_buffer_write(buffer, _msg->tarea, _msg->largo_nombre_tarea);
 
     u_paquete_t* paquete = u_malloc(sizeof(u_paquete_t));
     paquete->opCodeMsg = FINALIZACION_TAREA;
@@ -33,7 +33,7 @@ u_msg_finalizacion_tarea_t* u_msg_finalizacion_tarea_deserializar(const u_buffer
     offset += sizeof(uint32_t);
     u_buffer_read(_buffer, &finalizacion_tarea->largo_nombre_tarea, sizeof(uint32_t), offset);
     offset += sizeof(uint32_t);
-    finalizacion_tarea->tarea = u_malloc(sizeof(finalizacion_tarea->largo_nombre_tarea));
+    finalizacion_tarea->tarea = u_malloc(finalizacion_tarea->largo_nombre_tarea);
     u_buffer_read(_buffer, finalizacion_tarea->tarea, finalizacion_tarea->largo_nombre_tarea, offset);
 
     return finalizacion_tarea;
