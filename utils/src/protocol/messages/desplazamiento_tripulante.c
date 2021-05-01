@@ -11,7 +11,7 @@ u_msg_desplazamiento_tripulante_t* u_msg_desplazamiento_tripulante_crear(uint32_
     return msg;
 }
 
-u_paquete_t* u_msg_deplazamiento_tripulante_serializar(const u_msg_desplazamiento_tripulante_t* _msg){
+u_paquete_t* u_msg_desplazamiento_tripulante_serializar(const u_msg_desplazamiento_tripulante_t* _msg){
     u_buffer_t* buffer = u_buffer_create();
 
     u_buffer_write(buffer, &_msg->tripulante_id, sizeof(uint32_t));

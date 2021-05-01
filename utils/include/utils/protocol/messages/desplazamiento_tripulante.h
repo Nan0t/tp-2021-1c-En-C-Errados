@@ -29,7 +29,7 @@ u_msg_desplazamiento_tripulante_t* u_msg_desplazamiento_tripulante_crear(uint32_
  * 			[in] const u_msg_desplazamiento_tripulante_t* _msg - Mensaje a serializar.
  * @RETURNS: un struct u_paquete_t que contendra el mensaje serializado.
  */
-u_paquete_t* u_msg_deplazamiento_tripulante_serializar(const u_msg_desplazamiento_tripulante_t* _msg);
+u_paquete_t* u_msg_desplazamiento_tripulante_serializar(const u_msg_desplazamiento_tripulante_t* _msg);
 
 /**
  * @NAME: u_msg_desplazamiento_tripulante_deserializar
