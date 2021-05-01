@@ -39,7 +39,7 @@ u_paquete_t* u_msg_proxima_tarea_serializar(const u_msg_proxima_tarea_t* _msg);
  * 
  * @NOTA: El struct resultante debe ser liberado posteriormente llamando a u_msg_informar_proxima_tarea_eliminar.
  */
-u_msg_proxima_tarea_t* u_msg_informar_proxima_tarea_deserializar(const u_buffer_t* _buffer);
+u_msg_proxima_tarea_t* u_msg_proxima_tarea_deserializar(const u_buffer_t* _buffer);
 
 /**
  * @NAME: u_msg_informar_proxima_tarea_eliminar
@@ -47,7 +47,7 @@ u_msg_proxima_tarea_t* u_msg_informar_proxima_tarea_deserializar(const u_buffer_
  * @PARAMS:
  * 			[in] u_msg_proxima_tarea_t* _msg - mensaje a eliminar.
  */
-void u_msg_informar_proxima_tarea_eliminar(u_msg_proxima_tarea_t* _msg);
+void u_msg_proxima_tarea_eliminar(u_msg_proxima_tarea_t* _msg);
 
 
 #endif
