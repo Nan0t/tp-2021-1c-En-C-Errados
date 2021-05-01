@@ -39,7 +39,7 @@ u_paquete_t* u_msg_iniciar_tripulante_serializar(const u_msg_iniciar_tripulante_
  * 
  * @NOTA: El struct resultante debe ser liberado posteriormente llamando a u_msg_informar_iniciar_tripulante_eliminar.
  */
-u_msg_iniciar_tripulante_t* u_msg_informar_iniciar_tripulante_deserializar(const u_buffer_t* _buffer);
+u_msg_iniciar_tripulante_t* u_msg_iniciar_tripulante_deserializar(const u_buffer_t* _buffer);
 
 /**
  * @NAME: u_msg_informar_iniciar_tripulante_eliminar
@@ -47,7 +47,7 @@ u_msg_iniciar_tripulante_t* u_msg_informar_iniciar_tripulante_deserializar(const
  * @PARAMS:
  * 			[in] u_msg_iniciar_tripulante_t* _msg - mensaje a eliminar.
  */
-void u_msg_informar_iniciar_tripulante_eliminar(u_msg_iniciar_tripulante_t* _msg);
+void u_msg_tripulante_eliminar(u_msg_iniciar_tripulante_t* _msg);
 
 
 #endif
