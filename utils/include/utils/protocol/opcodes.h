@@ -1,0 +1,26 @@
+#ifndef UTILS_PROTOCOL_OPCODES_H
+#define UTILS_PROTOCOL_OPCODES_H
+
+#include "utils/typedefs.h"
+
+typedef enum
+{
+    DESPLAZAMIENTO_TRIPULANTE,
+    INFORMAR_SABOTAJE,
+    INICIO_TAREA,
+    FINALIZACION_TAREA,
+    ATIENDE_SABOTAJE,
+    RESUELVE_SABOTAJE,
+    OBTENER_BITACORA,
+    ELIMINAR_TRIPULANTE,
+    INICIAR_TRIPULANTE,
+    PROXIMA_TAREA,
+    TRIPULANTE_NUEVO_ESTADO
+} u_opcode_e;
+
+#define U_MSG_IS_VALID(opcode)\
+    ((opcode) >= DESPLAZAMIENTO_TRIPULANTE && (opcode) <= TRIPULANTE_NUEVO_ESTADO)
+
+const char* u_opcode_to_string(u_opcode_e opcode);
+
+#endif
