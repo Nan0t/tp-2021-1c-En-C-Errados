@@ -23,7 +23,7 @@ u_paquete_t* u_msg_atiende_sabotaje_serializar(const u_msg_atender_sabotaje_t* _
 }
 
 u_msg_atender_sabotaje_t* u_msg_atiende_sabotaje_deserializar(const u_buffer_t* _buffer){
-    u_msg_atender_sabotaje_t* atiende_sabotaje = u_u_malloc(sizeof( u_msg_atender_sabotaje_t));
+    u_msg_atender_sabotaje_t* atiende_sabotaje = u_malloc(sizeof( u_msg_atender_sabotaje_t));
     uint32_t offset = 0;
 
     u_buffer_read(_buffer, &atiende_sabotaje->tripulante_id, sizeof(uint32_t), offset);

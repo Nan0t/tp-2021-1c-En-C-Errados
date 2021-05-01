@@ -25,7 +25,7 @@ u_paquete_t* u_msg_iniciar_tripulante_serializar(const u_msg_iniciar_tripulante_
 }
 
 u_msg_iniciar_tripulante_t* u_msg_iniciar_tripulante_deserializar(const u_buffer_t* _buffer){
-    u_msg_iniciar_tripulante_t* iniciar_tripulante = u_u_malloc(sizeof( u_msg_iniciar_tripulante_t));
+    u_msg_iniciar_tripulante_t* iniciar_tripulante = u_malloc(sizeof( u_msg_iniciar_tripulante_t));
     uint32_t offset = 0;
 
     u_buffer_read(_buffer, &iniciar_tripulante->patota_id, sizeof(uint32_t), offset);

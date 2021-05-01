@@ -23,7 +23,7 @@ u_paquete_t* u_msg_obtener_bitacora_serializar(const u_msg_obtener_bitacora_t* _
 }
 
 u_msg_obtener_bitacora_t* u_msg_obtener_bitacora_deserializar(const u_buffer_t* _buffer){
-    u_msg_obtener_bitacora_t* obtener_bitacora = u_u_malloc(sizeof( u_msg_obtener_bitacora_t));
+    u_msg_obtener_bitacora_t* obtener_bitacora = u_malloc(sizeof( u_msg_obtener_bitacora_t));
     uint32_t offset = 0;
 
     u_buffer_read(_buffer, &obtener_bitacora->tripulante_id, sizeof(uint32_t), offset);

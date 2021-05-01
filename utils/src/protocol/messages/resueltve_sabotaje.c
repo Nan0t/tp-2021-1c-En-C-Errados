@@ -23,7 +23,7 @@ u_paquete_t* u_msg_resuelve_sabotaje_serializar(const u_msg_resuelve_sabotaje_t*
 }
 
 u_msg_resuelve_sabotaje_t* u_msg_resuelve_sabotaje_deserializar(const u_buffer_t* _buffer){
-    u_msg_resuelve_sabotaje_t* resuelve_sabotaje = u_u_malloc(sizeof( u_msg_resuelve_sabotaje_t));
+    u_msg_resuelve_sabotaje_t* resuelve_sabotaje = u_malloc(sizeof( u_msg_resuelve_sabotaje_t));
     uint32_t offset = 0;
 
     u_buffer_read(_buffer, &resuelve_sabotaje->tripulante_id, sizeof(uint32_t), offset);

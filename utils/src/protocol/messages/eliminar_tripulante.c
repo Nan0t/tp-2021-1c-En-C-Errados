@@ -23,7 +23,7 @@ u_paquete_t* u_msg_eliminar_tripulante_serializar(const u_msg_eliminar_tripulant
 }
 
 u_msg_eliminar_tripulante_t* u_msg_eliminar_tripulante_deserializar(const u_buffer_t* _buffer){
-    u_msg_eliminar_tripulante_t* eliminar_tripulante = u_u_malloc(sizeof( u_msg_eliminar_tripulante_t));
+    u_msg_eliminar_tripulante_t* eliminar_tripulante = u_malloc(sizeof( u_msg_eliminar_tripulante_t));
     uint32_t offset = 0;
 
     u_buffer_read(_buffer, &eliminar_tripulante->tripulante_id, sizeof(uint32_t), offset);
