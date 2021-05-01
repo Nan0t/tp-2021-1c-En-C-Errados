@@ -1,11 +1,12 @@
 #ifndef UTILS_PROTOCOL_PAQUETE_H
 #define UTILS_PROTOCOL_PAQUETE_H
 
+#include "utils/protocol/opcodes.h"
 #include "utils/protocol/buffer.h"
 
 typedef struct {
-    uint32_t  opCodeMsg; 
+    u_opcode_e  opCodeMsg; 
     u_buffer_t* buffer;
-} paquete_t;
+} u_paquete_t;
 
 #endif
