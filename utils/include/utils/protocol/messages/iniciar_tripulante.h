@@ -31,7 +31,7 @@ u_msg_iniciar_tripulante_t* u_msg_iniciar_tripulante_crear(uint32_t _patota_id, 
 u_paquete_t* u_msg_iniciar_tripulante_serializar(const u_msg_iniciar_tripulante_t* _msg);
 
 /**
- * @NAME: u_msg_informar_iniciar_tripulante_deserializar
+ * @NAME: u_msg_iniciar_tripulante_deserializar
  * @DESC: Dado un buffer que contiene el mensaje serializado, deserializa el mensaje.
  * @PARAMS:
  * 			[in] const u_buffer_t* _buffer - buffer con el mensaje serializado
@@ -42,12 +42,12 @@ u_paquete_t* u_msg_iniciar_tripulante_serializar(const u_msg_iniciar_tripulante_
 u_msg_iniciar_tripulante_t* u_msg_iniciar_tripulante_deserializar(const u_buffer_t* _buffer);
 
 /**
- * @NAME: u_msg_informar_iniciar_tripulante_eliminar
+ * @NAME: u_msg_iniciar_tripulante_eliminar
  * @DESC: Elimina un struct u_msg_iniciar_tripulante_t
  * @PARAMS:
  * 			[in] u_msg_iniciar_tripulante_t* _msg - mensaje a eliminar.
  */
-void u_msg_tripulante_eliminar(u_msg_iniciar_tripulante_t* _msg);
+void u_msg_iniciar_tripulante_eliminar(u_msg_iniciar_tripulante_t* _msg);
 
 
 #endif
