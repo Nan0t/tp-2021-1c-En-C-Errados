@@ -29,6 +29,19 @@ u_buffer_t* u_buffer_create(void)
     return this;
 }
 
+u_buffer_t* u_buffer_duplicate(const u_buffer_t* other)
+{
+    u_buffer_t* this = u_malloc(sizeof(struct u_buffer_t));
+
+    this->size     = other->size;
+    this->capacity = other->capacity;
+    this->data     = u_malloc(this->capacity);
+
+    memcpy(this->data, other->data, this->capacity);
+
+    return this;
+}
+
 void u_buffer_delete(u_buffer_t* this)
 {
     if(this != NULL)
