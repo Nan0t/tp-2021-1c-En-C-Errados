@@ -45,7 +45,8 @@ void u_logger_log(u_log_level_e log_level, const char* message, ...)
     va_start(args, message);
 
     pthread_mutex_lock(&s_logger_instances._log_mx);
-    u_console_save_state();
+    if(s_logger_instances._log->is_active_console)
+        u_console_save_state();
 
     switch (log_level)
     {
@@ -75,7 +76,8 @@ void u_logger_log(u_log_level_e log_level, const char* message, ...)
 
     va_end(args);
 
-    u_console_restore_state();
+    if(s_logger_instances._log->is_active_console)
+        u_console_restore_state();
     pthread_mutex_unlock(&s_logger_instances._log_mx);
 }
 
@@ -90,7 +92,9 @@ bool u_logger_is_init(void)
 void u_logger_vlog(u_log_level_e log_level, const char* message, va_list args)
 {
     pthread_mutex_lock(&s_logger_instances._log_mx);
-    u_console_save_state();
+
+    if(s_logger_instances._log->is_active_console)
+        u_console_save_state();
 
     switch (log_level)
     {
@@ -118,7 +122,8 @@ void u_logger_vlog(u_log_level_e log_level, const char* message, va_list args)
         break;
     }
 
-    u_console_restore_state();
+    if(s_logger_instances._log->is_active_console)
+        u_console_restore_state();
     pthread_mutex_unlock(&s_logger_instances._log_mx);    
 }
 #endif
