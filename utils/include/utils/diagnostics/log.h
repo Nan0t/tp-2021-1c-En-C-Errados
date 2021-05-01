@@ -131,7 +131,7 @@ void u_logger_terminate(void);
  * 
  * @Assert: en caso de que message sea NULL.
  */
-void u_logger_log(u_log_level_e log_level, const char* message, ...);
+void u_logger_log(u_log_level_e log_level, const char* message, ...) UTILS_PRINT_FORMAT(2, 3);
 
 /**
  * @Func: u_logger_is_init
