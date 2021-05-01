@@ -11,10 +11,6 @@ void* u_malloc(uint64_t size)
 
 void* u_realloc(void* ptr, uint64_t size)
 {
-    U_ASSERT(ptr != NULL, "ptr is NULL");
-    if(ptr == NULL)
-        return NULL;
-
     void* mem = realloc(ptr, size);
     U_ASSERT(mem != NULL, "realloc returns NULL");
 
