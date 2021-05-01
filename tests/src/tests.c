@@ -1,4 +1,5 @@
 #include "utils/config_test.h"
+#include "utils/msg_test.h"
 #include <CUnit/Basic.h>
 
 #define FUNCTION_TEST(f) { "\033[93m"#f"\033[0m", f }
@@ -46,4 +47,29 @@ void utils_tests(void)
     };
 
     ADD_TEST_TO_TEST_SUITE(config_test_suite, config_test_cases)
+
+    CU_pSuite msg_test_suite = CU_add_suite_with_setup_and_teardown(
+        "Utils Message Serialization And Deserialization Test Suite",
+        NULL,
+        NULL,
+        NULL,
+        NULL
+    );
+
+    test_case_t msg_test_cases[] =
+    {
+        FUNCTION_TEST(test_atiende_sabotaje_serializar_y_deserializar),
+        FUNCTION_TEST(test_desplazamiento_tripulante_serializar_y_deserializar),
+        FUNCTION_TEST(test_eliminar_tripulante_serializar_y_deserializar),
+        FUNCTION_TEST(test_finalizacion_tripulante_serializar_y_deserializar),
+        FUNCTION_TEST(test_informar_sabotaje_serializar_y_deserializar),
+        FUNCTION_TEST(test_iniciar_tripulante_serializar_y_deserializar),
+        FUNCTION_TEST(test_iniciar_tarea_serializar_y_deserializar),
+        FUNCTION_TEST(test_obtener_bitacora_serializar_y_deserializar),
+        FUNCTION_TEST(test_proxima_tarea_serializar_y_deserializar),
+        FUNCTION_TEST(test_resuelve_sabotaje_serializar_y_deserializar),
+        FUNCTION_TEST(test_tripulante_nuevo_estado_serializar_y_deserializar)
+    };
+
+    ADD_TEST_TO_TEST_SUITE(msg_test_suite, msg_test_cases)
 }
