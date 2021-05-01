@@ -7,6 +7,8 @@
 typedef struct u_buffer_t u_buffer_t;
 
 u_buffer_t* u_buffer_create(void);
+u_buffer_t* u_buffer_duplicate(const u_buffer_t* other);
+
 void        u_buffer_delete(u_buffer_t* this);
 
 void u_buffer_write(u_buffer_t* this, const void* data, uint64_t size);
