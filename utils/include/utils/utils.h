@@ -11,6 +11,9 @@
 #include "utils/config/config.h"
 #include "utils/memory/allocator.h"
 #include "utils/network/socket.h"
+#include "utils/protocol/opcodes.h"
+#include "utils/protocol/paquete.h"
+#include "utils/protocol/messages/messages.h"
 
 const char* u_get_version(void);
 
