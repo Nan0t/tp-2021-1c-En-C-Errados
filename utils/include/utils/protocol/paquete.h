@@ -5,7 +5,7 @@
 
 typedef struct {
     uint32_t  opCodeMsg; 
-    buffer_t* buffer;
+    u_buffer_t* buffer;
 } paquete_t;
 
 #endif
