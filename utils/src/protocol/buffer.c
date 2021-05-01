@@ -48,7 +48,7 @@ void u_buffer_write(u_buffer_t* this, const void* data, uint64_t size)
     this->size += size;
 }
 
-void u_buffer_read(u_buffer_t* this, void* data, uint64_t size, uint64_t offset)
+void u_buffer_read(const u_buffer_t* this, void* data, uint64_t size, uint64_t offset)
 {
     CHECK_OUT_OF_BOUND(this, size, offset)
     memcpy(data, this->data + offset, size);
