@@ -27,7 +27,7 @@ paquete_t* u_msg_sabotaje_serializar(const msg_posicion_sabotaje_t* _msg){
     return paquete; 
 }
 
-msg_posicion_sabotaje_t* u_msg_sabotaje_deserializar(const u_buffer_t* _buffer){
+msg_posicion_sabotaje_t* u_msg_informar_sabotaje_deserializar(const u_buffer_t* _buffer){
     msg_posicion_sabotaje_t* posicion_sabotaje = u_malloc(sizeof( msg_posicion_sabotaje_t));
     uint32_t offset = 0;
 
@@ -39,7 +39,7 @@ msg_posicion_sabotaje_t* u_msg_sabotaje_deserializar(const u_buffer_t* _buffer){
 }
 
 
-void u_msg_sabotaje_eliminar(msg_posicion_sabotaje_t* _msg) {
+void u_msg_informar_sabotaje_eliminar(msg_posicion_sabotaje_t* _msg) {
 	free(_msg);
 }
 
