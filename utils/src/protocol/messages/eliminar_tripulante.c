@@ -1,8 +1,5 @@
-#include "utils/protocol/eliminar_tripulante.h"
-#include <stdint.h>
-
-
-
+#include "utils/protocol/messages/eliminar_tripulante.h"
+#include "utils/memory/allocator.h"
 
 u_msg_eliminar_tripulante_t* u_msg_eliminar_tripulante_crear(uint32_t _tripulante_id){
     u_msg_eliminar_tripulante_t* msg = u_malloc(sizeof(u_msg_eliminar_tripulante_t));

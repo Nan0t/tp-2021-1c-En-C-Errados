@@ -1,6 +1,5 @@
-#include "utils/protocol/finalizacion_tarea.h"
-#include <stdint.h>
-
+#include "utils/protocol/messages/finalizacion_tarea.h"
+#include "utils/memory/allocator.h"
 
 u_msg_finalizacion_tarea_t* u_msg_finalizacion_tarea_crear(uint32_t _tripulante_id, const char* _tarea){
     u_msg_finalizacion_tarea_t* msg = u_malloc(sizeof(u_msg_finalizacion_tarea_t));

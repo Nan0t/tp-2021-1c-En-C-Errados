@@ -1,5 +1,5 @@
-#include "utils/protocol/atiende_sabotaje.h"
-#include <stdint.h>
+#include "utils/protocol/messages/atiende_sabotaje.h"
+#include "utils/memory/allocator.h"
 
 u_msg_atender_sabotaje_t* u_msg_atiende_sabotaje_crear(uint32_t _tripulante_id){
     u_msg_atender_sabotaje_t* msg = u_malloc(sizeof(u_msg_atender_sabotaje_t));

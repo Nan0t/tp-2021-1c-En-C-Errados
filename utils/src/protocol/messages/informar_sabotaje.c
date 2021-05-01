@@ -1,8 +1,5 @@
-#include "utils/protocol/informar_sabotaje.h"
-#include <stdint.h>
-
-
-
+#include "utils/protocol/messages/informar_sabotaje.h"
+#include "utils/memory/allocator.h"
 
 u_msg_posicion_sabotaje_t* u_msg_sabotaje_crear(uint32_t _pos_x, uint32_t _pos_y){
     u_msg_posicion_sabotaje_t* msg = u_malloc(sizeof(u_msg_posicion_sabotaje_t));

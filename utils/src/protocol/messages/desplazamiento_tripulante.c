@@ -1,5 +1,5 @@
-#include "utils/protocol/desplazamiento_tripulante.h"
-#include <stdint.h>
+#include "utils/protocol/messages/desplazamiento_tripulante.h"
+#include "utils/memory/allocator.h"
 
 u_msg_desplazamiento_tripulante_t* u_msg_desplazamiento_tripulante_crear(uint32_t _tripulante_id,uint32_t _pos_x, uint32_t _pos_y){
     u_msg_desplazamiento_tripulante_t* msg = u_malloc(sizeof(u_msg_desplazamiento_tripulante_t));

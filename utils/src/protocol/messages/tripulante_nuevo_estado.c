@@ -1,5 +1,5 @@
-#include "utils/protocol/tripulante_nuevo_estado.h"
-#include <stdint.h>
+#include "utils/protocol/messages/tripulante_nuevo_estado.h"
+#include "utils/memory/allocator.h"
 
 u_msg_tripulante_nuevo_estado_t* u_msg_tripulante_nuevo_estado_crear(uint32_t _tripulante_id, uint32_t _nuevo_estado){
     u_msg_tripulante_nuevo_estado_t* msg = u_malloc(sizeof(u_msg_tripulante_nuevo_estado_t));
@@ -25,7 +25,7 @@ u_paquete_t* u_msg_tripulante_nuevo_estado_serializar(const u_msg_tripulante_nue
 }
 
 u_msg_tripulante_nuevo_estado_t* u_msg_tripulante_nuevo_estado_deserializar(const u_buffer_t* _buffer){
-    u_msg_tripulante_nuevo_estado_t* tripulante_nuevo_estado = u_u_malloc(sizeof( u_msg_tripulante_nuevo_estado_t));
+    u_msg_tripulante_nuevo_estado_t* tripulante_nuevo_estado = u_malloc(sizeof( u_msg_tripulante_nuevo_estado_t));
     uint32_t offset = 0;
 
     u_buffer_read(_buffer, &tripulante_nuevo_estado->tripulante_id, sizeof(uint32_t), offset);

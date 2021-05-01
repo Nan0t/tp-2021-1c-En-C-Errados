@@ -1,8 +1,5 @@
-#include "utils/protocol/obtener_bitacora.h"
-#include <stdint.h>
-
-
-
+#include "utils/protocol/messages/obtener_bitacora.h"
+#include "utils/memory/allocator.h"
 
 u_msg_obtener_bitacora_t* u_msg_obtener_bitacora_crear(uint32_t _tripulante_id){
     u_msg_obtener_bitacora_t* msg = u_malloc(sizeof(u_msg_obtener_bitacora_t));

@@ -1,8 +1,5 @@
-#include "utils/protocol/proxima_tarea.h"
-#include <stdint.h>
-
-
-
+#include "utils/protocol/messages/proxima_tarea.h"
+#include "utils/memory/allocator.h"
 
 u_msg_proxima_tarea_t* u_msg_proxima_tarea_crear(uint32_t _patota_id, uint32_t _tripulante_id){
     u_msg_proxima_tarea_t* msg = u_malloc(sizeof(u_msg_proxima_tarea_t));

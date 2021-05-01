@@ -1,8 +1,5 @@
-#include "utils/protocol/iniciar_tripulante.h"
-#include <stdint.h>
-
-
-
+#include "utils/protocol/messages/iniciar_tripulante.h"
+#include "utils/memory/allocator.h"
 
 u_msg_iniciar_tripulante_t* u_msg_iniciar_tripulante_crear(uint32_t _patota_id, uint32_t _tripulante_id){
     u_msg_iniciar_tripulante_t* msg = u_malloc(sizeof(u_msg_iniciar_tripulante_t));
