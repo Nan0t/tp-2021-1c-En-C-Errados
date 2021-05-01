@@ -5,7 +5,7 @@
 
 
 u_msg_iniciar_tripulante_t* u_msg_iniciar_tripulante_crear(uint32_t _patota_id, uint32_t _tripulante_id){
-    u_msg_iniciar_tripulante_t* msg = malloc(sizeof(u_msg_iniciar_tripulante_t));
+    u_msg_iniciar_tripulante_t* msg = u_malloc(sizeof(u_msg_iniciar_tripulante_t));
 
     msg->patota_id = _patota_id;
     msg->tripulante_id = _tripulante_id;
@@ -19,7 +19,7 @@ u_paquete_t* u_msg_iniciar_tripulante_serializar(const u_msg_iniciar_tripulante_
     u_buffer_write(buffer, &_msg->patota_id, sizeof(uint32_t));
     u_buffer_write(buffer, &_msg->tripulante_id, sizeof(uint32_t));
 
-    u_paquete_t* paquete = malloc(sizeof(u_paquete_t));
+    u_paquete_t* paquete = u_malloc(sizeof(u_paquete_t));
     paquete->opCodeMsg = INICIAR_TRIPULANTE;
     paquete->buffer    = buffer;
 
@@ -28,7 +28,7 @@ u_paquete_t* u_msg_iniciar_tripulante_serializar(const u_msg_iniciar_tripulante_
 }
 
 u_msg_iniciar_tripulante_t* u_msg_iniciar_tripulante_deserializar(const u_buffer_t* _buffer){
-    u_msg_iniciar_tripulante_t* iniciar_tripulante = u_malloc(sizeof( u_msg_iniciar_tripulante_t));
+    u_msg_iniciar_tripulante_t* iniciar_tripulante = u_u_malloc(sizeof( u_msg_iniciar_tripulante_t));
     uint32_t offset = 0;
 
     u_buffer_read(_buffer, &iniciar_tripulante->patota_id, sizeof(uint32_t), offset);
@@ -40,6 +40,6 @@ u_msg_iniciar_tripulante_t* u_msg_iniciar_tripulante_deserializar(const u_buffer
 
 
 void u_msg_iniciar_tripulante_eliminar(u_msg_iniciar_tripulante_t* _msg) {
-	free(_msg);
+	u_free(_msg);
 }
 
