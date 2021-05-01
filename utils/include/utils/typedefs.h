@@ -10,6 +10,11 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include <commons/string.h>
+#include <commons/collections/list.h>
+#include <commons/collections/queue.h>
+#include <commons/collections/dictionary.h>
+
 #define private static
 
 #define UTILS_PRINT_FORMAT(...)  __attribute__((format(printf, __VA_ARGS__)))
