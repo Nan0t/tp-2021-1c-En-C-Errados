@@ -15,7 +15,7 @@ struct u_buffer_t
     buffer->data = u_realloc(buffer->data, buffer->capacity);
 
 #define CHECK_OUT_OF_BOUND(buffer, size, offset)\
-    U_ASSERT(buffer->size > offset + size, "Trying to access out of bound buffer memory");
+    U_ASSERT(buffer->size >= offset + size, "Trying to access out of bound buffer memory");
 
 
 u_buffer_t* u_buffer_create(void)
