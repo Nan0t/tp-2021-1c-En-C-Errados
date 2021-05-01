@@ -6,7 +6,7 @@ declare ARCH="x86"
 
 cd $SCRIPT_DIR
 
-if [ $PTR_SIZE=="64" ];then
+if [ "$PTR_SIZE" == "64" ];then
     ARCH="x86_64"
 fi
 
