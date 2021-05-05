@@ -9,6 +9,7 @@
 #include "utils/protocol/messages/informar_sabotaje.h"
 #include "utils/protocol/messages/iniciar_tripulante.h"
 #include "utils/protocol/messages/inicio_tarea.h"
+#include "utils/protocol/messages/movimiento_tripulante.h"
 #include "utils/protocol/messages/obtener_bitacora.h"
 #include "utils/protocol/messages/proxima_tarea.h"
 #include "utils/protocol/messages/resuelve_sabotaje.h"
