@@ -3,12 +3,14 @@
 
 #include <commons/string.h>
 
-u_msg_desplazamiento_tripulante_t* u_msg_desplazamiento_tripulante_crear(uint32_t _tripulante_id,uint32_t _pos_x, uint32_t _pos_y){
+u_msg_desplazamiento_tripulante_t* u_msg_desplazamiento_tripulante_crear(uint32_t _tripulante_id, u_pos_t origen, u_pos_t destino) {
     u_msg_desplazamiento_tripulante_t* msg = u_malloc(sizeof(u_msg_desplazamiento_tripulante_t));
 
     msg->tripulante_id = _tripulante_id;
-    msg->pos_x         = _pos_x;
-    msg->pos_y         = _pos_y;
+    msg->origen.x = origen.x;
+    msg->origen.y = origen.y;
+    msg->destino.x = destino.x;
+    msg->destino.y = destino.y;
 
     return msg;
 }
@@ -17,8 +19,8 @@ u_paquete_t* u_msg_desplazamiento_tripulante_serializar(const u_msg_desplazamien
     u_buffer_t* buffer = u_buffer_create();
 
     u_buffer_write(buffer, &_msg->tripulante_id, sizeof(uint32_t));
-    u_buffer_write(buffer, &_msg->pos_x, sizeof(uint32_t));
-    u_buffer_write(buffer, &_msg->pos_y, sizeof(uint32_t));
+    u_buffer_write(buffer, &_msg->origen, sizeof(u_pos_t));
+    u_buffer_write(buffer, &_msg->destino, sizeof(u_pos_t));
 
 
     u_paquete_t* paquete = u_malloc(sizeof(u_paquete_t));
@@ -34,9 +36,9 @@ u_msg_desplazamiento_tripulante_t* u_msg_desplazamiento_tripulante_deserializar(
 
     u_buffer_read(_buffer, &desplazamiento_tripulante->tripulante_id, sizeof(uint32_t), offset);
     offset += sizeof(uint32_t);
-    u_buffer_read(_buffer, &desplazamiento_tripulante->pos_x, sizeof(uint32_t), offset);
-    offset += sizeof(uint32_t);
-    u_buffer_read(_buffer, &desplazamiento_tripulante->pos_y, sizeof(uint32_t), offset);
+    u_buffer_read(_buffer, &desplazamiento_tripulante->origen, sizeof(u_pos_t), offset);
+    offset += sizeof(u_pos_t);
+    u_buffer_read(_buffer, &desplazamiento_tripulante->destino, sizeof(u_pos_t), offset);
 
     return desplazamiento_tripulante;
 }
@@ -48,7 +50,7 @@ void u_msg_desplazamiento_tripulante_eliminar(u_msg_desplazamiento_tripulante_t*
 
 char* u_msg_desplazamineto_tripulante_to_string(const u_msg_desplazamiento_tripulante_t* msg) {
     return string_from_format(
-        "MSG_DESPALZAMIENTO_TRIPULANTE: { TID: %d | Pos_X: %d | Pos_Y: %d }",
-        msg->tripulante_id, msg->pos_x, msg->pos_y
+        "MSG_DESPALZAMIENTO_TRIPULANTE: { TID: %d | Origen: { Pos_X: %d | Pos_Y: %d } | Destino: { Pos_X: %d | Pos_Y: %d } }",
+        msg->tripulante_id, msg->origen.x, msg->origen.y, msg->destino.x, msg->destino.y
     );
 }

@@ -5,8 +5,8 @@
 
 typedef struct {
     uint32_t tripulante_id;
-    uint32_t pos_x;
-    uint32_t pos_y;
+    u_pos_t  origen;
+    u_pos_t  destino;
 } u_msg_desplazamiento_tripulante_t;
 
 
@@ -20,7 +20,7 @@ typedef struct {
  * @RETURN: Un struct u_msg_desplazamiento_tripulante_t.
  * @NOTA: El struct resultante debe ser liberado posteriormente llamanda a u_msg_desplazamiento_tripulante_eliminar.
  */
-u_msg_desplazamiento_tripulante_t* u_msg_desplazamiento_tripulante_crear(uint32_t _tripulante_id,uint32_t _pos_x, uint32_t _pos_y);
+u_msg_desplazamiento_tripulante_t* u_msg_desplazamiento_tripulante_crear(uint32_t _tripulante_id, u_pos_t origen, u_pos_t destino);
 
 /**
  * @NAME: u_msg_deplazamiento_tripulante_serializar
