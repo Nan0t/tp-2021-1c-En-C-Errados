@@ -7,6 +7,7 @@
 #include "utils/protocol/messages/eliminar_tripulante.h"
 #include "utils/protocol/messages/finalizacion_tarea.h"
 #include "utils/protocol/messages/informar_sabotaje.h"
+#include "utils/protocol/messages/iniciar_patota.h"
 #include "utils/protocol/messages/iniciar_tripulante.h"
 #include "utils/protocol/messages/inicio_tarea.h"
 #include "utils/protocol/messages/movimiento_tripulante.h"
