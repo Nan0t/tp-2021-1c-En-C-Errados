@@ -26,9 +26,9 @@ u_msg_inicio_tarea_t* u_msg_inicio_tarea_crear(uint32_t _tripulante_id, const ch
  * @DESC: Serializar un u_msg_inicio_tarea_t y lo guarda en un struct u_paquete_t.
  * @PARAMS:
  * 			[in] const u_msg_inicio_tarea_t* _msg - Mensaje a serializar.
- * @RETURNS: un struct u_paquete_t que contendra el mensaje serializado.
+ * @RETURNS: un struct u_buffer_t que contendra el mensaje serializado.
  */
-u_paquete_t* u_msg_inicio_tarea_serializar(const u_msg_inicio_tarea_t* _msg);
+u_buffer_t* u_msg_inicio_tarea_serializar(const u_msg_inicio_tarea_t* _msg);
 
 /**
  * @NAME: u_msg_inicio_tarea_deserializar

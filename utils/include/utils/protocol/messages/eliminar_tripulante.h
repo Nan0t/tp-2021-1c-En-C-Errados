@@ -25,9 +25,9 @@ u_msg_eliminar_tripulante_t* u_msg_eliminar_tripulante_crear(uint32_t _tripulant
  * @DESC: Serializar un u_msg_eliminar_tripulante_t y lo guarda en un struct u_paquete_t.
  * @PARAMS:
  * 			[in] const u_msg_eliminar_tripulante_t* _msg - Mensaje a serializar.
- * @RETURNS: un struct u_paquete_t que contendra el mensaje serializado.
+ * @RETURNS: un struct u_buffer_t que contendra el mensaje serializado.
  */
-u_paquete_t* u_msg_eliminar_tripulante_serializar(const u_msg_eliminar_tripulante_t* _msg);
+u_buffer_t* u_msg_eliminar_tripulante_serializar(const u_msg_eliminar_tripulante_t* _msg);
 
 /**
  * @NAME: u_msg_eliminar_tripulante_deserializar

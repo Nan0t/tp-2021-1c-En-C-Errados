@@ -15,7 +15,7 @@ u_msg_fail_t* u_msg_fail_crear(const char* format, ...)
     return this;
 }
 
-u_paquete_t* u_msg_fail_serializar(const u_msg_fail_t* this)
+u_buffer_t* u_msg_fail_serializar(const u_msg_fail_t* this)
 {
     u_buffer_t* buffer = u_buffer_create();
 
@@ -24,10 +24,7 @@ u_paquete_t* u_msg_fail_serializar(const u_msg_fail_t* this)
     u_buffer_write(buffer, &desc_length, sizeof(uint32_t));
     u_buffer_write(buffer, this->description, desc_length);
 
-    u_paquete_t* paquete = u_paquete_crear(FAIL, buffer);
-    u_buffer_delete(buffer);
-
-    return paquete;
+    return buffer;
 }
 
 u_msg_fail_t* u_msg_fail_deserializar(const u_buffer_t* buffer)

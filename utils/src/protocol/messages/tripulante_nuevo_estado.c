@@ -10,18 +10,13 @@ u_msg_tripulante_nuevo_estado_t* u_msg_tripulante_nuevo_estado_crear(uint32_t _t
     return msg;
 }
 
-u_paquete_t* u_msg_tripulante_nuevo_estado_serializar(const u_msg_tripulante_nuevo_estado_t* _msg){
+u_buffer_t* u_msg_tripulante_nuevo_estado_serializar(const u_msg_tripulante_nuevo_estado_t* _msg){
     u_buffer_t* buffer = u_buffer_create();
 
     u_buffer_write(buffer, &_msg->tripulante_id, sizeof(uint32_t));
     u_buffer_write(buffer, &_msg->nuevo_estado, sizeof(uint32_t));
 
-    u_paquete_t* paquete = u_malloc(sizeof(u_paquete_t));
-    paquete->opCodeMsg = TRIPULANTE_NUEVO_ESTADO;
-    paquete->buffer    = buffer;
-
-
-    return paquete; 
+    return buffer;
 }
 
 u_msg_tripulante_nuevo_estado_t* u_msg_tripulante_nuevo_estado_deserializar(const u_buffer_t* _buffer){

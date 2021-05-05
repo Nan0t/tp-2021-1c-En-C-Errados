@@ -11,7 +11,7 @@ typedef struct
 
 u_msg_movimiento_tripulante_t* u_msg_movimiento_tripulante_crear(uint32_t tid, u_pos_t pos);
 
-u_paquete_t* u_msg_movimiento_tripulante_serializar(const u_msg_movimiento_tripulante_t* this);
+u_buffer_t* u_msg_movimiento_tripulante_serializar(const u_msg_movimiento_tripulante_t* this);
 u_msg_movimiento_tripulante_t* u_msg_movimiento_tripulante_deserializar(const u_buffer_t* buffer);
 
 void u_msg_movimiento_tripulante_eliminar(u_msg_movimiento_tripulante_t* this);

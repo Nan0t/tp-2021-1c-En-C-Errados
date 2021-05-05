@@ -11,7 +11,7 @@ typedef struct
 
 u_msg_iniciar_patota_t* u_msg_iniciar_patota_crear(uint32_t pid, const char* lista_tareas);
 
-u_paquete_t* u_msg_iniciar_patota_serializar(const u_msg_iniciar_patota_t* this);
+u_buffer_t* u_msg_iniciar_patota_serializar(const u_msg_iniciar_patota_t* this);
 u_msg_iniciar_patota_t* u_msg_iniciar_patota_deserializar(const u_buffer_t* buffer);
 
 void u_msg_iniciar_patota_eliminar(u_msg_iniciar_patota_t* this);

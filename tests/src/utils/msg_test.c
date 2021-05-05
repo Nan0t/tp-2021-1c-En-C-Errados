@@ -10,12 +10,12 @@ void test_atiende_sabotaje_serializar_y_deserializar(void)
 //--------
     u_msg_atender_sabotaje_t* ser_msg   = NULL;
     u_msg_atender_sabotaje_t* deser_msg = NULL;
-    u_paquete_t* paquete;
+    u_buffer_t* buffer;
 // Act
 //----
     ser_msg = u_msg_atiende_sabotaje_crear(10);
-    paquete = u_msg_atiende_sabotaje_serializar(ser_msg);
-    deser_msg = u_msg_atiende_sabotaje_deserializar(paquete->buffer);
+    buffer = u_msg_atiende_sabotaje_serializar(ser_msg);
+    deser_msg = u_msg_atiende_sabotaje_deserializar(buffer);
 
 // Assert
 //-------
@@ -24,7 +24,7 @@ void test_atiende_sabotaje_serializar_y_deserializar(void)
 
     u_msg_atiende_sabotaje_eliminar(ser_msg);
     u_msg_atiende_sabotaje_eliminar(deser_msg);
-    u_paquete_delete(paquete);
+    u_buffer_delete(buffer);
 }
 
 void test_bitacora_serializar_y_deserializar(void)
@@ -35,13 +35,13 @@ void test_bitacora_serializar_y_deserializar(void)
 
     u_msg_bitacora_t* ser_msg = NULL;
     u_msg_bitacora_t* deser_msg = NULL;
-    u_paquete_t* paquete = NULL;
+    u_buffer_t* buffer = NULL;
 
 // Act
 //----
     ser_msg = u_msg_bitacora_crear(expected_contenido_bitacora);
-    paquete = u_msg_bitacora_serializar(ser_msg);
-    deser_msg = u_msg_bitacora_deserializar(paquete->buffer);
+    buffer = u_msg_bitacora_serializar(ser_msg);
+    deser_msg = u_msg_bitacora_deserializar(buffer);
 
 // Assert
 //-------
@@ -50,7 +50,7 @@ void test_bitacora_serializar_y_deserializar(void)
 
     u_msg_bitacora_eliminar(ser_msg);
     u_msg_bitacora_eliminar(deser_msg);
-    u_paquete_delete(paquete);
+    u_buffer_delete(buffer);
 }
 
 void test_desplazamiento_tripulante_serializar_y_deserializar(void)
@@ -59,13 +59,13 @@ void test_desplazamiento_tripulante_serializar_y_deserializar(void)
 //--------
     u_msg_desplazamiento_tripulante_t* ser_msg   = NULL;
     u_msg_desplazamiento_tripulante_t* deser_msg = NULL;
-    u_paquete_t* paquete;
+    u_buffer_t* buffer;
 
 // Act
 //----
     ser_msg = u_msg_desplazamiento_tripulante_crear(10, (u_pos_t){ 4, 3 }, (u_pos_t){ 2, 1 });
-    paquete = u_msg_desplazamiento_tripulante_serializar(ser_msg);
-    deser_msg = u_msg_desplazamiento_tripulante_deserializar(paquete->buffer);
+    buffer = u_msg_desplazamiento_tripulante_serializar(ser_msg);
+    deser_msg = u_msg_desplazamiento_tripulante_deserializar(buffer);
 
 // Assert
 //-------
@@ -83,7 +83,7 @@ void test_desplazamiento_tripulante_serializar_y_deserializar(void)
 
     u_msg_desplazamiento_tripulante_eliminar(ser_msg);
     u_msg_desplazamiento_tripulante_eliminar(deser_msg);
-    u_paquete_delete(paquete);
+    u_buffer_delete(buffer);
 }
 
 void test_eliminar_tripulante_serializar_y_deserializar(void)
@@ -92,13 +92,13 @@ void test_eliminar_tripulante_serializar_y_deserializar(void)
 //--------
     u_msg_eliminar_tripulante_t* ser_msg = NULL;
     u_msg_eliminar_tripulante_t* deser_msg = NULL;
-    u_paquete_t* paquete = NULL;
+    u_buffer_t* buffer = NULL;
 
 // Act
 //----
     ser_msg = u_msg_eliminar_tripulante_crear(10);
-    paquete = u_msg_eliminar_tripulante_serializar(ser_msg);
-    deser_msg = u_msg_eliminar_tripulante_deserializar(paquete->buffer);
+    buffer = u_msg_eliminar_tripulante_serializar(ser_msg);
+    deser_msg = u_msg_eliminar_tripulante_deserializar(buffer);
 
 // Assert
 //-------
@@ -107,7 +107,7 @@ void test_eliminar_tripulante_serializar_y_deserializar(void)
 
     u_msg_eliminar_tripulante_eliminar(ser_msg);
     u_msg_eliminar_tripulante_eliminar(deser_msg);
-    u_paquete_delete(paquete);
+    u_buffer_delete(buffer);
 }
 
 void test_finalizacion_tripulante_serializar_y_deserializar(void)
@@ -119,13 +119,13 @@ void test_finalizacion_tripulante_serializar_y_deserializar(void)
 
     u_msg_finalizacion_tarea_t* ser_msg = NULL;
     u_msg_finalizacion_tarea_t* deser_msg = NULL;
-    u_paquete_t* paquete = NULL;
+    u_buffer_t* buffer = NULL;
 
 // Act
 //----
     ser_msg = u_msg_finalizacion_tarea_crear(10, "Tarea1");
-    paquete = u_msg_finalizacion_tarea_serializar(ser_msg);
-    deser_msg = u_msg_finalizacion_tarea_deserializar(paquete->buffer);
+    buffer = u_msg_finalizacion_tarea_serializar(ser_msg);
+    deser_msg = u_msg_finalizacion_tarea_deserializar(buffer);
 
 // Assert
 //-------
@@ -139,7 +139,7 @@ void test_finalizacion_tripulante_serializar_y_deserializar(void)
 
     u_msg_finalizacion_tarea_eliminar(ser_msg);
     u_msg_finalizacion_tarea_eliminar(deser_msg);
-    u_paquete_delete(paquete);
+    u_buffer_delete(buffer);
 }
 
 void test_informar_sabotaje_serializar_y_deserializar(void)
@@ -148,13 +148,13 @@ void test_informar_sabotaje_serializar_y_deserializar(void)
 //--------
     u_msg_atender_sabotaje_t* ser_msg = NULL;
     u_msg_atender_sabotaje_t* deser_msg = NULL;
-    u_paquete_t* paquete = NULL;
+    u_buffer_t* buffer = NULL;
 
 // Act
 //----
     ser_msg = u_msg_atiende_sabotaje_crear(10);
-    paquete = u_msg_atiende_sabotaje_serializar(ser_msg);
-    deser_msg = u_msg_atiende_sabotaje_deserializar(paquete->buffer);
+    buffer = u_msg_atiende_sabotaje_serializar(ser_msg);
+    deser_msg = u_msg_atiende_sabotaje_deserializar(buffer);
 
 // Assert
 //-------
@@ -163,7 +163,7 @@ void test_informar_sabotaje_serializar_y_deserializar(void)
 
     u_msg_atiende_sabotaje_eliminar(ser_msg);
     u_msg_atiende_sabotaje_eliminar(deser_msg);
-    u_paquete_delete(paquete);
+    u_buffer_delete(buffer);
 }
 
 void test_iniciar_tripulante_serializar_y_deserializar(void)
@@ -172,13 +172,13 @@ void test_iniciar_tripulante_serializar_y_deserializar(void)
 //--------
     u_msg_iniciar_tripulante_t* ser_msg = NULL;
     u_msg_iniciar_tripulante_t* deser_msg = NULL;
-    u_paquete_t* paquete = NULL;
+    u_buffer_t* buffer = NULL;
 
 // Act
 //----
     ser_msg = u_msg_iniciar_tripulante_crear(10, 10);
-    paquete = u_msg_iniciar_tripulante_serializar(ser_msg);
-    deser_msg = u_msg_iniciar_tripulante_deserializar(paquete->buffer);
+    buffer = u_msg_iniciar_tripulante_serializar(ser_msg);
+    deser_msg = u_msg_iniciar_tripulante_deserializar(buffer);
 
 // Assert
 //-------
@@ -190,7 +190,7 @@ void test_iniciar_tripulante_serializar_y_deserializar(void)
 
     u_msg_iniciar_tripulante_eliminar(ser_msg);
     u_msg_iniciar_tripulante_eliminar(deser_msg);
-    u_paquete_delete(paquete);
+    u_buffer_delete(buffer);
 }
 
 void test_iniciar_patota_serializar_y_deserializar(void)
@@ -201,13 +201,13 @@ void test_iniciar_patota_serializar_y_deserializar(void)
 
     u_msg_iniciar_patota_t* ser_msg = NULL;
     u_msg_iniciar_patota_t* deser_msg = NULL;
-    u_paquete_t* paquete = NULL;
+    u_buffer_t* buffer = NULL;
 
 // Act
 //----
     ser_msg = u_msg_iniciar_patota_crear(10, expected_lista_tareas);
-    paquete = u_msg_iniciar_patota_serializar(ser_msg);
-    deser_msg = u_msg_iniciar_patota_deserializar(paquete->buffer);
+    buffer = u_msg_iniciar_patota_serializar(ser_msg);
+    deser_msg = u_msg_iniciar_patota_deserializar(buffer);
 
 // Assert
 //-------
@@ -219,7 +219,7 @@ void test_iniciar_patota_serializar_y_deserializar(void)
 
     u_msg_iniciar_patota_eliminar(ser_msg);
     u_msg_iniciar_patota_eliminar(deser_msg);
-    u_paquete_delete(paquete);
+    u_buffer_delete(buffer);
 }
 
 void test_iniciar_tarea_serializar_y_deserializar(void)
@@ -231,13 +231,13 @@ void test_iniciar_tarea_serializar_y_deserializar(void)
 
     u_msg_inicio_tarea_t* ser_msg = NULL;
     u_msg_inicio_tarea_t* deser_msg = NULL;
-    u_paquete_t* paquete = NULL;
+    u_buffer_t* buffer = NULL;
 
 // Act
 //----
     ser_msg = u_msg_inicio_tarea_crear(10, "Tarea1");
-    paquete = u_msg_inicio_tarea_serializar(ser_msg);
-    deser_msg = u_msg_inicio_tarea_deserializar(paquete->buffer);
+    buffer = u_msg_inicio_tarea_serializar(ser_msg);
+    deser_msg = u_msg_inicio_tarea_deserializar(buffer);
 
 // Assert
 //-------
@@ -251,7 +251,7 @@ void test_iniciar_tarea_serializar_y_deserializar(void)
 
     u_msg_inicio_tarea_eliminar(ser_msg);
     u_msg_inicio_tarea_eliminar(deser_msg);
-    u_paquete_delete(paquete);
+    u_buffer_delete(buffer);
 }
 
 void test_movimiento_tripulante_serializar_y_deserializar(void)
@@ -260,13 +260,13 @@ void test_movimiento_tripulante_serializar_y_deserializar(void)
 //--------
     u_msg_movimiento_tripulante_t* ser_msg = NULL;
     u_msg_movimiento_tripulante_t* deser_msg = NULL;
-    u_paquete_t* paquete = NULL;
+    u_buffer_t* buffer = NULL;
 
 // Act
 //----
     ser_msg = u_msg_movimiento_tripulante_crear(10, (u_pos_t){ 3, 4 });
-    paquete = u_msg_movimiento_tripulante_serializar(ser_msg);
-    deser_msg = u_msg_movimiento_tripulante_deserializar(paquete->buffer);
+    buffer = u_msg_movimiento_tripulante_serializar(ser_msg);
+    deser_msg = u_msg_movimiento_tripulante_deserializar(buffer);
 
 // Assert
 //-------
@@ -280,7 +280,7 @@ void test_movimiento_tripulante_serializar_y_deserializar(void)
 
     u_msg_movimiento_tripulante_eliminar(ser_msg);
     u_msg_movimiento_tripulante_eliminar(deser_msg);
-    u_paquete_delete(paquete);
+    u_buffer_delete(buffer);
 }
 
 void test_obtener_bitacora_serializar_y_deserializar(void)
@@ -289,13 +289,13 @@ void test_obtener_bitacora_serializar_y_deserializar(void)
 //--------
     u_msg_obtener_bitacora_t* ser_msg = NULL;
     u_msg_obtener_bitacora_t* deser_msg = NULL;
-    u_paquete_t* paquete = NULL;
+    u_buffer_t* buffer = NULL;
 
 // Act
 //----
     ser_msg = u_msg_obtener_bitacora_crear(10);
-    paquete = u_msg_obtener_bitacora_serializar(ser_msg);
-    deser_msg = u_msg_obtener_bitacora_deserializar(paquete->buffer);
+    buffer = u_msg_obtener_bitacora_serializar(ser_msg);
+    deser_msg = u_msg_obtener_bitacora_deserializar(buffer);
 
 // Assert
 //-------
@@ -304,7 +304,7 @@ void test_obtener_bitacora_serializar_y_deserializar(void)
 
     u_msg_obtener_bitacora_eliminar(ser_msg);
     u_msg_obtener_bitacora_eliminar(deser_msg);
-    u_paquete_delete(paquete);
+    u_buffer_delete(buffer);
 }
 
 void test_proxima_tarea_serializar_y_deserializar(void)
@@ -313,13 +313,13 @@ void test_proxima_tarea_serializar_y_deserializar(void)
 //--------
     u_msg_proxima_tarea_t* ser_msg = NULL;
     u_msg_proxima_tarea_t* deser_msg = NULL;
-    u_paquete_t* paquete = NULL;
+    u_buffer_t* buffer = NULL;
 
 // Act
 //----
     ser_msg = u_msg_proxima_tarea_crear(10, 10);
-    paquete = u_msg_proxima_tarea_serializar(ser_msg);
-    deser_msg = u_msg_proxima_tarea_deserializar(paquete->buffer);
+    buffer = u_msg_proxima_tarea_serializar(ser_msg);
+    deser_msg = u_msg_proxima_tarea_deserializar(buffer);
 
 // Assert
 //-------
@@ -331,7 +331,7 @@ void test_proxima_tarea_serializar_y_deserializar(void)
 
     u_msg_proxima_tarea_eliminar(ser_msg);
     u_msg_proxima_tarea_eliminar(deser_msg);
-    u_paquete_delete(paquete);
+    u_buffer_delete(buffer);
 }
 
 void test_resuelve_sabotaje_serializar_y_deserializar(void)
@@ -340,13 +340,13 @@ void test_resuelve_sabotaje_serializar_y_deserializar(void)
 //--------
     u_msg_resuelve_sabotaje_t* ser_msg = NULL;
     u_msg_resuelve_sabotaje_t* deser_msg = NULL;
-    u_paquete_t* paquete = NULL;
+    u_buffer_t* buffer = NULL;
 
 // Act
 //----
     ser_msg = u_msg_resuelve_sabotaje_crear(10);
-    paquete = u_msg_resuelve_sabotaje_serializar(ser_msg);
-    deser_msg = u_msg_resuelve_sabotaje_deserializar(paquete->buffer);
+    buffer = u_msg_resuelve_sabotaje_serializar(ser_msg);
+    deser_msg = u_msg_resuelve_sabotaje_deserializar(buffer);
 
 // Assert
 //-------
@@ -355,7 +355,7 @@ void test_resuelve_sabotaje_serializar_y_deserializar(void)
 
     u_msg_resuelve_sabotaje_eliminar(ser_msg);
     u_msg_resuelve_sabotaje_eliminar(deser_msg);
-    u_paquete_delete(paquete);
+    u_buffer_delete(buffer);
 }
 
 void test_tripulante_nuevo_estado_serializar_y_deserializar(void)
@@ -366,13 +366,13 @@ void test_tripulante_nuevo_estado_serializar_y_deserializar(void)
 
     u_msg_tripulante_nuevo_estado_t* ser_msg = NULL;
     u_msg_tripulante_nuevo_estado_t* deser_msg = NULL;
-    u_paquete_t* paquete = NULL;
+    u_buffer_t* buffer = NULL;
 
 // Act
 //----
     ser_msg = u_msg_tripulante_nuevo_estado_crear(10, expected_state);
-    paquete = u_msg_tripulante_nuevo_estado_serializar(ser_msg);
-    deser_msg = u_msg_tripulante_nuevo_estado_deserializar(paquete->buffer);
+    buffer = u_msg_tripulante_nuevo_estado_serializar(ser_msg);
+    deser_msg = u_msg_tripulante_nuevo_estado_deserializar(buffer);
 
 // Assert
 //-------
@@ -384,5 +384,5 @@ void test_tripulante_nuevo_estado_serializar_y_deserializar(void)
 
     u_msg_tripulante_nuevo_estado_eliminar(ser_msg);
     u_msg_tripulante_nuevo_estado_eliminar(deser_msg);
-    u_paquete_delete(paquete);
+    u_buffer_delete(buffer);
 }

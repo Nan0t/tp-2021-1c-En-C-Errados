@@ -9,7 +9,7 @@ u_msg_nueva_tarea_t* u_msg_nueva_tarea_crear(const char* tarea)
     return this;
 }
 
-u_paquete_t* u_msg_nueva_tarea_serializar(const u_msg_nueva_tarea_t* this)
+u_buffer_t* u_msg_nueva_tarea_serializar(const u_msg_nueva_tarea_t* this)
 {
     u_buffer_t* buffer = u_buffer_create();
     uint32_t tarea_length = strlen(this->tarea) + 1;
@@ -17,10 +17,7 @@ u_paquete_t* u_msg_nueva_tarea_serializar(const u_msg_nueva_tarea_t* this)
     u_buffer_write(buffer, &tarea_length, sizeof(uint32_t));
     u_buffer_write(buffer, this->tarea, tarea_length);
 
-    u_paquete_t* paquete = u_paquete_crear(NUEVA_TAREA, buffer);
-    u_buffer_delete(buffer);
-
-    return paquete;
+    return buffer;
 }
 
 u_msg_nueva_tarea_t* u_msg_nueva_tarea_deserializar(const u_buffer_t* buffer)

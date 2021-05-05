@@ -11,7 +11,7 @@ u_msg_iniciar_patota_t* u_msg_iniciar_patota_crear(uint32_t pid, const char* lis
     return this;
 }
 
-u_paquete_t* u_msg_iniciar_patota_serializar(const u_msg_iniciar_patota_t* this)
+u_buffer_t* u_msg_iniciar_patota_serializar(const u_msg_iniciar_patota_t* this)
 {
     u_buffer_t* buffer = u_buffer_create();
     uint32_t lista_tarea_length = strlen(this->lista_tareas) + 1;
@@ -20,10 +20,7 @@ u_paquete_t* u_msg_iniciar_patota_serializar(const u_msg_iniciar_patota_t* this)
     u_buffer_write(buffer, &lista_tarea_length, sizeof(uint32_t));
     u_buffer_write(buffer, this->lista_tareas, lista_tarea_length);
 
-    u_paquete_t* paquete = u_paquete_crear(INICIAR_PATOTA, buffer);
-    u_buffer_delete(buffer);
-
-    return paquete;
+    return buffer;
 }
 
 u_msg_iniciar_patota_t* u_msg_iniciar_patota_deserializar(const u_buffer_t* buffer)

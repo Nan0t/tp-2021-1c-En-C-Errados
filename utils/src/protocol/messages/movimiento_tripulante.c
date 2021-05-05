@@ -12,17 +12,14 @@ u_msg_movimiento_tripulante_t* u_msg_movimiento_tripulante_crear(uint32_t tid, u
     return this;
 }
 
-u_paquete_t* u_msg_movimiento_tripulante_serializar(const u_msg_movimiento_tripulante_t* this)
+u_buffer_t* u_msg_movimiento_tripulante_serializar(const u_msg_movimiento_tripulante_t* this)
 {
     u_buffer_t* buffer = u_buffer_create();
 
     u_buffer_write(buffer, &this->tid, sizeof(uint32_t));
     u_buffer_write(buffer, &this->pos, sizeof(u_pos_t));
 
-    u_paquete_t* paquete = u_paquete_crear(MOVIMIENTO_TRIPULANTE, buffer);
-    u_buffer_delete(buffer);
-
-    return paquete;
+    return buffer;
 }
 
 u_msg_movimiento_tripulante_t* u_msg_movimiento_tripulante_deserializar(const u_buffer_t* buffer)

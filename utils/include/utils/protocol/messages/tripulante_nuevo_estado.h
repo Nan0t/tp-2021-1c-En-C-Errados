@@ -25,9 +25,9 @@ u_msg_tripulante_nuevo_estado_t* u_msg_tripulante_nuevo_estado_crear(uint32_t _t
  * @DESC: Serializar un u_msg_tripulante_nuevo_estado_t y lo guarda en un struct u_paquete_t.
  * @PARAMS:
  * 			[in] const u_msg_tripulante_nuevo_estado_t* _msg - Mensaje a serializar.
- * @RETURNS: un struct u_paquete_t que contendra el mensaje serializado.
+ * @RETURNS: un struct u_buffer_t que contendra el mensaje serializado.
  */
-u_paquete_t* u_msg_tripulante_nuevo_estado_serializar(const u_msg_tripulante_nuevo_estado_t* _msg);
+u_buffer_t* u_msg_tripulante_nuevo_estado_serializar(const u_msg_tripulante_nuevo_estado_t* _msg);
 
 /**
  * @NAME: u_msg_tripulante_nuevo_estado_deserializar
