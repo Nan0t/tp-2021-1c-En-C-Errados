@@ -3,6 +3,8 @@
 
 private const char* OPCODES_STR[] =
 {
+    "OK",
+    "FAIL",
     "DESPLAZAMIENTO_TRIPULANTE",
 	"BITACORA",
     "MOVIMIENTO_TRIPULANTE",
