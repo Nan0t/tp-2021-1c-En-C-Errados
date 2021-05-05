@@ -309,6 +309,35 @@ void test_iniciar_tripulante_serializar_y_deserializar(void)
     u_paquete_delete(paquete);
 }
 
+void test_iniciar_patota_serializar_y_deserializar(void)
+{
+// Arrange
+//--------
+    const char* expected_lista_tareas = "ListaTareas";
+
+    u_msg_iniciar_patota_t* ser_msg = NULL;
+    u_msg_iniciar_patota_t* deser_msg = NULL;
+    u_paquete_t* paquete = NULL;
+
+// Act
+//----
+    ser_msg = u_msg_iniciar_patota_crear(10, expected_lista_tareas);
+    paquete = u_msg_iniciar_patota_serializar(ser_msg);
+    deser_msg = u_msg_iniciar_patota_deserializar(paquete->buffer);
+
+// Assert
+//-------
+    CU_ASSERT_EQUAL(ser_msg->pid, 10);
+    CU_ASSERT_STRING_EQUAL(ser_msg->lista_tareas, expected_lista_tareas);
+
+    CU_ASSERT_EQUAL(ser_msg->pid, deser_msg->pid);
+    CU_ASSERT_STRING_EQUAL(ser_msg->lista_tareas, deser_msg->lista_tareas);
+
+    u_msg_iniciar_patota_eliminar(ser_msg);
+    u_msg_iniciar_patota_eliminar(deser_msg);
+    u_paquete_delete(paquete);
+}
+
 void test_iniciar_tarea_serializar_y_deserializar(void)
 {
 // Arrange
