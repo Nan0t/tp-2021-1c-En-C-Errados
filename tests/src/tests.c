@@ -66,6 +66,7 @@ void utils_tests(void)
         FUNCTION_TEST(test_informar_sabotaje_serializar_y_deserializar),
         FUNCTION_TEST(test_iniciar_tripulante_serializar_y_deserializar),
         FUNCTION_TEST(test_iniciar_tarea_serializar_y_deserializar),
+        FUNCTION_TEST(test_movimiento_tripulante_serializar_y_deserializar),
         FUNCTION_TEST(test_obtener_bitacora_serializar_y_deserializar),
         FUNCTION_TEST(test_proxima_tarea_serializar_y_deserializar),
         FUNCTION_TEST(test_resuelve_sabotaje_serializar_y_deserializar),

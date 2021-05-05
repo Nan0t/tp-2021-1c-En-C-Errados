@@ -179,19 +179,23 @@ void test_desplazamiento_tripulante_serializar_y_deserializar(void)
 
 // Act
 //----
-    ser_msg = u_msg_desplazamiento_tripulante_crear(10, 4, 3);
+    ser_msg = u_msg_desplazamiento_tripulante_crear(10, (u_pos_t){ 4, 3 }, (u_pos_t){ 2, 1 });
     paquete = u_msg_desplazamiento_tripulante_serializar(ser_msg);
     deser_msg = u_msg_desplazamiento_tripulante_deserializar(paquete->buffer);
 
 // Assert
 //-------
     CU_ASSERT_EQUAL(ser_msg->tripulante_id, 10);
-    CU_ASSERT_EQUAL(ser_msg->pos_x, 4);
-    CU_ASSERT_EQUAL(ser_msg->pos_y, 3);
+    CU_ASSERT_EQUAL(ser_msg->origen.x, 4);
+    CU_ASSERT_EQUAL(ser_msg->origen.y, 3);
+    CU_ASSERT_EQUAL(ser_msg->destino.x, 2);
+    CU_ASSERT_EQUAL(ser_msg->destino.y, 1);
 
     CU_ASSERT_EQUAL(ser_msg->tripulante_id, deser_msg->tripulante_id);
-    CU_ASSERT_EQUAL(ser_msg->pos_x, deser_msg->pos_x);
-    CU_ASSERT_EQUAL(ser_msg->pos_y, deser_msg->pos_y);
+    CU_ASSERT_EQUAL(ser_msg->origen.x, deser_msg->origen.x);
+    CU_ASSERT_EQUAL(ser_msg->origen.y, deser_msg->origen.y);
+    CU_ASSERT_EQUAL(ser_msg->destino.x, deser_msg->destino.x);
+    CU_ASSERT_EQUAL(ser_msg->destino.y, deser_msg->destino.y);
 
     u_msg_desplazamiento_tripulante_eliminar(ser_msg);
     u_msg_desplazamiento_tripulante_eliminar(deser_msg);
@@ -334,6 +338,35 @@ void test_iniciar_tarea_serializar_y_deserializar(void)
 
     u_msg_inicio_tarea_eliminar(ser_msg);
     u_msg_inicio_tarea_eliminar(deser_msg);
+    u_paquete_delete(paquete);
+}
+
+void test_movimiento_tripulante_serializar_y_deserializar(void)
+{
+// Arrange
+//--------
+    u_msg_movimiento_tripulante_t* ser_msg = NULL;
+    u_msg_movimiento_tripulante_t* deser_msg = NULL;
+    u_paquete_t* paquete = NULL;
+
+// Act
+//----
+    ser_msg = u_msg_movimiento_tripulante_crear(10, (u_pos_t){ 3, 4 });
+    paquete = u_msg_movimiento_tripulante_serializar(ser_msg);
+    deser_msg = u_msg_movimiento_tripulante_deserializar(paquete->buffer);
+
+// Assert
+//-------
+    CU_ASSERT_EQUAL(ser_msg->tid, 10);
+    CU_ASSERT_EQUAL(ser_msg->pos.x, 3);
+    CU_ASSERT_EQUAL(ser_msg->pos.y, 4);
+
+    CU_ASSERT_EQUAL(ser_msg->tid, ser_msg->tid);
+    CU_ASSERT_EQUAL(ser_msg->pos.x, ser_msg->pos.x);
+    CU_ASSERT_EQUAL(ser_msg->pos.y, ser_msg->pos.y);
+
+    u_msg_movimiento_tripulante_eliminar(ser_msg);
+    u_msg_movimiento_tripulante_eliminar(deser_msg);
     u_paquete_delete(paquete);
 }
 
