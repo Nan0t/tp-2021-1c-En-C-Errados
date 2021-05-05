@@ -1,7 +1,7 @@
 #ifndef UTILS_PROTOCOL_INFORMAR_SABOTAJE_H
 #define UTILS_PROTOCOL_INFORMAR_SABOTAJE_H
 
-#include "utils/protocol/paquete.h"
+#include "utils/protocol/buffer.h"
 
 typedef struct {
     uint32_t pos_x;
@@ -23,7 +23,7 @@ u_msg_posicion_sabotaje_t* u_msg_sabotaje_crear(uint32_t _pos_x, uint32_t _pos_y
 
 /**
  * @NAME: u_msg_sabotaje_serializar
- * @DESC: Serializar un u_msg_posicion_sabotaje_t y lo guarda en un struct u_paquete_t.
+ * @DESC: Serializar un u_msg_posicion_sabotaje_t y lo guarda en un struct u_buffer_t.
  * @PARAMS:
  * 			[in] const u_msg_posicion_sabotaje_t* _msg - Mensaje a serializar.
  * @RETURNS: un struct u_buffer_t que contendra el mensaje serializado.

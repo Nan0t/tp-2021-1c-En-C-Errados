@@ -28,6 +28,14 @@ typedef enum
 #define U_MSG_IS_VALID(opcode)\
     ((opcode) >= DESPLAZAMIENTO_TRIPULANTE && (opcode) <= TRIPULANTE_NUEVO_ESTADO)
 
+/**
+ * @NAME: u_opcode_to_string.
+ * @DESC: devuelve una representacion en string del opcode.
+ * @PARAMS:
+ *  [in] u_opcode_e opcode - opcode del cual se quiere obtener su representacion en string.
+ * 
+ * @RETURNS: un string con la representacion del opcode.
+ */
 const char* u_opcode_to_string(u_opcode_e opcode);
 
 #endif

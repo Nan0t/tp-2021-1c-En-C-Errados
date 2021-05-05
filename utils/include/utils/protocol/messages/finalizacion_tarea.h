@@ -1,7 +1,7 @@
 #ifndef UTILS_PROTOCOL_FINALIZACION_TAREA_H
 #define UTILS_PROTOCOL_FINALIZACION_TAREA_H
 
-#include "utils/protocol/paquete.h"
+#include "utils/protocol/buffer.h"
 
 typedef struct {
     uint32_t tripulante_id;
@@ -23,7 +23,7 @@ u_msg_finalizacion_tarea_t* u_msg_finalizacion_tarea_crear(uint32_t _tripulante_
 
 /**
  * @NAME: u_msg_finalizacion_tarea_serializar
- * @DESC: Serializar un u_msg_finalizacion_tarea_t y lo guarda en un struct u_paquete_t.
+ * @DESC: Serializar un u_msg_finalizacion_tarea_t y lo guarda en un struct u_buffer_t.
  * @PARAMS:
  * 			[in] const u_msg_finalizacion_tarea_t* _msg - Mensaje a serializar.
  * @RETURNS: un struct u_buffer_t que contendra el mensaje serializado.

@@ -1,7 +1,7 @@
 #ifndef UTILS_PROTOCOL_PROXIMA_TAREA_H
 #define UTILS_PROTOCOL_PROXIMA_TAREA_H
 
-#include "utils/protocol/paquete.h"
+#include "utils/protocol/buffer.h"
 
 typedef struct {
     uint32_t patota_id;
@@ -23,7 +23,7 @@ u_msg_proxima_tarea_t* u_msg_proxima_tarea_crear(uint32_t _patota_id, uint32_t _
 
 /**
  * @NAME: u_msg_proxima_tarea_serializar
- * @DESC: Serializar un u_msg_proxima_tarea_t y lo guarda en un struct u_paquete_t.
+ * @DESC: Serializar un u_msg_proxima_tarea_t y lo guarda en un struct u_buffer_t.
  * @PARAMS:
  * 			[in] const u_msg_proxima_tarea_t* _msg - Mensaje a serializar.
  * @RETURNS: un struct u_buffer_t que contendra el mensaje serializado.

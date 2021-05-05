@@ -1,7 +1,7 @@
 #ifndef UTILS_PROTOCOL_DESPLAZAMIENTO_TRIPULANTE_H
 #define UTILS_PROTOCOL_DESPLAZAMIENTO_TRIPULANTE_H
 
-#include "utils/protocol/paquete.h"
+#include "utils/protocol/buffer.h"
 
 typedef struct {
     uint32_t tripulante_id;
@@ -24,7 +24,7 @@ u_msg_desplazamiento_tripulante_t* u_msg_desplazamiento_tripulante_crear(uint32_
 
 /**
  * @NAME: u_msg_deplazamiento_tripulante_serializar
- * @DESC: Serializar un u_msg_desplazamiento_tripulante_t y lo guarda en un struct u_paquete_t.
+ * @DESC: Serializar un u_msg_desplazamiento_tripulante_t y lo guarda en un struct u_buffer_t.
  * @PARAMS:
  * 			[in] const u_msg_desplazamiento_tripulante_t* _msg - Mensaje a serializar.
  * @RETURNS: un struct u_buffer_t que contendra el mensaje serializado.
