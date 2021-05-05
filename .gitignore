@@ -11,6 +11,8 @@
 *.cproject
 *.project
 *.xml
+RemoteSystemsTempFiles
+/.metadata/
 
 #CLion files
 .idea
