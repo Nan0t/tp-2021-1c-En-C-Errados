@@ -2,6 +2,7 @@
 #define TEST_UTILS_MSG_TEST_H
 
 void test_atiende_sabotaje_serializar_y_deserializar(void);
+void test_bitacora_serializar_y_deserializar(void);
 void test_desplazamiento_tripulante_serializar_y_deserializar(void);
 void test_eliminar_tripulante_serializar_y_deserializar(void);
 void test_finalizacion_tripulante_serializar_y_deserializar(void);

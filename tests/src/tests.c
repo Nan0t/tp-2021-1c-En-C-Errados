@@ -59,6 +59,7 @@ void utils_tests(void)
     test_case_t msg_test_cases[] =
     {
         FUNCTION_TEST(test_atiende_sabotaje_serializar_y_deserializar),
+		FUNCTION_TEST(test_bitacora_serializar_y_deserializar),
         FUNCTION_TEST(test_desplazamiento_tripulante_serializar_y_deserializar),
         FUNCTION_TEST(test_eliminar_tripulante_serializar_y_deserializar),
         FUNCTION_TEST(test_finalizacion_tripulante_serializar_y_deserializar),
