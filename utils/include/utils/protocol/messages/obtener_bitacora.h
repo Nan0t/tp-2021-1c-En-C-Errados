@@ -1,7 +1,7 @@
 #ifndef UTILS_PROTOCOL_OBTENER_BITACORA_H
 #define UTILS_PROTOCOL_OBTENER_BITACORA_H
 
-#include "utils/protocol/paquete.h"
+#include "utils/protocol/buffer.h"
 
 typedef struct {
     uint32_t tripulante_id;
@@ -22,12 +22,12 @@ u_msg_obtener_bitacora_t* u_msg_obtener_bitacora_crear(uint32_t _tripulante_id);
 
 /**
  * @NAME: u_msg_obtener_bitacora_serializar
- * @DESC: Serializar un u_msg_obtener_bitacora_t y lo guarda en un struct u_paquete_t.
+ * @DESC: Serializar un u_msg_obtener_bitacora_t y lo guarda en un struct u_buffer_t.
  * @PARAMS:
  * 			[in] const u_msg_obtener_bitacora_t* _msg - Mensaje a serializar.
- * @RETURNS: un struct u_paquete_t que contendra el mensaje serializado.
+ * @RETURNS: un struct u_buffer_t que contendra el mensaje serializado.
  */
-u_paquete_t* u_msg_obtener_bitacora_serializar(const u_msg_obtener_bitacora_t* _msg);
+u_buffer_t* u_msg_obtener_bitacora_serializar(const u_msg_obtener_bitacora_t* _msg);
 
 /**
  * @NAME: u_msg_obtener_bitacora_deserializar

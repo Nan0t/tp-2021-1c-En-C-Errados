@@ -1,7 +1,7 @@
 #ifndef UTILS_PROTOCOL_INICIAR_TRIPULANTE_H
 #define UTILS_PROTOCOL_INICIAR_TRIPULANTE_H
 
-#include "utils/protocol/paquete.h"
+#include "utils/protocol/buffer.h"
 
 typedef struct {
     uint32_t patota_id;
@@ -23,12 +23,12 @@ u_msg_iniciar_tripulante_t* u_msg_iniciar_tripulante_crear(uint32_t _patota_id, 
 
 /**
  * @NAME: u_msg_iniciar_tripulante_serializar
- * @DESC: Serializar un u_msg_iniciar_tripulante_t y lo guarda en un struct u_paquete_t.
+ * @DESC: Serializar un u_msg_iniciar_tripulante_t y lo guarda en un struct u_buffer_t.
  * @PARAMS:
  * 			[in] const u_msg_iniciar_tripulante_t* _msg - Mensaje a serializar.
- * @RETURNS: un struct u_paquete_t que contendra el mensaje serializado.
+ * @RETURNS: un struct u_buffer_t que contendra el mensaje serializado.
  */
-u_paquete_t* u_msg_iniciar_tripulante_serializar(const u_msg_iniciar_tripulante_t* _msg);
+u_buffer_t* u_msg_iniciar_tripulante_serializar(const u_msg_iniciar_tripulante_t* _msg);
 
 /**
  * @NAME: u_msg_iniciar_tripulante_deserializar

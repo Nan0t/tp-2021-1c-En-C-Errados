@@ -12,18 +12,13 @@ u_msg_iniciar_tripulante_t* u_msg_iniciar_tripulante_crear(uint32_t _patota_id, 
     return msg;
 }
 
-u_paquete_t* u_msg_iniciar_tripulante_serializar(const u_msg_iniciar_tripulante_t* _msg){
+u_buffer_t* u_msg_iniciar_tripulante_serializar(const u_msg_iniciar_tripulante_t* _msg){
     u_buffer_t* buffer = u_buffer_create();
 
     u_buffer_write(buffer, &_msg->patota_id, sizeof(uint32_t));
     u_buffer_write(buffer, &_msg->tripulante_id, sizeof(uint32_t));
 
-    u_paquete_t* paquete = u_malloc(sizeof(u_paquete_t));
-    paquete->opCodeMsg = INICIAR_TRIPULANTE;
-    paquete->buffer    = buffer;
-
-
-    return paquete; 
+    return buffer;
 }
 
 u_msg_iniciar_tripulante_t* u_msg_iniciar_tripulante_deserializar(const u_buffer_t* _buffer){
