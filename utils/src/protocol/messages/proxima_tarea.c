@@ -10,18 +10,13 @@ u_msg_proxima_tarea_t* u_msg_proxima_tarea_crear(uint32_t _patota_id, uint32_t _
     return msg;
 }
 
-u_paquete_t* u_msg_proxima_tarea_serializar(const u_msg_proxima_tarea_t* _msg){
+u_buffer_t* u_msg_proxima_tarea_serializar(const u_msg_proxima_tarea_t* _msg){
     u_buffer_t* buffer = u_buffer_create();
 
     u_buffer_write(buffer, &_msg->patota_id, sizeof(uint32_t));
     u_buffer_write(buffer, &_msg->tripulante_id, sizeof(uint32_t));
 
-    u_paquete_t* paquete = u_malloc(sizeof(u_paquete_t));
-    paquete->opCodeMsg = PROXIMA_TAREA;
-    paquete->buffer    = buffer;
-
-
-    return paquete; 
+    return buffer;
 }
 
 u_msg_proxima_tarea_t* u_msg_proxima_tarea_deserializar(const u_buffer_t* _buffer){

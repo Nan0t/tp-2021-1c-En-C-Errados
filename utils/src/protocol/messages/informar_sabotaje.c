@@ -12,18 +12,13 @@ u_msg_posicion_sabotaje_t* u_msg_sabotaje_crear(uint32_t _pos_x, uint32_t _pos_y
     return msg;
 }
 
-u_paquete_t* u_msg_sabotaje_serializar(const u_msg_posicion_sabotaje_t* _msg){
+u_buffer_t* u_msg_sabotaje_serializar(const u_msg_posicion_sabotaje_t* _msg){
     u_buffer_t* buffer = u_buffer_create();
 
     u_buffer_write(buffer, &_msg->pos_x, sizeof(uint32_t));
     u_buffer_write(buffer, &_msg->pos_y, sizeof(uint32_t));
 
-    u_paquete_t* paquete = u_malloc(sizeof(u_paquete_t));
-    paquete->opCodeMsg = INFORMAR_SABOTAJE;
-    paquete->buffer    = buffer;
-
-
-    return paquete; 
+    return buffer;
 }
 
 u_msg_posicion_sabotaje_t* u_msg_informar_sabotaje_deserializar(const u_buffer_t* _buffer){

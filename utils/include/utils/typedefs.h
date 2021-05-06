@@ -15,6 +15,12 @@
 #include <commons/collections/queue.h>
 #include <commons/collections/dictionary.h>
 
+typedef struct
+{
+	uint32_t x;
+	uint32_t y;
+} u_pos_t;
+
 #define private static
 
 #define UTILS_PRINT_FORMAT(...)  __attribute__((format(printf, __VA_ARGS__)))
