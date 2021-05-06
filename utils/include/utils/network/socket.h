@@ -7,55 +7,7 @@
  * @DESC: Header que contiene las operaciones basicas para operar sockets.
  */
 
-#include "utils/typedefs.h"
-#include "utils/memory/allocator.h"
-
-/**
- * @NAME: sock_err_type_e
- * @DESC: enumerados que representan los posibles codigos de error que pueden
- * devolver algunas de las funciones de sockets.
- */
-typedef enum
-{
-    U_SOCK_NO_ERROR,
-    U_SOCK_GET_ADDR_ERROR,
-    U_SOCK_CONNECT_ERROR,
-    U_SOCK_BIND_ERROR,
-    U_SOCK_LISTEN_ERROR,
-    U_SOCK_ACCEPT_ERROR
-} sock_err_type_e;
-
-/**
- * @NAME: u_sock_err_t
- * @DESC: struct que es utilizado por u_sock_connect,
- * u_sock_listen y u_sock_accept para generar una descripcion
- * en caso que ocurriese un error dentro de alguna de estas funciones
- * 
- * @FIELDS:
- *  enum sock_err_type err_type - enumerado con el codigo de error.
- *  char*              desc     - string con la descripcion del error.
- */
-typedef struct
-{
-    sock_err_type_e err_type;
-    char*           desc;
-} u_sock_err_t;
-
-/**
- * @NAME: u_sock_err_create
- * @DESC: crea un struct u_sock_err_t que puede ser usado en u_sock_connect,
- * u_sock_listen y u_sock_accept para obtener en caso que ocurrira un error,
- * una descripcion del mismo.
- * 
- * @RETURNS: un struct u_sock_err_t
- */
-u_sock_err_t* u_sock_err_create(void);
-
-/**
- * @NAME: u_sock_err_delete
- * @DESC: libera la memoria utilizada por un struct u_sock_err_t
- */
-void          u_sock_err_delete(u_sock_err_t* this);
+#include "utils/network/sock_err.h"
 
 /**
  * @NAME: u_socket_connect

@@ -9,21 +9,7 @@
 
 #include <errno.h>
 
-u_sock_err_t* u_sock_err_create(void)
-{
-    u_sock_err_t* this = u_malloc(sizeof(u_sock_err_t));
-
-    this->desc = string_duplicate("No errors");
-    this->err_type = U_SOCK_NO_ERROR;
-
-    return this;
-}
-
-void u_sock_err_delete(u_sock_err_t* this)
-{
-    u_free(this->desc);
-    u_free(this);
-}
+extern void u_sock_err_write_error(u_sock_err_t* err, u_sock_err_type_e err_type, const char* format_msg, ...);
 
 int32_t u_socket_connect(const char* host, const char* port, u_sock_err_t* err)
 {
@@ -41,8 +27,10 @@ int32_t u_socket_connect(const char* host, const char* port, u_sock_err_t* err)
     
     if(getaddr_err != 0)
     {
-        err->err_type = U_SOCK_GET_ADDR_ERROR;
-        err->desc     = string_from_format("getaddrinfo error: %s", gai_strerror(getaddr_err));
+        if(err)
+            u_sock_err_write_error(
+                err, U_SOCK_GET_ADDR_ERROR, "getaddrinfo error: %s", gai_strerror(getaddr_err));
+
         return -1;
     }
 
@@ -62,8 +50,10 @@ int32_t u_socket_connect(const char* host, const char* port, u_sock_err_t* err)
 
     if(it == NULL)
     {
-        err->err_type = U_SOCK_CONNECT_ERROR;
-        err->desc     = string_from_format("connect error: %s", strerror(errno));
+        if(err)
+            u_sock_err_write_error(
+                err, U_SOCK_CONNECT_ERROR, "connect error: %s", strerror(errno));
+
         return -1;
     }
 
@@ -90,10 +80,8 @@ int32_t u_socket_listen(const char* port, int32_t backlogs, u_sock_err_t* err)
     if(getaddr_err != 0)
     {
         if(err)
-        {
-            err->err_type = U_SOCK_GET_ADDR_ERROR;
-            err->desc     = string_from_format("getaddrinfo error: %s", gai_strerror(getaddr_err));
-        }
+            u_sock_err_write_error(
+                err, U_SOCK_GET_ADDR_ERROR, "getaddrinfo error: %s", gai_strerror(getaddr_err));
 
         return -1;
     }
@@ -117,20 +105,18 @@ int32_t u_socket_listen(const char* port, int32_t backlogs, u_sock_err_t* err)
     if(it == NULL)
     {
         if(err)
-        {
-            err->err_type = U_SOCK_BIND_ERROR;
-            err->desc     = string_from_format("bind error: %s", strerror(errno));
-        }
+            u_sock_err_write_error(
+                err, U_SOCK_BIND_ERROR, "bind error: %s", strerror(errno));
+
         return -1;
     }
 
     if(listen(fd, backlogs) == -1)
     {
         if(err)
-        {
-            err->err_type = U_SOCK_LISTEN_ERROR;
-            err->desc     = string_from_format("listen error: %s", strerror(errno));
-        }
+            u_sock_err_write_error(
+                err, U_SOCK_LISTEN_ERROR, "listen error: %s", strerror(errno));
+
         return -1;
     }
 
@@ -142,10 +128,8 @@ int32_t u_socket_accept(int32_t sock, u_sock_err_t* err)
     int32_t new_conn = accept(sock, NULL, NULL);
 
     if(new_conn == -1)
-    {
-        err->err_type = U_SOCK_ACCEPT_ERROR;
-        err->desc     = string_from_format("accept error: %s", strerror(errno));
-    }
+        if(err)
+            u_sock_err_write_error(err, U_SOCK_ACCEPT_ERROR, "accept error: %s", strerror(errno));
 
     return new_conn;
 }
