@@ -48,3 +48,11 @@ void u_sock_err_write_error(u_sock_err_t* err, u_sock_err_type_e err_type, const
 
     err->err_type = err_type;
 }
+
+void u_sock_err_reset(u_sock_err_t* err)
+{
+    u_free(err->description);
+
+    err->description = string_duplicate("No Errors");
+    err->err_type    = U_SOCK_NO_ERROR;
+}

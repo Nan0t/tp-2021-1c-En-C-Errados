@@ -10,6 +10,7 @@
 #include <errno.h>
 
 extern void u_sock_err_write_error(u_sock_err_t* err, u_sock_err_type_e err_type, const char* format_msg, ...);
+extern void u_sock_err_reset(u_sock_err_t* err);
 
 int32_t u_socket_connect(const char* host, const char* port, u_sock_err_t* err)
 {
@@ -19,6 +20,8 @@ int32_t u_socket_connect(const char* host, const char* port, u_sock_err_t* err)
 
     int32_t fd;
     int32_t getaddr_err;
+
+    u_sock_err_reset(err);
 
     hints.ai_family   = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
@@ -70,6 +73,8 @@ int32_t u_socket_listen(const char* port, int32_t backlogs, u_sock_err_t* err)
     int32_t getaddr_err;
 
     const int32_t yes = 1;
+
+    u_sock_err_reset(err);
 
     hints.ai_family   = AF_INET;
     hints.ai_flags    = AI_PASSIVE;
@@ -126,6 +131,8 @@ int32_t u_socket_listen(const char* port, int32_t backlogs, u_sock_err_t* err)
 int32_t u_socket_accept(int32_t sock, u_sock_err_t* err)
 {
     int32_t new_conn = accept(sock, NULL, NULL);
+
+    u_sock_err_reset(err);
 
     if(new_conn == -1)
         if(err)
