@@ -19,7 +19,8 @@ private const char* OPCODES_STR[] =
     "INICIAR_TRIPULANTE",
     "INICIAR_PATOTA",
     "PROXIMA_TAREA",
-    "TRIPULANTE_NUEVO_ESTADO"
+    "TRIPULANTE_NUEVO_ESTADO",
+    "FINALIZACION_FSCK"
 };
 
 const char* u_opcode_to_string(u_opcode_e opcode)
