@@ -21,7 +21,10 @@ int entry_point(int argc, char** argv)
 
     U_LOG_TRACE("Modulo Discordia");
 
-    if(ds_server_init("3333"))
+    if(
+        ds_server_init(
+            u_config_get_string_value("PUERTO"))
+    )
         ds_console_init();
 
     return -1;
