@@ -1,9 +1,8 @@
 #include "server.h"
-<<<<<<< HEAD
 #include "client_handler.h"
 #include <utils/utils.h>
 
-int server_init(const char* port)
+int ds_server_init(const char* port)
 {
     // Socket del servidor
     int32_t server_sock;
@@ -43,10 +42,4 @@ int server_init(const char* port)
     }
 
     return 0;
-=======
-
-bool ds_server_init(const char* port)
-{
-    return true;
->>>>>>> fc72592921c00c9981f104a89aef06978bab3ca0
 }
