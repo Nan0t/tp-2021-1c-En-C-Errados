@@ -101,6 +101,7 @@ private void discordiador_client_handler_manage_buffer_sabotaje(int32_t _sock_cl
                 posicion_sabotaje->x = msg->pos_x;
                 posicion_sabotaje->y = msg->pos_y;
                 discordia_notificar_sabotaje(posicion_sabotaje);
+                free(posicion_sabotaje);
                 u_msg_informar_sabotaje_eliminar(msg);
             }
             free(stream);

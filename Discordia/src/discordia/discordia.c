@@ -32,7 +32,7 @@ void  discordia_pausar_planificacion(void)
 
 void  discordia_notificar_sabotaje(const u_pos_t* pos)
 {
-//tiré un malloc así que acá hay que hacer un free en algún punto.
+
 }
 
 void  discordia_finaliza_fsck(void)
