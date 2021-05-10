@@ -1,5 +1,7 @@
 #include "client_handler.h"
+#include "../discordia/discordia.h"
 #include <pthread.h>
+#include <stdlib.h>
 
 // Lista de clientes conectados al servidor. Como se puede acceder
 // a la lista desde distintos hilos, necesitamos un mutex para la lista
@@ -10,7 +12,8 @@ private pthread_mutex_t client_list_mx = PTHREAD_MUTEX_INITIALIZER;
 // Helper functions. Se describen mas abajo.
 private void client_thread(int32_t* sock_client);
 private void client_delete_from_list(int32_t sock_client);
-private void send_msg_to_all_clients(int32_t client_sender, const char* msg);
+private void discordiador_client_handler_manage_buffer_sabotaje(int32_t _sock_client);
+private void discordiador_client_handler_manage_opcode(int32_t _sock_client, u_opcode_e _opcode);
 
 void client_handler_new_connection(int32_t new_client)
 {
@@ -94,8 +97,12 @@ private void discordiador_client_handler_manage_buffer_sabotaje(int32_t _sock_cl
             void* stream= malloc(sizeof(tamanio_buffer));
             if(u_socket_recv(_sock_client, stream, tamanio_buffer)){
                 u_msg_posicion_sabotaje_t* msg = u_msg_informar_sabotaje_deserializar(stream);
-                discordiador_informar_sabotaje(msg->pos_x, msg->pos_y);
+                u_pos_t* posicion_sabotaje = malloc(sizeof(u_pos_t));
+                posicion_sabotaje->x = msg->pos_x;
+                posicion_sabotaje->y = msg->pos_y;
+                discordia_notificar_sabotaje(posicion_sabotaje);
                 u_msg_informar_sabotaje_eliminar(msg);
             }
             free(stream);
+        }
 }

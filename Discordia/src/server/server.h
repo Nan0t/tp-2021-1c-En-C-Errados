@@ -4,6 +4,6 @@
 
 #include <utils/utils.h>
 
-bool ds_server_init(const char* port);
+int ds_server_init(const char* port);
 
 #endif
