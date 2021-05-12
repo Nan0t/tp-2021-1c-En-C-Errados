@@ -1,4 +1,6 @@
 #include <utils/entry_point.h>
+#include "servidor/servidor.h"
+#include <utils/utils.h>
 
 app_attr_t get_app_setup(void)
 {
@@ -16,6 +18,6 @@ int entry_point(int argc, char** argv)
     (void)argc; // --> para evitar el warning unused_parameter
     (void)argv; // --> para evitar el warning unused_parameter
 
-    U_LOG_INFO("Modulo Mi-RAM-HQ");
-    return 0;
+    U_LOG_INFO("Modulo Mi-RAM-HQ iniciado");
+    return servidor_init(u_config_get_string_value("PUERTO"));
 }
