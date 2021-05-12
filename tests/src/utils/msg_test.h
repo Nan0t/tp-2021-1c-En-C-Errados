@@ -11,6 +11,7 @@ void test_iniciar_patota_serializar_y_deserializar(void);
 void test_iniciar_tripulante_serializar_y_deserializar(void);
 void test_iniciar_tarea_serializar_y_deserializar(void);
 void test_movimiento_tripulante_serializar_y_deserializar(void);
+void test_nueva_tarea_serializar_y_deserializar(void);
 void test_obtener_bitacora_serializar_y_deserializar(void);
 void test_proxima_tarea_serializar_y_deserializar(void);
 void test_resuelve_sabotaje_serializar_y_deserializar(void);
