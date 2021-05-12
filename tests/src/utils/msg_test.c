@@ -258,6 +258,74 @@ void test_iniciar_tarea_serializar_y_deserializar(void)
     u_buffer_delete(buffer);
 }
 
+void test_lista_tripulantes_serializar_y_deserializar(void)
+{
+// Arrange
+//--------
+    const u_tripulante_info_t expected_trips[] =
+    {
+        {
+            .pid = 10,
+            .tid = 10,
+            .estado = 'R'
+        },
+        {
+            .pid = 10,
+            .tid = 11,
+            .estado = 'R'
+        },
+        {
+            .pid = 10,
+            .tid = 12,
+            .estado = 'B'
+        },
+    };
+
+    uint64_t i = 0;
+
+    u_msg_lista_tripulantes_t* ser_msg_sin_trips = NULL;
+    u_msg_lista_tripulantes_t* deser_msg_sin_trips = NULL;
+
+    u_msg_lista_tripulantes_t* ser_msg_con_trips = NULL;
+    u_msg_lista_tripulantes_t* deser_msg_con_trips = NULL;
+
+    u_buffer_t* buffer_sin_trips = NULL;
+    u_buffer_t* buffer_con_trips = NULL;
+
+// Act
+//----
+    ser_msg_sin_trips = u_msg_lista_tripulantes_crear();
+    buffer_sin_trips = u_msg_lista_tripulantes_serialize(ser_msg_sin_trips);
+    deser_msg_sin_trips = u_msg_lista_tripulantes_deserialize(buffer_sin_trips);
+
+    ser_msg_con_trips = u_msg_lista_tripulantes_crear();
+
+    for(i = 0; i < ARRAY_LENGTH(expected_trips); i ++)
+        u_msg_lista_tripulantes_agregar(ser_msg_con_trips, expected_trips[i]);
+
+// Assert
+//-------
+    CU_ASSERT_PTR_NULL(deser_msg_sin_trips->tripulantes);
+
+    i = 0;
+    bool _trip_info_are_equal(const u_tripulante_info_t* trip) {
+        return trip->pid ==expected_trips[i].pid &&
+                trip->tid ==expected_trips[i].tid &&
+                trip->estado ==expected_trips[i ++].estado;
+    };
+
+    CU_ASSERT_TRUE(list_all_satisfy(ser_msg_con_trips->tripulantes, (void*)_trip_info_are_equal));
+
+    u_msg_lista_tripulantes_eliminar(ser_msg_sin_trips);
+    u_msg_lista_tripulantes_eliminar(deser_msg_sin_trips);
+
+    u_msg_lista_tripulantes_eliminar(ser_msg_con_trips);
+    u_msg_lista_tripulantes_eliminar(deser_msg_con_trips);
+
+    u_buffer_delete(buffer_sin_trips);
+    u_buffer_delete(buffer_con_trips);
+}
+
 void test_movimiento_tripulante_serializar_y_deserializar(void)
 {
 // Arrange
