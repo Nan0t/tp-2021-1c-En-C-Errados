@@ -5,12 +5,12 @@ bool admin_memoria_iniciar_patota(uint32_t pid, const char* lista_tareas)
 
 }
 
-bool admin_memoria_iniciar_tripulante(uint32_t pid, uint32_t tid, const u_pos_t* pos)
+bool admin_memoria_iniciar_tripulante(uint32_t pid, uint32_t tid,  const u_pos_t* pos)
 {
 
 }
 
-void admin_memoria_mover_tripulante(uint32_t tid, const u_pos_t* pos)
+void admin_memoria_mover_tripulante(uint32_t tid, u_pos_t pos)//cambiado const u_pos_t*
 {
 
 }
