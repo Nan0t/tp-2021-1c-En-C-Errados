@@ -6,13 +6,14 @@
 typedef struct
 {
     char* tarea;
+    bool  hay_tarea;
 } u_msg_nueva_tarea_t;
 
 /**
  * @NAME: u_msg_nueva_tarea_crear
  * @DESC: Crea un mensaje u_msg_nueva_tarea_t
  * @PARAMS:
- *  [in] const char* tarea - contenido de la tarea.
+ *  [in] const char* tarea - contenido de la tarea o NULL en caso de que no haya tarea.
  * 
  * @RETURN: Un struct u_msg_nueva_tarea_t*.
  * 
