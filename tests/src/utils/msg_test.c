@@ -176,7 +176,7 @@ void test_iniciar_tripulante_serializar_y_deserializar(void)
 
 // Act
 //----
-    ser_msg = u_msg_iniciar_tripulante_crear(10, 10);
+    ser_msg = u_msg_iniciar_tripulante_crear(10, 10, (u_pos_t){ 3, 4 });
     buffer = u_msg_iniciar_tripulante_serializar(ser_msg);
     deser_msg = u_msg_iniciar_tripulante_deserializar(buffer);
 
@@ -184,9 +184,13 @@ void test_iniciar_tripulante_serializar_y_deserializar(void)
 //-------
     CU_ASSERT_EQUAL(ser_msg->patota_id, 10);
     CU_ASSERT_EQUAL(ser_msg->tripulante_id, 10);
+    CU_ASSERT_EQUAL(ser_msg->posicion.x, 3);
+    CU_ASSERT_EQUAL(ser_msg->posicion.y, 4);
 
     CU_ASSERT_EQUAL(ser_msg->patota_id, deser_msg->patota_id);
     CU_ASSERT_EQUAL(ser_msg->tripulante_id, deser_msg->tripulante_id);
+    CU_ASSERT_EQUAL(ser_msg->posicion.x, deser_msg->posicion.x);
+    CU_ASSERT_EQUAL(ser_msg->posicion.y, deser_msg->posicion.y);
 
     u_msg_iniciar_tripulante_eliminar(ser_msg);
     u_msg_iniciar_tripulante_eliminar(deser_msg);
