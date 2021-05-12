@@ -297,33 +297,36 @@ void test_nueva_tarea_serializar_y_deserializar(void)
     u_msg_nueva_tarea_t* deser_msg_sin_tarea = NULL;
     u_msg_nueva_tarea_t* deser_msg_con_tarea = NULL;
 
-    u_package_t* package_sin_tarea = NULL;
-    u_package_t* package_con_tarea = NULL;
+    u_buffer_t* buffer_sin_tarea = NULL;
+    u_buffer_t* buffer_con_tarea = NULL;
 
 // Act
 //----
     ser_msg_sin_tarea = u_msg_nueva_tarea_crear(NULL);
     ser_msg_con_tarea = u_msg_nueva_tarea_crear("Tarea1");
 
-    package_sin_tarea = u_msg_nueva_tarea_serializar(ser_msg_sin_tarea);
-    package_con_tarea = u_msg_nueva_tarea_serializar(ser_msg_con_tarea);
+    buffer_sin_tarea = u_msg_nueva_tarea_serializar(ser_msg_sin_tarea);
+    buffer_con_tarea = u_msg_nueva_tarea_serializar(ser_msg_con_tarea);
 
-    deser_msg_sin_tarea = u_msg_nueva_tarea_deserializar(ser_msg_sin_tarea);
-    deser_msg_con_tarea = u_msg_nueva_tarea_deserializar(ser_msg_con_tarea);
+    deser_msg_sin_tarea = u_msg_nueva_tarea_deserializar(buffer_sin_tarea);
+    deser_msg_con_tarea = u_msg_nueva_tarea_deserializar(buffer_con_tarea);
 
 // Assert
 //-------
     CU_ASSERT_FALSE(ser_msg_sin_tarea->hay_tarea);
     CU_ASSERT_PTR_NULL(ser_msg_sin_tarea->tarea);
 
-    CU_ASSERT_TRUE(ser_msg_con_tarea->tarea);
-    CU_ASSERT_STRING_EQUAL(ser_msg_con_tarea->tarea, "Tarea1");
+    CU_ASSERT_TRUE(deser_msg_con_tarea->hay_tarea);
+    CU_ASSERT_STRING_EQUAL(deser_msg_con_tarea->tarea, "Tarea1");
 
     u_msg_nueva_tarea_eliminar(ser_msg_sin_tarea);
     u_msg_nueva_tarea_eliminar(ser_msg_con_tarea);
 
-    u_package_delete(package_sin_tarea);
-    u_package_delete(package_con_tarea);
+    u_msg_nueva_tarea_eliminar(deser_msg_sin_tarea);
+    u_msg_nueva_tarea_eliminar(deser_msg_con_tarea);
+
+    u_buffer_delete(buffer_sin_tarea);
+    u_buffer_delete(buffer_con_tarea);
 }
 
 void test_obtener_bitacora_serializar_y_deserializar(void)
