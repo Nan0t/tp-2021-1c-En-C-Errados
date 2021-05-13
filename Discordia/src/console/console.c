@@ -7,7 +7,7 @@
 #include <utils/console/console.h>
 
 private uint32_t ds_calculate_args_count(char** args);
-private void     ds_check_result(const ds_parser_result_t* result);
+private bool     ds_check_result(const ds_parser_result_t* result);
 private void     ds_delete_args(char** args);
 
 void ds_console_init(void)
@@ -18,7 +18,9 @@ void ds_console_init(void)
     ds_print("Bienvenido a la consola de Discordia.\n");
     ds_print("Para salir: Ctrl + C\n\n");
 
-    while(1)
+    bool should_exit = false;
+
+    while(!should_exit)
     {
         input = u_console_read("[Discordia]:> ");
 
@@ -26,8 +28,7 @@ void ds_console_init(void)
         uint32_t argc = ds_calculate_args_count(args);
 
         ds_parse(argc, args, &result);
-
-        ds_check_result(&result);
+        should_exit = ds_check_result(&result);
 
         ds_delete_args(args);
         ds_parser_result_free(&result);
@@ -42,7 +43,7 @@ private uint32_t ds_calculate_args_count(char** args)
     return count;
 }
 
-private void ds_check_result(const ds_parser_result_t* result)
+private bool ds_check_result(const ds_parser_result_t* result)
 {
     switch(result->command)
     {
@@ -99,9 +100,13 @@ private void ds_check_result(const ds_parser_result_t* result)
 
             break;
         }
+        case DS_SALIR:
+            return true;
         default:
             ds_print("Parser error: %s\n", (char*)result->data);
     }
+
+    return false;
 }
 
 private void ds_delete_args(char** args)

@@ -43,6 +43,7 @@ void ds_parse(uint32_t argc, char** argv, ds_parser_result_t* result)
         ds_parser_obtener_bitacora(argc, argv, result);
         break;
 
+    case DS_SALIR:
     case DS_LISTAR_TRIPULANTES:
     case DS_INICIAR_PLANIFICACION:
     case DS_PAUSAR_PLANIFICACION:
@@ -86,6 +87,8 @@ private ds_parser_command_e ds_command_str_to_enum(const char* command_str)
         return DS_PAUSAR_PLANIFICACION;
     else if(!strcmp(command_str, "OBTENER_BITACORA"))
         return DS_OBTENER_BITACORA;
+    else if(!strcmp(command_str, "SALIR"))
+        return DS_SALIR;
     
     return DS_INVALID_COMMAND;
 }
