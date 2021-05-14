@@ -94,14 +94,18 @@ private void discordiador_client_handler_manage_opcode(int32_t _sock_client, u_o
 private void discordiador_client_handler_manage_buffer_sabotaje(int32_t _sock_client){
     uint32_t tamanio_buffer;
         if(u_socket_recv(_sock_client, &(tamanio_buffer),sizeof(uint32_t))){
-            void* stream= malloc(sizeof(tamanio_buffer));
+            void* stream= malloc(tamanio_buffer);
             if(u_socket_recv(_sock_client, stream, tamanio_buffer)){
-                u_msg_posicion_sabotaje_t* msg = u_msg_informar_sabotaje_deserializar(stream);
-                u_pos_t* posicion_sabotaje = malloc(sizeof(u_pos_t));
-                posicion_sabotaje->x = msg->pos_x;
-                posicion_sabotaje->y = msg->pos_y;
-                discordia_notificar_sabotaje(posicion_sabotaje);
-                free(posicion_sabotaje);
+                u_buffer_t* buffer = u_buffer_create();
+                u_buffer_write(buffer, stream, tamanio_buffer);
+
+                u_msg_posicion_sabotaje_t* msg = u_msg_informar_sabotaje_deserializar(buffer);
+
+                discordia_notificar_sabotaje(&(u_pos_t){
+                    .x = msg->pos_x,
+                    .y = msg->pos_y
+                });
+                
                 u_msg_informar_sabotaje_eliminar(msg);
             }
             free(stream);
