@@ -5,6 +5,7 @@
 #include "utils/protocol/messages/bitacora.h"
 #include "utils/protocol/messages/desplazamiento_tripulante.h"
 #include "utils/protocol/messages/eliminar_tripulante.h"
+#include "utils/protocol/messages/fail.h"
 #include "utils/protocol/messages/finalizacion_tarea.h"
 #include "utils/protocol/messages/informar_sabotaje.h"
 #include "utils/protocol/messages/iniciar_patota.h"
