@@ -16,7 +16,7 @@ app_attr_t get_app_setup(void)
     };
 }
 
-private t_list* get_sabotage_positions(void);
+private t_queue* get_sabotage_positions(void);
 
 int entry_point(int argc, char** argv)
 {
@@ -34,10 +34,10 @@ int entry_point(int argc, char** argv)
     return 0;
 }
 
-private t_list* get_sabotage_positions(void)
+private t_queue* get_sabotage_positions(void)
 {
     char** positions           = u_config_get_array_value("POSICIONES_SABOTAJE");
-    t_list* sabotage_positions = list_create();
+    t_queue* sabotage_positions = queue_create();
 
     for(char** pos = positions; *pos != NULL;  pos ++)
     {
@@ -48,7 +48,7 @@ private t_list* get_sabotage_positions(void)
         pos_struct->x = (uint32_t)atoi(pos_values[0]);
         pos_struct->y = (uint32_t)atoi(pos_values[1]);
 
-        list_add(sabotage_positions, pos_struct);
+        queue_push(sabotage_positions, pos_struct);
 
         u_free(pos_values[0]);
         u_free(pos_values[1]);

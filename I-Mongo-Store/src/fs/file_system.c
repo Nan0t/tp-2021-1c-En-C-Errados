@@ -1,4 +1,5 @@
 #include "file_system.h"
+#include "sabotage_notifier.h"
 #include <pthread.h>
 
 // typedef struct
@@ -20,24 +21,8 @@ void file_system_init(const file_system_attr_t* attr)
     U_LOG_INFO("I-Mongo-Store File System");
     U_LOG_INFO("Punto de Montaje: %s", attr->mount_point);
     U_LOG_INFO("Tiempo de Sincronizacion: %d", attr->sync_time);
-    
-    char* positions = string_new();
-    bool first_iteration = true;
 
-    void _add_positions_to_log(const u_pos_t* pos) {
-        if(first_iteration)
-        {
-            string_append_with_format(&positions, "{ x: %d | y: %d }", pos->x, pos->y);
-            first_iteration = false;
-        }
-        else
-            string_append_with_format(&positions, ", { x: %d | y: %d }", pos->x, pos->y);
-    };
-
-    list_iterate(attr->sabotage_positions, (void*)_add_positions_to_log);
-
-    U_LOG_INFO("Posiciones de Sabotaje: %s", positions);
-    u_free(positions);
+    fs_sabotage_notifier_init(attr->sabotage_positions);
 }
 
 void  file_system_desplazamiento_tripulante(uint32_t tid, const u_pos_t* from, const u_pos_t* to)
@@ -109,6 +94,7 @@ private void  file_system_remove_bitacora(uint32_t tid)
 
 private void  file_system_update_bitacora(uint32_t tid, const char* content)
 {
+    // TODO: inspeccionar en el fs que exista la bitacora del tripulante
     U_LOG_TRACE("Se actualiza bitacora de %d", tid);
     U_LOG_TRACE("Contenido: %s", content);
 }

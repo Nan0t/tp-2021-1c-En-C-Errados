@@ -7,7 +7,7 @@ typedef struct
 {
     const char* mount_point;
     uint32_t    sync_time;
-    t_list*     sabotage_positions;
+    t_queue*    sabotage_positions;
 } file_system_attr_t;
 
 void file_system_init(const file_system_attr_t* attr);
