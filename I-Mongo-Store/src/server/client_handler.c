@@ -147,23 +147,38 @@ private void fs_client_handler_msg_obtener_bitacora(int32_t client_sock, const u
     u_msg_obtener_bitacora_t* msg = u_msg_obtener_bitacora_deserializar(buffer);
     char* bitacora_content = file_system_obtener_bitacora(msg->tripulante_id);
 
-    u_msg_bitacora_t* bitacora = u_msg_bitacora_crear(bitacora_content);
+    u_buffer_t* package_ser = NULL;
 
-    u_buffer_t*  bitacora_ser = u_msg_bitacora_serializar(bitacora);
-    u_package_t* package      = u_package_create(BITACORA, bitacora_ser);
-    u_buffer_t*  package_ser  = u_package_serialize(package);
+    if(bitacora_content != NULL)
+    {
+        u_msg_bitacora_t* bitacora = u_msg_bitacora_crear(bitacora_content);
+        u_buffer_t*  bitacora_ser = u_msg_bitacora_serializar(bitacora);
+        u_package_t* package      = u_package_create(BITACORA, bitacora_ser);
+
+        package_ser  = u_package_serialize(package);
+
+        u_msg_bitacora_eliminar(bitacora);
+        u_buffer_delete(bitacora_ser);
+        u_package_delete(package);
+        u_free(bitacora_content);
+    }
+    else
+    {
+        u_msg_fail_t* fail = u_msg_fail_crear("No existe el tripulante %d en el FileSystem", msg->tripulante_id);
+        u_buffer_t* fail_ser = u_msg_fail_serializar(fail);
+        u_package_t* package = u_package_create(FAIL, fail_ser);
+
+        package_ser = u_package_serialize(package);
+
+        u_msg_fail_eliminar(fail);
+        u_buffer_delete(fail_ser);
+        u_package_delete(package);
+    }
 
     u_socket_send(client_sock, u_buffer_get_content(package_ser), u_buffer_get_size(package_ser));
 
     u_msg_obtener_bitacora_eliminar(msg);
-    u_msg_bitacora_eliminar(bitacora);
-
-    u_buffer_delete(bitacora_ser);
     u_buffer_delete(package_ser);
-
-    u_package_delete(package);
-
-    u_free(bitacora);
 }
 
 private bool fs_client_handler_is_valid_opcode(u_opcode_e opcode)
