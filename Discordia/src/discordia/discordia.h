@@ -3,6 +3,8 @@
 
 #include <utils/utils.h>
 
+int discordia_init(void);
+
 char* discordia_obtener_bitacora(uint32_t tid);
 char* discordia_obtener_tripulantes(void);
 void  discordia_inicializar_patota(const char* ruta_tareas, uint32_t cant_trip, t_list* posiciones_trip);
