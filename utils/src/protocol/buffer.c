@@ -67,7 +67,7 @@ void u_buffer_read(const u_buffer_t* this, void* data, uint64_t size, uint64_t o
     memcpy(data, this->data + offset, size);
 }
 
-uint32_t u_buffer_get_size(u_buffer_t* this)
+uint32_t u_buffer_get_size(const u_buffer_t* this)
 {
     return this->size;
 }
