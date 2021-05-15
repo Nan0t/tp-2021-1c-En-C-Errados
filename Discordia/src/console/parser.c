@@ -540,6 +540,8 @@ private void ds_parser_mover_tripulante(uint32_t argc, char** argv, ds_parser_re
     command->pos.x = atoi(pos_coords[0]);
     command->pos.y = atoi(pos_coords[1]);
 
+    result->data = command;
+
     u_free(pos_coords[0]);
     u_free(pos_coords[1]);
     u_free(pos_coords);
