@@ -23,7 +23,7 @@ void test_invalid_cant_args_iniciar_patota(void)
     CU_ASSERT_EQUAL(result.command, DS_INVALID_COMMAND);
     CU_ASSERT_STRING_EQUAL(
         result.data,
-        "Insuficiente cantidad de argumentos: INICIAR_PATOTA [CANT_TRIP] [RUTA_TAREAS] [...POS]");
+        "Cantidad insuficiente de argumentos: INICIAR_PATOTA [CANT_TRIP] [RUTA_TAREAS] [...POS]");
 
     ds_parser_result_free(&result);
 }
@@ -171,7 +171,7 @@ void test_invalid_cant_args_expulsar_tripulante(void)
     CU_ASSERT_EQUAL_FATAL(result.command, DS_INVALID_COMMAND);
     CU_ASSERT_STRING_EQUAL(
         result.data,
-        "Insuficiente cantidad de argumentos: EXPULSAR_TRIPULANTE [TID]");
+        "Cantidad insuficiente de argumentos: EXPULSAR_TRIPULANTE [TID]");
 
     ds_parser_result_free(&result);
 }
@@ -238,7 +238,7 @@ void test_invalid_cant_args_obtener_bitacora(void)
     CU_ASSERT_EQUAL_FATAL(result.command, DS_INVALID_COMMAND);
     CU_ASSERT_STRING_EQUAL(
         result.data,
-        "Insuficiente cantidad de argumentos: OBTENER_BITACORA [TID]");
+        "Cantidad insuficiente de argumentos: OBTENER_BITACORA [TID]");
 
     ds_parser_result_free(&result);
 }
