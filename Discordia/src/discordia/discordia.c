@@ -74,6 +74,192 @@ char* discordia_obtener_tripulantes(void)
     return NULL;
 }
 
+void  discordia_desplazamiento_tripulante(uint32_t tid, const u_pos_t* origen, const u_pos_t* destion)
+{
+    int32_t conn = discordia_conectar_con_fs();
+
+    if(conn == -1)
+        return;
+
+    u_msg_desplazamiento_tripulante_t* msg =
+        u_msg_desplazamiento_tripulante_crear(tid, *origen, *destion);
+
+    u_buffer_t* msg_ser     = u_msg_desplazamiento_tripulante_serializar(msg);
+    u_package_t* package    = u_package_create(DESPLAZAMIENTO_TRIPULANTE, msg_ser);
+    u_buffer_t* package_ser = u_package_serialize(package);
+
+    if(!u_socket_send(conn, u_buffer_get_content(package_ser), u_buffer_get_size(package_ser)))
+    {
+        char* msg_str = u_msg_desplazamineto_tripulante_to_string(msg);
+        U_LOG_ERROR("No se pudo enviar el mensaje %s al FileSystem", msg_str);
+        u_free(msg_str);
+    }
+
+    u_msg_desplazamiento_tripulante_eliminar(msg);
+    u_buffer_delete(msg_ser);
+    u_buffer_delete(package_ser);
+    u_package_delete(package);
+
+    u_socket_close(conn);
+}
+
+void  discordia_mover_tripulante(uint32_t tid, const u_pos_t* pos)
+{
+    int32_t conn = discordia_conectar_con_memoria();
+
+    if(conn == -1)
+        return;
+
+    u_msg_movimiento_tripulante_t* msg = u_msg_movimiento_tripulante_crear(tid, *pos);
+
+    u_buffer_t*  msg_ser     = u_msg_movimiento_tripulante_serializar(msg);
+    u_package_t* package     = u_package_create(MOVIMIENTO_TRIPULANTE, msg_ser);
+    u_buffer_t*  package_ser = u_package_serialize(package);
+
+    if(!u_socket_send(conn, u_buffer_get_content(package_ser), u_buffer_get_size(package_ser)))
+    {
+        char* msg_str = u_msg_movimiento_tripulante_to_string(msg);
+        U_LOG_ERROR("No se pudo enviar el mensaje %s a la Memoria", msg_str);
+        u_free(msg_str);
+    }
+
+    u_msg_movimiento_tripulante_eliminar(msg);
+    u_buffer_delete(msg_ser);
+    u_buffer_delete(package_ser);
+    u_package_delete(package);
+
+    u_socket_close(conn);
+}
+
+void  discordia_iniciar_tarea(uint32_t tid, const char* tarea)
+{
+    int32_t conn = discordia_conectar_con_fs();
+
+    if(conn == -1)
+        return;
+
+    u_msg_inicio_tarea_t* msg = u_msg_inicio_tarea_crear(tid, tarea);
+
+    u_buffer_t*  msg_ser     = u_msg_inicio_tarea_serializar(msg);
+    u_package_t* package     = u_package_create(INICIO_TAREA, msg_ser);
+    u_buffer_t*  package_ser = u_package_serialize(package);
+
+    if(!u_socket_send(conn, u_buffer_get_content(package_ser), u_buffer_get_size(package_ser)))
+    {
+        char* msg_str = u_msg_inicio_tarea_to_string(msg);
+        U_LOG_ERROR("No se pudo mandar el mensaje %s al FileSystem", msg_str);
+        u_free(msg_str);
+    }
+
+    u_msg_inicio_tarea_eliminar(msg);
+    u_buffer_delete(msg_ser);
+    u_buffer_delete(package_ser);
+    u_package_delete(package);
+
+    u_socket_close(conn);
+}
+
+void  discordia_finalizar_tarea(uint32_t tid, const char* tarea)
+{
+    int32_t conn = discordia_conectar_con_fs();
+
+    if(conn == -1)
+        return;
+
+    u_msg_finalizacion_tarea_t* msg = u_msg_finalizacion_tarea_crear(tid, tarea);
+
+    u_buffer_t*  msg_ser     = u_msg_finalizacion_tarea_serializar(msg);
+    u_package_t* package     = u_package_create(FINALIZACION_TAREA, msg_ser);
+    u_buffer_t*  package_ser = u_package_serialize(package);
+
+    if(!u_socket_send(conn, u_buffer_get_content(package_ser), u_buffer_get_size(package_ser)))
+    {
+        char* msg_str = u_msg_finalizacion_tarea_to_string(msg);
+        U_LOG_ERROR("No se pudo enviar el mensaje %s al FileSystem", msg_str);
+        u_free(msg_str);
+    }
+
+    u_msg_finalizacion_tarea_eliminar(msg);
+    u_buffer_delete(msg_ser);
+    u_buffer_delete(package_ser);
+    u_package_delete(package);
+
+    u_socket_close(conn);
+}
+
+void  discordia_tripulante_atiende_sabotaje(uint32_t tid)
+{
+    int32_t conn = discordia_conectar_con_fs();
+
+    if(conn == -1)
+        return;
+
+    u_msg_atender_sabotaje_t* msg = u_msg_atiende_sabotaje_crear(tid);
+
+    u_buffer_t*  msg_ser     = u_msg_atiende_sabotaje_serializar(msg);
+    u_package_t* package     = u_package_create(ATIENDE_SABOTAJE, msg_ser);
+    u_buffer_t*  package_ser = u_package_serialize(package);
+
+    if(!u_socket_send(conn, u_buffer_get_content(package_ser), u_buffer_get_size(package_ser)))
+    {
+        char* msg_str = u_msg_atiende_sabotaje_to_string(msg);
+        U_LOG_ERROR("No se pudo enviar el mensaje %s al FileSystem", msg_str);
+        u_free(msg_str);
+    }
+
+    u_msg_atiende_sabotaje_eliminar(msg);
+    u_buffer_delete(msg_ser);
+    u_buffer_delete(package_ser);
+    u_package_delete(package);
+
+    u_socket_close(conn);
+
+}
+
+void  discordia_tripulante_resuelve_sabotaje(uint32_t tid)
+{
+    int32_t conn = discordia_conectar_con_fs();
+
+    if(conn == -1)
+        return;
+
+    u_msg_resuelve_sabotaje_t* msg = u_msg_resuelve_sabotaje_crear(tid);
+
+    u_buffer_t*  msg_ser     = u_msg_resuelve_sabotaje_serializar(msg);
+    u_package_t* package     = u_package_create(ATIENDE_SABOTAJE, msg_ser);
+    u_buffer_t*  package_ser = u_package_serialize(package);
+
+    if(!u_socket_send(conn, u_buffer_get_content(package_ser), u_buffer_get_size(package_ser)))
+    {
+        char* msg_str = u_msg_resuelve_sabotaje_to_string(msg);
+        U_LOG_ERROR("No se pudo enviar el mensaje %s al FileSystem", msg_str);
+        u_free(msg_str);
+    }
+
+    u_msg_resuelve_sabotaje_eliminar(msg);
+    u_buffer_delete(msg_ser);
+    u_buffer_delete(package_ser);
+    u_package_delete(package);
+
+    u_socket_close(conn);
+}
+
+char* discordia_obtener_proxima_tarea(uint32_t tid)
+{
+    // TODO: Corregir struct u_msg_proxima_tarea
+    (void)tid;
+    U_LOG_TRACE("Corregir struct u_msg_proxima_tarea");
+    return NULL;
+}
+
+void  discordia_tripulante_nuevo_estado(uint32_t tid, char estado)
+{
+    // TODO: Corregir struct u_msg_tripulante_nuevo_estaod
+    (void)tid;
+    (void)estado;
+    U_LOG_TRACE("Corregir struct u_msg_tripulante_nuevo_estado");
+}
+
 void discordia_inicializar_patota(const char* ruta_tareas, uint32_t cant_trip, t_list* posiciones_trip)
 {
     char* tareas = discordia_leer_archivo_tareas(ruta_tareas);
