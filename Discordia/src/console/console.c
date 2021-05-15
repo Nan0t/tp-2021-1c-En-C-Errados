@@ -19,6 +19,20 @@ private bool ds_iniciar_planificacion(const ds_parser_result_t* result);
 private bool ds_pausar_planificacion(const ds_parser_result_t* result);
 private bool ds_obtener_bitacora(const ds_parser_result_t* result);
 
+#ifndef NDEBUG
+// Mensajes de prueba para el FS
+private bool _debug_ds_desplazamiento_tripulante(const ds_parser_result_t* result);
+private bool _debug_ds_iniciar_tarea(const ds_parser_result_t* result);
+private bool _debug_ds_finalizar_tarea(const ds_parser_result_t* result);
+private bool _debug_ds_tripulante_atiende_sabotaje(const ds_parser_result_t* result);
+private bool _debug_ds_tripulante_resuelve_sabotaje(const ds_parser_result_t* result);
+
+// Mensajes de prueba para la Memoria.
+private bool _debug_ds_mover_tripulante(const ds_parser_result_t* result);
+private bool _debug_ds_proxima_tarea(const ds_parser_result_t* result);
+private bool _debug_ds_tripulante_nuevo_estado(const ds_parser_result_t* result);
+#endif
+
 typedef bool(*ds_command_func_t)(const ds_parser_result_t*);
 
 private ds_command_func_t COMMAND_FUNCS_ARRAY[] =
@@ -30,7 +44,17 @@ private ds_command_func_t COMMAND_FUNCS_ARRAY[] =
     ds_expulsar_tripulante,
     ds_iniciar_planificacion,
     ds_pausar_planificacion,
-    ds_obtener_bitacora
+    ds_obtener_bitacora,
+#ifndef NDEBUG
+    _debug_ds_desplazamiento_tripulante,
+    _debug_ds_iniciar_tarea,
+    _debug_ds_finalizar_tarea,
+    _debug_ds_tripulante_atiende_sabotaje,
+    _debug_ds_tripulante_resuelve_sabotaje,
+    _debug_ds_mover_tripulante,
+    _debug_ds_proxima_tarea,
+    _debug_ds_tripulante_nuevo_estado
+#endif
 };
 
 private const char* COMMANDS[] =
@@ -41,7 +65,17 @@ private const char* COMMANDS[] =
     "EXPULSAR_TRIPULANTE",
     "INICIAR_PLANIFICACION",
     "PAUSAR_PLANIFICACION",
-    "OBTENER_BITACORA"
+    "OBTENER_BITACORA",
+#ifndef NDEBUG
+    "DESPLAZAMIENTO_TRIPULANTE",
+    "INICIAR_TAREA",
+    "FINALIZAR_TAREA",
+    "TRIPULANTE_ATIENDE_SABOTAJE",
+    "TRIPULANTE_RESUELVE_SABOTAJE",
+    "MOVER_TRIPULANTE",
+    "PROXIMA_TAREA",
+    "TRIPULANTE_NUEVO_ESTADO"
+#endif
 };
 
 void ds_console_init(void)
@@ -168,3 +202,89 @@ private bool ds_obtener_bitacora(const ds_parser_result_t* result)
 
     return false;
 }
+
+#ifndef NDEBUG
+
+// Mensajes de prueba para el FS
+private bool _debug_ds_desplazamiento_tripulante(const ds_parser_result_t* result)
+{
+    ds_command_desplazamiento_tripulante_t* command =
+        (ds_command_desplazamiento_tripulante_t*)result->data;
+
+    discordia_desplazamiento_tripulante(command->tid, &command->origen, &command->destion);
+
+    return false;
+}
+
+private bool _debug_ds_iniciar_tarea(const ds_parser_result_t* result)
+{
+    ds_command_iniciar_tarea_t* command =
+        (ds_command_iniciar_tarea_t*)result->data;
+
+    discordia_iniciar_tarea(command->tid, command->tarea);
+
+    return false;
+}
+
+private bool _debug_ds_finalizar_tarea(const ds_parser_result_t* result)
+{
+    ds_command_finalizar_tarea_t* command =
+        (ds_command_finalizar_tarea_t*)result->data;
+
+    discordia_finalizar_tarea(command->tid, command->tarea);
+
+    return false;
+}
+
+private bool _debug_ds_tripulante_atiende_sabotaje(const ds_parser_result_t* result)
+{
+    uint32_t* tid = (uint32_t*)result->data;
+    discordia_tripulante_atiende_sabotaje(*tid);
+
+    return false;
+}
+
+private bool _debug_ds_tripulante_resuelve_sabotaje(const ds_parser_result_t* result)
+{
+    uint32_t* tid = (uint32_t*)result->data;
+    discordia_tripulante_resuelve_sabotaje(*tid);
+
+    return false;
+}
+
+// Mensajes de prueba para la Memoria.
+private bool _debug_ds_mover_tripulante(const ds_parser_result_t* result)
+{
+    ds_command_mover_tripulante_t* command =
+        (ds_command_mover_tripulante_t*)result->data;
+
+    discordia_mover_tripulante(command->tid, &command->pos);
+
+    return false;
+}
+
+private bool _debug_ds_proxima_tarea(const ds_parser_result_t* result)
+{
+    uint32_t* tid = (uint32_t*)result->data;
+    char* tarea = discordia_obtener_proxima_tarea(*tid);
+
+    if(tarea)
+    {
+        ds_print("Tarea obtenida del tripulante %d: %s", *tid, tarea);
+        u_free(tarea);
+    }
+    else
+        ds_print("No se pudo obtener ninguna tarea para el tripulante %d", *tid);
+
+    return false;
+}
+
+private bool _debug_ds_tripulante_nuevo_estado(const ds_parser_result_t* result)
+{
+    ds_command_tripulante_nuevo_estado_t* command =
+        (ds_command_tripulante_nuevo_estado_t*)result->data;
+
+    discordia_tripulante_nuevo_estado(command->tid, command->estado);
+}
+
+#endif
