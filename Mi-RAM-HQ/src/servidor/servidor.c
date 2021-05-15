@@ -66,24 +66,24 @@ void client_handler_new_conection(int32_t nuevo_cliente){
 
 private void cliente_thread(int32_t sock_client)
 {
-    uint64_t op_code; 
-    uint64_t msg_length;
+    uint32_t op_code; 
+    uint32_t msg_length;
 
     // Quedamos a la escucha de que el cliente envie un
     // mensaje. En caso de que u_socket_recv devuelva false, significara que se
     // perdio la conexion con el cliente, por lo que el hilo del cliente terminará.
 
-    if(u_socket_recv(sock_client, &op_code, sizeof(uint64_t)))  //if en lugar de while
+    if(u_socket_recv(sock_client, &op_code, sizeof(uint32_t)))  //if en lugar de while
     {
 
         // Si el primer recv tiene éxito, habremos obtenido el op_code
         // Volvemos a hacer otro recv para recibir el tamaño del msj.
-        u_socket_recv(sock_client, &msg_length, sizeof(uint64_t));
+        u_socket_recv(sock_client, &msg_length, sizeof(uint32_t));
 
         //Recibido el msj lo pasamos a una estructura buffer para deserializarlo
         
         void* msg = u_malloc(msg_length);
-        if(u_socket_recv(sock_client, &msg, msg_length)){
+        if(u_socket_recv(sock_client, msg, msg_length)){
         //    u_socket_recv(sock_client, &msg, msg_length);
             u_buffer_t* buffer = u_buffer_create();
             u_buffer_write(buffer, msg, msg_length);
