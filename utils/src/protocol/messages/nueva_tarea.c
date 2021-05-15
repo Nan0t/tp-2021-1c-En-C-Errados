@@ -4,7 +4,17 @@
 u_msg_nueva_tarea_t* u_msg_nueva_tarea_crear(const char* tarea)
 {
     u_msg_nueva_tarea_t* this = u_malloc(sizeof(u_msg_nueva_tarea_t));
-    this->tarea = strdup(tarea);
+    
+    if(tarea)
+    {
+        this->tarea = strdup(tarea);
+        this->hay_tarea = true;
+    }
+    else
+    {
+        this->tarea = NULL;
+        this->hay_tarea = false;
+    }
 
     return this;
 }
@@ -12,10 +22,15 @@ u_msg_nueva_tarea_t* u_msg_nueva_tarea_crear(const char* tarea)
 u_buffer_t* u_msg_nueva_tarea_serializar(const u_msg_nueva_tarea_t* this)
 {
     u_buffer_t* buffer = u_buffer_create();
-    uint32_t tarea_length = strlen(this->tarea) + 1;
+    
+    u_buffer_write(buffer, &this->hay_tarea, sizeof(uint8_t));
 
-    u_buffer_write(buffer, &tarea_length, sizeof(uint32_t));
-    u_buffer_write(buffer, this->tarea, tarea_length);
+    if(this->hay_tarea)
+    {
+        uint32_t tarea_length = strlen(this->tarea) + 1;
+        u_buffer_write(buffer, &tarea_length, sizeof(uint32_t));
+        u_buffer_write(buffer, this->tarea, tarea_length);
+    }
 
     return buffer;
 }
@@ -25,14 +40,23 @@ u_msg_nueva_tarea_t* u_msg_nueva_tarea_deserializar(const u_buffer_t* buffer)
     u_msg_nueva_tarea_t* this = u_malloc(sizeof(u_msg_nueva_tarea_t));
 
     uint64_t offset = 0;
-    uint32_t tarea_length;
+    bool hay_tarea;
 
-    u_buffer_read(buffer, &tarea_length, sizeof(uint32_t), offset);
-    offset += sizeof(uint32_t);
+    u_buffer_read(buffer, &hay_tarea, sizeof(uint8_t), offset);
 
-    this->tarea = u_malloc(tarea_length);
+    if(hay_tarea)
+    {
+        uint32_t tarea_length;
 
-    u_buffer_read(buffer, this->tarea, tarea_length, offset);
+        u_buffer_read(buffer, &tarea_length, sizeof(uint32_t), offset);
+        offset += sizeof(uint32_t);
+
+        this->tarea = u_malloc(tarea_length);
+
+        u_buffer_read(buffer, this->tarea, tarea_length, offset);
+    }
+    else
+        this->tarea = NULL;
 
     return this;
 }

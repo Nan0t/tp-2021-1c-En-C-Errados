@@ -176,7 +176,7 @@ void test_iniciar_tripulante_serializar_y_deserializar(void)
 
 // Act
 //----
-    ser_msg = u_msg_iniciar_tripulante_crear(10, 10);
+    ser_msg = u_msg_iniciar_tripulante_crear(10, 10, (u_pos_t){ 3, 4 });
     buffer = u_msg_iniciar_tripulante_serializar(ser_msg);
     deser_msg = u_msg_iniciar_tripulante_deserializar(buffer);
 
@@ -184,9 +184,13 @@ void test_iniciar_tripulante_serializar_y_deserializar(void)
 //-------
     CU_ASSERT_EQUAL(ser_msg->patota_id, 10);
     CU_ASSERT_EQUAL(ser_msg->tripulante_id, 10);
+    CU_ASSERT_EQUAL(ser_msg->posicion.x, 3);
+    CU_ASSERT_EQUAL(ser_msg->posicion.y, 4);
 
     CU_ASSERT_EQUAL(ser_msg->patota_id, deser_msg->patota_id);
     CU_ASSERT_EQUAL(ser_msg->tripulante_id, deser_msg->tripulante_id);
+    CU_ASSERT_EQUAL(ser_msg->posicion.x, deser_msg->posicion.x);
+    CU_ASSERT_EQUAL(ser_msg->posicion.y, deser_msg->posicion.y);
 
     u_msg_iniciar_tripulante_eliminar(ser_msg);
     u_msg_iniciar_tripulante_eliminar(deser_msg);
@@ -254,6 +258,74 @@ void test_iniciar_tarea_serializar_y_deserializar(void)
     u_buffer_delete(buffer);
 }
 
+void test_lista_tripulantes_serializar_y_deserializar(void)
+{
+// Arrange
+//--------
+    const u_tripulante_info_t expected_trips[] =
+    {
+        {
+            .pid = 10,
+            .tid = 10,
+            .estado = 'R'
+        },
+        {
+            .pid = 10,
+            .tid = 11,
+            .estado = 'R'
+        },
+        {
+            .pid = 10,
+            .tid = 12,
+            .estado = 'B'
+        },
+    };
+
+    uint64_t i = 0;
+
+    u_msg_lista_tripulantes_t* ser_msg_sin_trips = NULL;
+    u_msg_lista_tripulantes_t* deser_msg_sin_trips = NULL;
+
+    u_msg_lista_tripulantes_t* ser_msg_con_trips = NULL;
+    u_msg_lista_tripulantes_t* deser_msg_con_trips = NULL;
+
+    u_buffer_t* buffer_sin_trips = NULL;
+    u_buffer_t* buffer_con_trips = NULL;
+
+// Act
+//----
+    ser_msg_sin_trips = u_msg_lista_tripulantes_crear();
+    buffer_sin_trips = u_msg_lista_tripulantes_serialize(ser_msg_sin_trips);
+    deser_msg_sin_trips = u_msg_lista_tripulantes_deserialize(buffer_sin_trips);
+
+    ser_msg_con_trips = u_msg_lista_tripulantes_crear();
+
+    for(i = 0; i < ARRAY_LENGTH(expected_trips); i ++)
+        u_msg_lista_tripulantes_agregar(ser_msg_con_trips, expected_trips[i]);
+
+// Assert
+//-------
+    CU_ASSERT_PTR_NULL(deser_msg_sin_trips->tripulantes);
+
+    i = 0;
+    bool _trip_info_are_equal(const u_tripulante_info_t* trip) {
+        return trip->pid ==expected_trips[i].pid &&
+                trip->tid ==expected_trips[i].tid &&
+                trip->estado ==expected_trips[i ++].estado;
+    };
+
+    CU_ASSERT_TRUE(list_all_satisfy(ser_msg_con_trips->tripulantes, (void*)_trip_info_are_equal));
+
+    u_msg_lista_tripulantes_eliminar(ser_msg_sin_trips);
+    u_msg_lista_tripulantes_eliminar(deser_msg_sin_trips);
+
+    u_msg_lista_tripulantes_eliminar(ser_msg_con_trips);
+    u_msg_lista_tripulantes_eliminar(deser_msg_con_trips);
+
+    u_buffer_delete(buffer_sin_trips);
+    u_buffer_delete(buffer_con_trips);
+}
+
 void test_movimiento_tripulante_serializar_y_deserializar(void)
 {
 // Arrange
@@ -281,6 +353,48 @@ void test_movimiento_tripulante_serializar_y_deserializar(void)
     u_msg_movimiento_tripulante_eliminar(ser_msg);
     u_msg_movimiento_tripulante_eliminar(deser_msg);
     u_buffer_delete(buffer);
+}
+
+void test_nueva_tarea_serializar_y_deserializar(void)
+{
+// Arrange
+//--------
+    u_msg_nueva_tarea_t* ser_msg_sin_tarea = NULL;
+    u_msg_nueva_tarea_t* ser_msg_con_tarea = NULL;
+
+    u_msg_nueva_tarea_t* deser_msg_sin_tarea = NULL;
+    u_msg_nueva_tarea_t* deser_msg_con_tarea = NULL;
+
+    u_buffer_t* buffer_sin_tarea = NULL;
+    u_buffer_t* buffer_con_tarea = NULL;
+
+// Act
+//----
+    ser_msg_sin_tarea = u_msg_nueva_tarea_crear(NULL);
+    ser_msg_con_tarea = u_msg_nueva_tarea_crear("Tarea1");
+
+    buffer_sin_tarea = u_msg_nueva_tarea_serializar(ser_msg_sin_tarea);
+    buffer_con_tarea = u_msg_nueva_tarea_serializar(ser_msg_con_tarea);
+
+    deser_msg_sin_tarea = u_msg_nueva_tarea_deserializar(buffer_sin_tarea);
+    deser_msg_con_tarea = u_msg_nueva_tarea_deserializar(buffer_con_tarea);
+
+// Assert
+//-------
+    CU_ASSERT_FALSE(ser_msg_sin_tarea->hay_tarea);
+    CU_ASSERT_PTR_NULL(ser_msg_sin_tarea->tarea);
+
+    CU_ASSERT_TRUE(deser_msg_con_tarea->hay_tarea);
+    CU_ASSERT_STRING_EQUAL(deser_msg_con_tarea->tarea, "Tarea1");
+
+    u_msg_nueva_tarea_eliminar(ser_msg_sin_tarea);
+    u_msg_nueva_tarea_eliminar(ser_msg_con_tarea);
+
+    u_msg_nueva_tarea_eliminar(deser_msg_sin_tarea);
+    u_msg_nueva_tarea_eliminar(deser_msg_con_tarea);
+
+    u_buffer_delete(buffer_sin_tarea);
+    u_buffer_delete(buffer_con_tarea);
 }
 
 void test_obtener_bitacora_serializar_y_deserializar(void)

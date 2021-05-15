@@ -6,9 +6,8 @@
 typedef struct {
     uint32_t patota_id;
     uint32_t tripulante_id;
+    u_pos_t  posicion;
 } u_msg_iniciar_tripulante_t;
-
-
 
 /**
  * @NAME: u_msg_iniciar_tripulante_crear
@@ -16,10 +15,11 @@ typedef struct {
  * @PARAMS:
  * 			[in] uint32_t _tripulante_id - id del tripulante.
  * 			[in] uint32_t _patota_id     - id de la patota.
+ *          [in] u_pos_t  pos            - posicion inicial del tripulante.
  * @RETURN: Un struct u_msg_iniciar_tripulante_t.
  * @NOTA: El struct resultante debe ser liberado posteriormente llamanda a u_msg_informar_iniciar_tripulante_eliminar.
  */
-u_msg_iniciar_tripulante_t* u_msg_iniciar_tripulante_crear(uint32_t _patota_id, uint32_t _tripulante_id);
+u_msg_iniciar_tripulante_t* u_msg_iniciar_tripulante_crear(uint32_t _patota_id, uint32_t _tripulante_id, u_pos_t pos);
 
 /**
  * @NAME: u_msg_iniciar_tripulante_serializar

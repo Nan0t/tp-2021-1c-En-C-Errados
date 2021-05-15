@@ -14,6 +14,8 @@ private const char* OPCODES_STR[] =
     "FINALIZACION_TAREA",
     "ATIENDE_SABOTAJE",
     "RESUELVE_SABOTAJE",
+    "LISTA_TRIPULANTES",
+    "OBTENER_TRIPULANTES",
     "OBTENER_BITACORA",
     "ELIMINAR_TRIPULANTE",
     "INICIAR_TRIPULANTE",
@@ -25,6 +27,6 @@ private const char* OPCODES_STR[] =
 
 const char* u_opcode_to_string(u_opcode_e opcode)
 {
-    U_ASSERT(U_MSG_IS_VALID(opcode), "Invalid opcode!");
+    U_ASSERT(U_MSG_IS_VALID(opcode), "Invalid opcode #(%d)", opcode);
     return OPCODES_STR[opcode];
 }
