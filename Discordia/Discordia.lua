@@ -11,6 +11,11 @@ project "Discordia"
         "%{prj.location}/src/**.c"
     }
 
+    removefiles {
+        "%{prj.location}/src/planificador/**.h",
+        "%{prj.location}/src/planificador/**.c"
+    }
+
     includedirs {
         "%{CommonLocations.Commons.IncludeDir}",
         "%{CommonLocations.Utils.IncludeDir}",
