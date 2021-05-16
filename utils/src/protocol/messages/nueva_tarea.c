@@ -40,11 +40,11 @@ u_msg_nueva_tarea_t* u_msg_nueva_tarea_deserializar(const u_buffer_t* buffer)
     u_msg_nueva_tarea_t* this = u_malloc(sizeof(u_msg_nueva_tarea_t));
 
     uint64_t offset = 0;
-    bool hay_tarea;
 
-    u_buffer_read(buffer, &hay_tarea, sizeof(uint8_t), offset);
+    u_buffer_read(buffer, &this->hay_tarea, sizeof(uint8_t), offset);
+    offset += sizeof(uint8_t);
 
-    if(hay_tarea)
+    if(this->hay_tarea)
     {
         uint32_t tarea_length;
 

@@ -7,7 +7,7 @@
 private bool   s_should_restore   = false;
 private char*  s_last_buffer_data = NULL;
 private int    s_last_cursor_pos  = 0;
-private char** s_commands         = NULL;
+private const char** s_commands   = NULL;
 
 private char*  u_command_generator(const char* text, int count);
 private char** u_fileman_completion(const char* text, int start, int end);
@@ -19,6 +19,11 @@ char* u_console_read(const char* prompt)
         rl_attempted_completion_function = u_fileman_completion;
 
     return u_gets(prompt);
+}
+
+void u_console_set_commands(const char** commands)
+{
+    s_commands = commands;
 }
 
 void u_console_save_state(void)
@@ -71,6 +76,7 @@ private char*  u_command_generator(const char* text, int count)
 
 private char** u_fileman_completion(const char* text, int start, int end)
 {
+    (void)end;
 	char **matches = NULL;
 
 	if (start == 0)
