@@ -160,7 +160,7 @@ private bool ds_lista_tripulantes(const ds_parser_result_t* result)
         ds_print("No hay tripulantes disponibles en el sistema\n");
     else
     {
-        ds_print("Tripulantes: { %s }\n", lista_tripulantes);
+        ds_print("%s\n", lista_tripulantes);
         u_free(lista_tripulantes);
     }
 

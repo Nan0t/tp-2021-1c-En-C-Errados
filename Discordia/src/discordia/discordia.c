@@ -2,6 +2,8 @@
 #include "server/server.h"
 #include "console/console.h"
 
+#include <commons/temporal.h>
+
 #include <stdio.h>
 
 typedef struct
@@ -21,6 +23,11 @@ private int32_t discordia_conectar_con_fs(void);
 private void  discordia_eliminar_tripulante_de_memoria(uint32_t tid);
 private void  discordia_eliminar_tripulante_de_fs(uint32_t tid);
 private char* discordia_obtener_bitacora_del_fs(int32_t conn);
+private char* discordia_recibir_tripulantes_de_memoria(int32_t conn);
+
+private char* discordia_lista_tripulantes_to_string(const u_msg_lista_tripulantes_t* msg);
+
+private void discordia_recibir_fail(int32_t conn);
 
 private uint32_t discordia_enviar_patota_a_memoria(const char* tareas);
 private bool     discordia_recibir_respuesta_memoria(int32_t conn);
@@ -72,6 +79,19 @@ char* discordia_obtener_bitacora(uint32_t tid)
 
 char* discordia_obtener_tripulantes(void)
 {
+    int32_t conn = discordia_conectar_con_memoria();
+
+    if(conn == -1)
+        return NULL;
+
+    u_opcode_e opcode = OBTENER_TRIPULANTES;
+
+    if(u_socket_send(conn, &opcode, sizeof(uint32_t)))
+        return discordia_recibir_tripulantes_de_memoria(conn);
+    
+    U_LOG_ERROR("No se pudo enviar el mensaje %s a la Memoria. Se perdio la conexion", u_opcode_to_string(opcode));
+    u_socket_close(conn);
+
     return NULL;
 }
 
@@ -400,12 +420,16 @@ private char* discordia_obtener_bitacora_del_fs(int32_t conn)
 
     if(u_socket_recv(conn, &opcode, sizeof(uint32_t)))
     {
-        if(opcode != BITACORA)
+        if(opcode == FAIL)
+        {
+            discordia_recibir_fail(conn);
+            return NULL;
+        }
+        else if(opcode != BITACORA)
         {
             U_LOG_ERROR("Se recibio un opcode invalido como respuesta a OBTENER_BITACORA");
             U_LOG_ERROR("Opcode recibido: %d", opcode);
             u_socket_close(conn);
-
             return NULL;
         }
 
@@ -439,6 +463,119 @@ private char* discordia_obtener_bitacora_del_fs(int32_t conn)
     u_socket_close(conn);
 
     return bitacora;
+}
+
+private char* discordia_recibir_tripulantes_de_memoria(int32_t conn)
+{
+    u_opcode_e opcode;
+    char* lista_tripulantes_str = NULL;
+
+    if(u_socket_recv(conn, &opcode, sizeof(uint32_t)))
+    {
+        uint32_t msg_length;
+        void*    msg_buffer;
+
+        if(opcode == FAIL)
+        {
+            discordia_recibir_fail(conn);
+            u_socket_close(conn);
+            return NULL;
+        }
+        else if(opcode != LISTA_TRIPULANTES)
+        {
+            U_LOG_ERROR("Se recibio un opcode invalido como respuesta a OBTENER_TRIPULANTES");
+            U_LOG_ERROR("Opcode recibido: %d", opcode);
+            u_socket_close(conn);
+            return NULL;
+        }
+
+        if(u_socket_recv(conn, &msg_length, sizeof(uint32_t)))
+        {
+            msg_buffer = u_malloc(msg_length);
+
+            if(u_socket_recv(conn, msg_buffer, msg_length))
+            {
+                u_buffer_t* buffer = u_buffer_create();
+                u_buffer_write(buffer, msg_buffer, msg_length);
+
+                u_msg_lista_tripulantes_t* msg = u_msg_lista_tripulantes_deserialize(buffer);
+                
+                lista_tripulantes_str = discordia_lista_tripulantes_to_string(msg);
+
+                u_msg_lista_tripulantes_eliminar(msg);
+                u_buffer_delete(buffer);
+            }
+            else
+                U_LOG_ERROR("No se pudo obtener la lista de tripulantes. Conexion perdida con la Memoria");
+
+            u_free(msg_buffer);
+        }
+        else
+            U_LOG_ERROR("No se pudo obtener la lista de tripulantes. Conexion perdida con la Memoria");
+    }
+    else
+        U_LOG_ERROR("No se pudo obtener la lista de tripulantes. Conexion perdida con la Memoria");
+
+    u_socket_close(conn);
+
+    return lista_tripulantes_str;
+}
+
+private char* discordia_lista_tripulantes_to_string(const u_msg_lista_tripulantes_t* msg)
+{
+    char* lista_tripulantes = string_new();
+    t_list_iterator* it = list_iterator_create(msg->tripulantes);
+
+    while(list_iterator_has_next(it))
+    {
+        u_tripulante_info_t* trip = (u_tripulante_info_t*)list_iterator_next(it);
+
+         string_append_with_format(&lista_tripulantes,
+            "Tripulante: %d\tPatota: %d\tStatus: %s\n",
+            trip->tid, trip->pid, (trip->estado == 'E') ? "EXEC" : (trip->estado == 'B') ? "BLOCKED I/O" : "READY"
+        );
+    }
+
+    list_iterator_destroy(it);
+
+    char* current_time = temporal_get_string_time("%d/%m/%y %H:%M:%S");
+    char* reporte_estado = string_from_format(
+        "Estado de la Nave: %s\n%s",
+        current_time,
+        lista_tripulantes
+    );
+
+    u_free(lista_tripulantes);
+    u_free(current_time);
+
+    return reporte_estado;
+}
+
+private void discordia_recibir_fail(int32_t conn)
+{
+    uint32_t msg_length;
+    void*    msg_buffer;
+
+    if(u_socket_recv(conn, &msg_length, sizeof(uint32_t)))
+    {
+        msg_buffer = u_malloc(msg_length);
+        
+        if(u_socket_recv(conn, msg_buffer, msg_length))
+        {
+            u_buffer_t* buffer = u_buffer_create();
+            u_buffer_write(buffer, msg_buffer, msg_length);
+
+            u_msg_fail_t* msg = u_msg_fail_deserializar(buffer);
+
+            U_LOG_ERROR("Se recibio el siguiente mensaje de error");
+            U_LOG_ERROR("%s", msg->description);
+
+            u_msg_fail_eliminar(msg);
+            u_buffer_delete(buffer);
+        }
+
+        u_free(msg_buffer);
+    }
 }
 
 private uint32_t discordia_enviar_patota_a_memoria(const char* tareas)

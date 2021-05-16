@@ -76,19 +76,24 @@ private void cliente_thread(int32_t sock_client)
     if(u_socket_recv(sock_client, &op_code, sizeof(uint32_t)))  //if en lugar de while
     {
 
-        // Si el primer recv tiene éxito, habremos obtenido el op_code
-        // Volvemos a hacer otro recv para recibir el tamaño del msj.
-        u_socket_recv(sock_client, &msg_length, sizeof(uint32_t));
+        if(op_code == OBTENER_TRIPULANTES)
+            client_handler_manage_opcode(sock_client, op_code, NULL);
+        else
+        {
+            // Si el primer recv tiene éxito, habremos obtenido el op_code
+            // Volvemos a hacer otro recv para recibir el tamaño del msj.
+            u_socket_recv(sock_client, &msg_length, sizeof(uint32_t));
 
-        //Recibido el msj lo pasamos a una estructura buffer para deserializarlo
-        
-        void* msg = u_malloc(msg_length);
-        if(u_socket_recv(sock_client, msg, msg_length)){
-        //    u_socket_recv(sock_client, &msg, msg_length);
-            u_buffer_t* buffer = u_buffer_create();
-            u_buffer_write(buffer, msg, msg_length);
-            u_free(msg);
-            client_handler_manage_opcode(sock_client, op_code, buffer);
+            //Recibido el msj lo pasamos a una estructura buffer para deserializarlo
+            
+            void* msg = u_malloc(msg_length);
+            if(u_socket_recv(sock_client, msg, msg_length)){
+            //    u_socket_recv(sock_client, &msg, msg_length);
+                u_buffer_t* buffer = u_buffer_create();
+                u_buffer_write(buffer, msg, msg_length);
+                u_free(msg);
+                client_handler_manage_opcode(sock_client, op_code, buffer);
+            }
         }
     }
     u_socket_close(sock_client);
@@ -195,10 +200,52 @@ void client_handler_manage_opcode(int32_t sock_client, u_opcode_e op_code, u_buf
 
             break;
 
-        default: 
-            U_LOG_ERROR("no se recibio op_code aceptable");
+        case OBTENER_TRIPULANTES:
+        {
+            t_list* tripulantes = admin_memoria_obtener_tripulantes();
+
+            t_list_iterator* it = list_iterator_create(tripulantes);
+            u_msg_lista_tripulantes_t* msg = u_msg_lista_tripulantes_crear();
+
+            while(list_iterator_has_next(it))
+            {
+                tripulantes_t* trip = (tripulantes_t*)list_iterator_next(it);
+                u_tripulante_info_t trip_info = {
+                    .tid = trip->tid,
+                    .pid = trip->pid,
+                    .estado = trip->estado
+                };
+
+                u_msg_lista_tripulantes_agregar(msg, trip_info);
+            }
+
+            u_buffer_t*  buffer      = u_msg_lista_tripulantes_serialize(msg);
+            u_package_t* package     = u_package_create(LISTA_TRIPULANTES, buffer);
+            u_buffer_t*  package_ser = u_package_serialize(package);
+
+            u_socket_send(sock_client, u_buffer_get_content(package_ser), u_buffer_get_size(package_ser));
+
+            u_msg_lista_tripulantes_eliminar(msg);
+            u_buffer_delete(buffer);
+            u_buffer_delete(package_ser);
+            u_package_delete(package);
+
+            list_destroy_and_destroy_elements(tripulantes, u_free);
+
             break;
-        //faltaria obtener tripulante
+        }
+
+        default:
+        {
+            U_LOG_ERROR("no se recibio op_code aceptable");
+
+            u_msg_fail_t* msg         = u_msg_fail_crear("[Memoria]: Opcode #(%d) erroneo o desconocido", op_code);
+            u_buffer_t*   msg_ser     = u_msg_fail_serializar(msg);
+            u_package_t*  package     = u_package_create(FAIL, msg_ser);
+            u_buffer_t*   package_ser = u_package_serialize(package);
+
+            u_socket_send(sock_client, u_buffer_get_content(package_ser), u_buffer_get_size(package_ser));
+        }
     } 
 
 }
