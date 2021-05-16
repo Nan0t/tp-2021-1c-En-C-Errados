@@ -473,7 +473,7 @@ void test_tripulante_nuevo_estado_serializar_y_deserializar(void)
 {
 // Arrange
 //--------
-    uint32_t expected_state = 30; // Reemplazar en el futuro por el enum de los estados del tripulante.
+    char expected_state = 'E';
 
     u_msg_tripulante_nuevo_estado_t* ser_msg = NULL;
     u_msg_tripulante_nuevo_estado_t* deser_msg = NULL;
