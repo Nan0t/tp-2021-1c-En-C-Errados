@@ -453,6 +453,8 @@ private void ds_parser_iniciar_tarea(uint32_t argc, char** argv, ds_parser_resul
 
     command->tid   = atoi(argv[DS_INICIAR_TAREA__TID_INDEX]);
     command->tarea = string_duplicate(argv[DS_INICIAR_TAREA__TAREA_INDEX]);
+
+    result->data = command;
 }
 
 private void ds_parser_finalizar_tarea(uint32_t argc, char** argv, ds_parser_result_t* result)
@@ -473,6 +475,8 @@ private void ds_parser_finalizar_tarea(uint32_t argc, char** argv, ds_parser_res
 
     command->tid   = atoi(argv[DS_FINALIZAR_TAREA__TID_INDEX]);
     command->tarea = string_duplicate(argv[DS_FINALIZAR_TAREA__TAREA_INDEX]);
+
+    result->data = command;
 }
 
 private void ds_parser_trip_atiende_sabotaje(uint32_t argc, char** argv, ds_parser_result_t* result)
@@ -586,6 +590,8 @@ private void ds_parser_trip_nuevo_estado(uint32_t argc, char** argv, ds_parser_r
 
     command->tid    = atoi(argv[DS_TRIP_NUEVO_ESTADO__TID_INDEX]);
     command->estado = argv[DS_TRIP_NUEVO_ESTADO__ESTADO_INDEX][0];
+
+    result->data = command;
 }
 
 #endif
