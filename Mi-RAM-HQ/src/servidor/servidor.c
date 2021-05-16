@@ -167,16 +167,33 @@ void client_handler_manage_opcode(int32_t sock_client, u_opcode_e op_code, u_buf
 
             break;
 
-        case PROXIMA_TAREA: ;
-            u_msg_proxima_tarea_t* tarea = u_msg_proxima_tarea_deserializar(buffer);
+        case PROXIMA_TAREA:
+        {
+            u_msg_proxima_tarea_t* tarea_msg = u_msg_proxima_tarea_deserializar(buffer);
             
             U_LOG_TRACE("Recibido msg PROXIMA_TAREA");
-            U_LOG_TRACE("tid: %d", tarea->tripulante_id);
+            U_LOG_TRACE("tid: %d", tarea_msg->tripulante_id);
 
-            admin_memoria_obtener_proxima_tarea(tarea->tripulante_id);
-            u_msg_proxima_tarea_eliminar(tarea);
+            char* tarea = admin_memoria_obtener_proxima_tarea(tarea_msg->tripulante_id);
+            u_msg_proxima_tarea_eliminar(tarea_msg);
+
+            u_msg_nueva_tarea_t* msg = u_msg_nueva_tarea_crear(tarea);
+            
+            u_buffer_t* buffer      = u_msg_nueva_tarea_serializar(msg);
+            u_package_t* package    = u_package_create(NUEVA_TAREA, buffer);
+            u_buffer_t* package_ser = u_package_serialize(package);
+
+            u_socket_send(sock_client, u_buffer_get_content(package_ser), u_buffer_get_size(package_ser));
+
+            u_msg_nueva_tarea_eliminar(msg);
+            u_buffer_delete(buffer);
+            u_buffer_delete(package_ser);
+            u_package_delete(package);
+
+            u_free(tarea);
 
             break;
+        }
 
         case TRIPULANTE_NUEVO_ESTADO: ;
             u_msg_tripulante_nuevo_estado_t* nuevo_estado = u_msg_tripulante_nuevo_estado_deserializar(buffer);
