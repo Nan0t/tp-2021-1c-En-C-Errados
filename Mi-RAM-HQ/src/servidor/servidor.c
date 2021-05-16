@@ -1,7 +1,7 @@
 #include "servidor.h"
 
 private void cliente_thread(int32_t sock_client);
-void client_handler_manage_opcode(u_opcode_e op_code, u_buffer_t* buffer);
+void client_handler_manage_opcode(int32_t sock_client, u_opcode_e op_code, u_buffer_t* buffer);
 
 bool servidor_init(const char* port)
 {
@@ -88,56 +88,113 @@ private void cliente_thread(int32_t sock_client)
             u_buffer_t* buffer = u_buffer_create();
             u_buffer_write(buffer, msg, msg_length);
             u_free(msg);
-            client_handler_manage_opcode(op_code, buffer);
+            client_handler_manage_opcode(sock_client, op_code, buffer);
         }
     }
     u_socket_close(sock_client);
 }
 
-void client_handler_manage_opcode(u_opcode_e op_code, u_buffer_t* buffer){
+void client_handler_manage_opcode(int32_t sock_client, u_opcode_e op_code, u_buffer_t* buffer){
     switch(op_code){
         case INICIAR_PATOTA: ;
             u_msg_iniciar_patota_t* patota = u_msg_iniciar_patota_deserializar(buffer);
+            
             U_LOG_TRACE("Recibido msg INICIAR_PATOTA");
             U_LOG_TRACE("pid: %d, lista_tareas: %s", patota->pid, patota->lista_tareas);//para probar que llego correcto
-            //admin_memoria_iniciar_patota(patota->pid, patota->lista_tareas);
+            
+            if(admin_memoria_iniciar_patota(patota->pid, patota->lista_tareas))
+            {
+                u_opcode_e opcode = OK;
+                u_socket_send(sock_client, &opcode, sizeof(uint32_t));
+            }
+            else
+            {
+                u_msg_fail_t* msg         = u_msg_fail_crear("No se pudo crear el PCB de patota %d en la memoria", patota->pid);
+                u_buffer_t*   msg_ser     = u_msg_fail_serializar(msg);
+                u_package_t*  package     = u_package_create(FAIL, msg_ser);
+                u_buffer_t*   package_ser = u_package_serialize(package);
+
+                u_socket_send(sock_client, u_buffer_get_content(package_ser), u_buffer_get_size(package_ser));
+
+                u_msg_fail_eliminar(msg);
+                u_buffer_delete(msg_ser);
+                u_buffer_delete(package_ser);
+                u_package_delete(package);
+            }
+
             u_msg_iniciar_patota_eliminar(patota);
+
             break;
+
         case INICIAR_TRIPULANTE: ;
             u_msg_iniciar_tripulante_t* tripulante = u_msg_iniciar_tripulante_deserializar(buffer);
             U_LOG_TRACE("Recibido msg INICIAR_TRIPULANTE");
             U_LOG_TRACE("pid: %d, tid: %d, posx: %d, posy: %d", tripulante->patota_id, tripulante->tripulante_id, tripulante->posicion.x, tripulante->posicion.y);
-            //admin_memoria_iniciar_tripulante(tripulante->patota_id, tripulante->tripulante_id, tripulante->posicion);
+            
+            if(admin_memoria_iniciar_tripulante(tripulante->patota_id, tripulante->tripulante_id, tripulante->posicion))
+            {
+                u_opcode_e opcode = OK;
+                u_socket_send(sock_client, &opcode, sizeof(uint32_t));
+            }
+            else
+            {
+                u_msg_fail_t* msg =
+                    u_msg_fail_crear("No se pudo crear el TCB para el tripulante %d en la memoria", tripulante->tripulante_id);
+
+                u_buffer_t*  msg_ser     = u_msg_fail_serializar(msg);
+                u_package_t* package     = u_package_create(FAIL, msg_ser);
+                u_buffer_t*  package_ser = u_package_serialize(package);
+
+                u_socket_send(sock_client, u_buffer_get_content(package_ser), u_buffer_get_size(package_ser));
+            }
+
             u_msg_iniciar_tripulante_eliminar(tripulante);
             break;
+
         case MOVIMIENTO_TRIPULANTE: ;
             u_msg_movimiento_tripulante_t* movimiento = u_msg_movimiento_tripulante_deserializar(buffer);
+
             U_LOG_TRACE("Recibido msg MOVIMIENTO_TRIPULANTE");
             U_LOG_TRACE("tid: %d, posx: %d, posy: %d", movimiento->tid, movimiento->pos.x, movimiento->pos.y);
-            //admin_memoria_mover_tripulante(movimiento->tid, movimiento->pos);
+
+            admin_memoria_mover_tripulante(movimiento->tid, movimiento->pos);
             u_msg_movimiento_tripulante_eliminar(movimiento);
+
             break;
+
         case PROXIMA_TAREA: ;
             u_msg_proxima_tarea_t* tarea = u_msg_proxima_tarea_deserializar(buffer);
+            
             U_LOG_TRACE("Recibido msg PROXIMA_TAREA");
             U_LOG_TRACE("tid: %d", tarea->tripulante_id);
-            //admin_memoria_obtener_proxima_tarea(tarea->tripulante_id);
+
+            admin_memoria_obtener_proxima_tarea(tarea->tripulante_id);
             u_msg_proxima_tarea_eliminar(tarea);
+
             break;
+
         case TRIPULANTE_NUEVO_ESTADO: ;
             u_msg_tripulante_nuevo_estado_t* nuevo_estado = u_msg_tripulante_nuevo_estado_deserializar(buffer);
+            
             U_LOG_TRACE("Recibido msg TRIPULANTE_NUEVO_ESTADO");
             U_LOG_TRACE("tid: %d, estado nuevo: %d", nuevo_estado->tripulante_id, nuevo_estado->nuevo_estado);
-            //admin_memoria_tripulante_nuevo_estado(nuevo_estado->tripulante_id, nuevo_estado->nuevo_estado);
+
+            admin_memoria_tripulante_nuevo_estado(nuevo_estado->tripulante_id, nuevo_estado->nuevo_estado);
             u_msg_tripulante_nuevo_estado_eliminar(nuevo_estado);
+
             break; 
+
         case ELIMINAR_TRIPULANTE: ;
             u_msg_eliminar_tripulante_t* eliminar = u_msg_eliminar_tripulante_deserializar(buffer);
+ 
             U_LOG_TRACE("Recibido msg ELIMINAR_TRIPULANTE");
             U_LOG_TRACE("tid: %d", eliminar->tripulante_id);
-            //admin_memoria_eliminar_tripulante(eliminar->tripulante_id);
+            
+            admin_memoria_eliminar_tripulante(eliminar->tripulante_id);
             u_msg_eliminar_tripulante_eliminar(eliminar);
+
             break;
+
         default: 
             U_LOG_ERROR("no se recibio op_code aceptable");
             break;
