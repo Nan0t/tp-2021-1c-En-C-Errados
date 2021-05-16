@@ -22,8 +22,9 @@ private void  discordia_eliminar_tripulante_de_memoria(uint32_t tid);
 private void  discordia_eliminar_tripulante_de_fs(uint32_t tid);
 private char* discordia_obtener_bitacora_del_fs(int32_t conn);
 
-private bool discordia_enviar_patota_a_memoria(const char* tareas);
-private bool discordia_enviar_tripulantes_a_memoria(int32_t cant_trips, t_list* positions);
+private uint32_t discordia_enviar_patota_a_memoria(const char* tareas);
+private bool     discordia_recibir_respuesta_memoria(int32_t conn);
+private void     discordia_inicializar_tripulantes(uint32_t pid, int32_t cant_trips, t_list* positions);
 
 private char* discordia_leer_archivo_tareas(const char* ruta_tareas);
 
@@ -270,10 +271,9 @@ void discordia_inicializar_patota(const char* ruta_tareas, uint32_t cant_trip, t
         return;
     }
 
-    if(!discordia_enviar_patota_a_memoria(tareas))
-        discordia_enviar_tripulantes_a_memoria(cant_trip, posiciones_trip);
-
-    // TODO: inicializar planficador
+    uint32_t pid = discordia_enviar_patota_a_memoria(tareas);
+    if(pid)
+        discordia_inicializar_tripulantes(pid, cant_trip, posiciones_trip);
 }
 
 void discordia_expulsar_tripulante(uint32_t tid)
@@ -441,13 +441,12 @@ private char* discordia_obtener_bitacora_del_fs(int32_t conn)
     return bitacora;
 }
 
-private bool discordia_enviar_patota_a_memoria(const char* tareas)
+private uint32_t discordia_enviar_patota_a_memoria(const char* tareas)
 {
-    bool result = true;
     int32_t conn = discordia_conectar_con_memoria();
 
     if(conn == -1)
-        return false;
+        return 0;
 
     uint32_t pid = discordia_obtener_nuevo_pid();
 
@@ -461,22 +460,97 @@ private bool discordia_enviar_patota_a_memoria(const char* tareas)
         char* msg_str = u_msg_iniciar_patota_to_string(msg);
         U_LOG_ERROR("No se pudo enviar el mensaje %s a la memoria", msg_str);
         u_free(msg_str);
-
-        result = false;
     }
+
+    discordia_recibir_respuesta_memoria(conn);
 
     u_msg_iniciar_patota_eliminar(msg);
     u_buffer_delete(msg_ser);
     u_buffer_delete(package_ser);
     u_package_delete(package);
 
-    return result;
+    return pid;
 }
 
-private bool discordia_enviar_tripulantes_a_memoria(int32_t cant_trips, t_list* positions)
+private bool discordia_recibir_respuesta_memoria(int32_t conn)
 {
-    // TODO: enviar iniciar tripulante (proxima correccion en utils)
-    return true;
+    u_opcode_e opcode;
+
+    if(u_socket_recv(conn, &opcode, sizeof(uint32_t)))
+    {
+        if(opcode == OK)
+            return true;
+
+        uint32_t msg_length;
+        void*    msg_buffer;
+
+        if(u_socket_recv(conn, &msg_length, sizeof(uint32_t)))
+        {
+            msg_buffer = u_malloc(msg_length);
+
+            u_buffer_t* buffer = u_buffer_create();
+            u_buffer_write(buffer, msg_buffer, msg_length);
+
+            u_msg_fail_t* msg = u_msg_fail_deserializar(buffer);
+
+            U_LOG_ERROR("Memoria contesto con el siguiente error");
+            U_LOG_ERROR("%s", msg->description);
+
+            u_msg_fail_eliminar(msg);
+            u_buffer_delete(buffer);
+            u_free(msg_buffer);
+        }
+        else
+            U_LOG_ERROR("Memoria contesto FAIL. No se pudo obtener una descripcion");
+    }
+    else
+        U_LOG_ERROR("No se pudo obtener una respuesta desde la Memoria. Se perdio la conexion");
+
+    return false;
+}
+
+private void discordia_inicializar_tripulantes(uint32_t pid, int32_t cant_trips, t_list* positions)
+{
+    for(int32_t i = 0; i < cant_trips; i ++)
+    {
+        int32_t conn = discordia_conectar_con_memoria();
+
+        if(conn == -1)
+            continue;
+
+        u_pos_t default_pos = { 0 };
+        const u_pos_t* pos = &default_pos;
+
+        if(positions && i < list_size(positions))
+            pos = list_get(positions, i);
+
+
+        u_msg_iniciar_tripulante_t* msg = u_msg_iniciar_tripulante_crear(
+            pid,
+            discordia_obtener_nuevo_tid(),
+            *pos
+        );
+
+        u_buffer_t* msg_ser     = u_msg_iniciar_tripulante_serializar(msg);
+        u_package_t* package    = u_package_create(INICIAR_TRIPULANTE, msg_ser);
+        u_buffer_t* package_ser = u_package_serialize(package);
+
+        if(!u_socket_send(conn, u_buffer_get_content(package_ser), u_buffer_get_size(package_ser)))
+        {
+            char* msg_str = u_msg_iniciar_tripulante_to_string(msg);
+            U_LOG_ERROR("No se pudo mandar el mensaje %s a la Memoria", msg_str);
+            u_free(msg_str);
+        }
+
+        discordia_recibir_respuesta_memoria(conn);
+        u_msg_iniciar_tripulante_eliminar(msg);
+
+        u_buffer_delete(msg_ser);
+        u_buffer_delete(package_ser);
+        u_package_delete(package);
+    }
+
+    //TODO: Ingresar tripulante al planificador
 }
 
 private char* discordia_leer_archivo_tareas(const char* ruta_tareas)
