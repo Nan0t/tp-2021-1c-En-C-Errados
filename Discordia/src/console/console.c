@@ -285,6 +285,7 @@ private bool _debug_ds_tripulante_nuevo_estado(const ds_parser_result_t* result)
         (ds_command_tripulante_nuevo_estado_t*)result->data;
 
     discordia_tripulante_nuevo_estado(command->tid, command->estado);
+    return false;
 }
 
 #endif
