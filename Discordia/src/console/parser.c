@@ -128,6 +128,35 @@ void ds_parser_result_free(ds_parser_result_t* result)
     case DS_OBTENER_BITACORA:
     case DS_INVALID_COMMAND:
         u_free(result->data);
+        break;
+
+#ifndef NDEBUG
+    case _DEBUG_DS_DESPLAZAMIENTO_TRIPULANTE:
+        ds_command_desplazar_tripulante_delete((ds_command_desplazamiento_tripulante_t*)result->data);
+        break;
+
+    case _DEBUG_DS_INICIAR_TAREA:
+        ds_command_iniciar_tarea_delete((ds_command_iniciar_tarea_t*)result->data);
+        break;
+
+    case _DEBUG_DS_FINALIZAR_TAREA:
+        ds_command_finalizar_tarea_delete((ds_command_finalizar_tarea_t*)result->data);
+        break;
+    
+    case _DEBUG_DS_MOVER_TRIPULANTE:
+        ds_command_mover_tripulante_delete((ds_command_mover_tripulante_t*)result->data);
+        break;
+
+    case _DEBUG_DS_TRIPULANTE_NUEVO_ESTADO:
+        ds_command_tripulante_nuevo_estado((ds_command_tripulante_nuevo_estado_t*)result->data);
+        break;
+
+    case _DEBUG_DS_TRIPULANTE_ATIENDE_SABOTAJE:
+    case _DEBUG_DS_TRIPULANTE_RESUELVE_SABOTAJE:
+    case _DEBUG_DS_PROXIMA_TAREA:
+        u_free(result->data);
+        break;
+#endif
 
     default:
         break;
