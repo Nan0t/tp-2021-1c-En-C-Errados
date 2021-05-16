@@ -1,5 +1,8 @@
 #include "utils/config_test.h"
 #include "utils/msg_test.h"
+
+#include "discordia/parser_test.h"
+
 #include <CUnit/Basic.h>
 
 #define FUNCTION_TEST(f) { "\033[93m"#f"\033[0m", f }
@@ -14,13 +17,25 @@ typedef struct {
 } test_case_t;
 
 static void utils_tests(void);
+static void discordia_tests(void);
 
-int main(void)
+int main(int argc, char** argv)
 {
     CU_initialize_registry();
     CU_basic_set_mode(CU_BRM_VERBOSE);
 
-    utils_tests();
+    if(argc < 2)
+    {
+        utils_tests();
+        discordia_tests();
+    }
+    else
+    {
+        if(!strcmp(argv[1], "utils"))
+            utils_tests();
+        else if(!strcmp(argv[1], "discordia"))
+            discordia_tests();
+    }
 
     CU_basic_run_tests();
     CU_cleanup_registry();
@@ -75,4 +90,38 @@ void utils_tests(void)
     };
 
     ADD_TEST_TO_TEST_SUITE(msg_test_suite, msg_test_cases)
+}
+
+static void discordia_tests(void)
+{
+    CU_pSuite parser_test_suite = CU_add_suite_with_setup_and_teardown(
+        "Discordia Praser Test Suite",
+        NULL,
+        NULL,
+        NULL,
+        NULL
+    );
+
+    test_case_t parser_test_cases[] =
+    {
+        FUNCTION_TEST(test_invalid_cant_args_iniciar_patota),
+        FUNCTION_TEST(test_invalid_cant_trips_iniciar_patota),
+        FUNCTION_TEST(test_invalid_positions_iniciar_patota),
+        FUNCTION_TEST(test_valid_iniciar_patota_sin_posiciones),
+        FUNCTION_TEST(test_valid_iniciar_patota_con_posiciones),
+
+        FUNCTION_TEST(test_invalid_cant_args_expulsar_tripulante),
+        FUNCTION_TEST(test_invalid_expulsar_tripulante),
+        FUNCTION_TEST(test_valid_expulsar_tripulante),
+
+        FUNCTION_TEST(test_invalid_cant_args_obtener_bitacora),
+        FUNCTION_TEST(test_invalid_obtener_bitacora),
+        FUNCTION_TEST(test_valid_obtener_bitacora),
+
+        FUNCTION_TEST(test_valid_listar_tripulantes),
+        FUNCTION_TEST(test_valid_iniciar_planificacion),
+        FUNCTION_TEST(test_valid_pausar_planificacion)
+    };
+
+    ADD_TEST_TO_TEST_SUITE(parser_test_suite, parser_test_cases)
 }
