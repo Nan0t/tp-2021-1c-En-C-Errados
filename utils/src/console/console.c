@@ -76,6 +76,7 @@ private char*  u_command_generator(const char* text, int count)
 
 private char** u_fileman_completion(const char* text, int start, int end)
 {
+    (void)end;
 	char **matches = NULL;
 
 	if (start == 0)
