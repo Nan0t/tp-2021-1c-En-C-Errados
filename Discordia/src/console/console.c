@@ -270,11 +270,11 @@ private bool _debug_ds_proxima_tarea(const ds_parser_result_t* result)
 
     if(tarea)
     {
-        ds_print("Tarea obtenida del tripulante %d: %s", *tid, tarea);
+        ds_print("Tarea obtenida del tripulante %d: %s\n", *tid, tarea);
         u_free(tarea);
     }
     else
-        ds_print("No se pudo obtener ninguna tarea para el tripulante %d", *tid);
+        ds_print("No se pudo obtener ninguna tarea para el tripulante %d\n", *tid);
 
     return false;
 }
