@@ -1,11 +1,11 @@
 #ifndef UTILS_PROTOCOL_TRIPULANTE_NUEVO_ESTADO_H
 #define UTILS_PROTOCOL_TRIPULANTE_NUEVO_ESTADO_H
 
-#include "utils/protocol/paquete.h"
+#include "utils/protocol/buffer.h"
 
 typedef struct {
     uint32_t tripulante_id;
-    uint32_t nuevo_estado;
+    char     nuevo_estado;
 } u_msg_tripulante_nuevo_estado_t;
 
 
@@ -15,19 +15,20 @@ typedef struct {
  * @DESC: Crea un mensaje u_msg_tripulante_nuevo_estado_t
  * @PARAMS:
  * 			[in] uint32_t _tripulante_id - id del tripulante.
+ *          [in] char     _nuevo_estado  - estado del tripulante (uno de R, E, B).
  * @RETURN: Un struct u_msg_tripulante_nuevo_estado_t.
  * @NOTA: El struct resultante debe ser liberado posteriormente llamanda a u_msg_tripulante_nuevo_estado_eliminar.
  */
-u_msg_tripulante_nuevo_estado_t* u_msg_tripulante_nuevo_estado_crear(uint32_t _tripulante_id, uint32_t _nuevo_estado);
+u_msg_tripulante_nuevo_estado_t* u_msg_tripulante_nuevo_estado_crear(uint32_t _tripulante_id, char _nuevo_estado);
 
 /**
  * @NAME: u_msg_tripulante_nuevo_estado_serializar
- * @DESC: Serializar un u_msg_tripulante_nuevo_estado_t y lo guarda en un struct u_paquete_t.
+ * @DESC: Serializar un u_msg_tripulante_nuevo_estado_t y lo guarda en un struct u_buffer_t.
  * @PARAMS:
  * 			[in] const u_msg_tripulante_nuevo_estado_t* _msg - Mensaje a serializar.
- * @RETURNS: un struct u_paquete_t que contendra el mensaje serializado.
+ * @RETURNS: un struct u_buffer_t que contendra el mensaje serializado.
  */
-u_paquete_t* u_msg_tripulante_nuevo_estado_serializar(const u_msg_tripulante_nuevo_estado_t* _msg);
+u_buffer_t* u_msg_tripulante_nuevo_estado_serializar(const u_msg_tripulante_nuevo_estado_t* _msg);
 
 /**
  * @NAME: u_msg_tripulante_nuevo_estado_deserializar

@@ -1,14 +1,13 @@
 #ifndef UTILS_PROTOCOL_INICIAR_TRIPULANTE_H
 #define UTILS_PROTOCOL_INICIAR_TRIPULANTE_H
 
-#include "utils/protocol/paquete.h"
+#include "utils/protocol/buffer.h"
 
 typedef struct {
     uint32_t patota_id;
     uint32_t tripulante_id;
+    u_pos_t  posicion;
 } u_msg_iniciar_tripulante_t;
-
-
 
 /**
  * @NAME: u_msg_iniciar_tripulante_crear
@@ -16,19 +15,20 @@ typedef struct {
  * @PARAMS:
  * 			[in] uint32_t _tripulante_id - id del tripulante.
  * 			[in] uint32_t _patota_id     - id de la patota.
+ *          [in] u_pos_t  pos            - posicion inicial del tripulante.
  * @RETURN: Un struct u_msg_iniciar_tripulante_t.
  * @NOTA: El struct resultante debe ser liberado posteriormente llamanda a u_msg_informar_iniciar_tripulante_eliminar.
  */
-u_msg_iniciar_tripulante_t* u_msg_iniciar_tripulante_crear(uint32_t _patota_id, uint32_t _tripulante_id);
+u_msg_iniciar_tripulante_t* u_msg_iniciar_tripulante_crear(uint32_t _patota_id, uint32_t _tripulante_id, u_pos_t pos);
 
 /**
  * @NAME: u_msg_iniciar_tripulante_serializar
- * @DESC: Serializar un u_msg_iniciar_tripulante_t y lo guarda en un struct u_paquete_t.
+ * @DESC: Serializar un u_msg_iniciar_tripulante_t y lo guarda en un struct u_buffer_t.
  * @PARAMS:
  * 			[in] const u_msg_iniciar_tripulante_t* _msg - Mensaje a serializar.
- * @RETURNS: un struct u_paquete_t que contendra el mensaje serializado.
+ * @RETURNS: un struct u_buffer_t que contendra el mensaje serializado.
  */
-u_paquete_t* u_msg_iniciar_tripulante_serializar(const u_msg_iniciar_tripulante_t* _msg);
+u_buffer_t* u_msg_iniciar_tripulante_serializar(const u_msg_iniciar_tripulante_t* _msg);
 
 /**
  * @NAME: u_msg_iniciar_tripulante_deserializar

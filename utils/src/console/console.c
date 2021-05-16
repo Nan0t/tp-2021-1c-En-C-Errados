@@ -2,14 +2,28 @@
 #include "utils/memory/allocator.h"
 
 #include <readline/readline.h>
+#include <readline/history.h>
 
-private bool  s_should_restore   = false;
-private char* s_last_buffer_data = NULL;
-private int   s_last_cursor_pos  = 0;
+private bool   s_should_restore   = false;
+private char*  s_last_buffer_data = NULL;
+private int    s_last_cursor_pos  = 0;
+private const char** s_commands   = NULL;
+
+private char*  u_command_generator(const char* text, int count);
+private char** u_fileman_completion(const char* text, int start, int end);
+private char*  u_gets(const char* prompt);
 
 char* u_console_read(const char* prompt)
 {
-    return readline(prompt);
+    if(s_commands)
+        rl_attempted_completion_function = u_fileman_completion;
+
+    return u_gets(prompt);
+}
+
+void u_console_set_commands(const char** commands)
+{
+    s_commands = commands;
 }
 
 void u_console_save_state(void)
@@ -36,4 +50,50 @@ void u_console_restore_state(void)
         rl_redisplay();
         u_free(s_last_buffer_data);
     }
+}
+
+private char*  u_command_generator(const char* text, int count)
+{
+    static int list_index, len;
+    const char *name;
+
+    if(!count)
+    {
+        list_index = 0;
+        len = strlen(text);
+    }
+
+    while((name = s_commands[list_index]))
+    {
+        list_index++;
+
+        if(strncmp(name, text, len) == 0)
+            return strdup(name);
+    }
+
+    return NULL;
+}
+
+private char** u_fileman_completion(const char* text, int start, int end)
+{
+    (void)end;
+	char **matches = NULL;
+
+	if (start == 0)
+		matches = rl_completion_matches(text, u_command_generator);
+
+	return matches;
+}
+
+private char* u_gets(const char* prompt)
+{
+	char *line = readline (prompt);
+
+	if(!line)
+		return NULL;
+
+    char* line_cpy = strdup(line);
+	add_history (line_cpy);
+
+    return line;
 }

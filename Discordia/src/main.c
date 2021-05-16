@@ -1,4 +1,5 @@
 #include <utils/entry_point.h>
+#include "discordia/discordia.h"
 
 app_attr_t get_app_setup(void)
 {
@@ -16,6 +17,5 @@ int entry_point(int argc, char** argv)
     (void)argc; // --> para evitar el warning unused_parameter
     (void)argv; // --> para evitar el warning unused_parameter
 
-    U_LOG_INFO("Modulo Discordia");
-    return 0;
+    return discordia_init();
 }
