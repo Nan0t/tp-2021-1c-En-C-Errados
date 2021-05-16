@@ -20,10 +20,10 @@ char* u_console_read(const char* prompt);
  * @DESC: Dado una lista de comandos, permite autocompletar dependiendo de los
  *        comandos seteados por argumento:
  * @PARAMS:
- *  [in] char** commands - array con strings que representan los comandos disponibles.
+ *  [in] const char** commands - array con strings que representan los comandos disponibles.
  *                         El ultimo elemento del array debne ser NULL.
  */
-void  u_console_set_commands(char** commands);
+void  u_console_set_commands(const char** commands);
 
 
 #endif

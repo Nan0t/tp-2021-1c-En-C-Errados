@@ -7,6 +7,7 @@ project "tests"
     objdir    "%{CommonLocations.ObjDir}"
 
     files {
+        "%{wks.location}/Discordia/src/console/parser.c",
         "%{prj.location}/src/**.h",
         "%{prj.location}/src/**.c"
     }
@@ -14,6 +15,7 @@ project "tests"
     includedirs {
         "%{CommonLocations.Commons.IncludeDir}",
         "%{CommonLocations.Utils.IncludeDir}",
+        "%{wks.location}/Discordia/src",
         "%{prj.location}/src"
     }
 
