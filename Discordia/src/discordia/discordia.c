@@ -93,7 +93,7 @@ char* discordia_obtener_tripulantes(void)
     if(u_socket_send(conn, &opcode, sizeof(uint32_t)))
         lista_tripulantes = discordia_recibir_tripulantes_de_memoria(conn);
     else
-        U_LOG_ERROR("No se pudo enviar el mensaje %s a la Memoria. Se perdio la conexion", u_opcode_to_string(opcode));
+        U_LOG_ERROR("No se pudo enviar el mensaje %s. Conexion perdida con la Memoria", u_opcode_to_string(opcode));
     
     u_socket_close(conn);
 
@@ -117,7 +117,7 @@ void  discordia_desplazamiento_tripulante(uint32_t tid, const u_pos_t* origen, c
     if(!u_socket_send(conn, u_buffer_get_content(package_ser), u_buffer_get_size(package_ser)))
     {
         char* msg_str = u_msg_desplazamineto_tripulante_to_string(msg);
-        U_LOG_ERROR("No se pudo enviar el mensaje %s al FileSystem", msg_str);
+        U_LOG_ERROR("No se pudo enviar el mensaje %s. Conexion perdida con el FS", msg_str);
         u_free(msg_str);
     }
 
@@ -145,7 +145,7 @@ void  discordia_mover_tripulante(uint32_t tid, const u_pos_t* pos)
     if(!u_socket_send(conn, u_buffer_get_content(package_ser), u_buffer_get_size(package_ser)))
     {
         char* msg_str = u_msg_movimiento_tripulante_to_string(msg);
-        U_LOG_ERROR("No se pudo enviar el mensaje %s a la Memoria", msg_str);
+        U_LOG_ERROR("No se pudo enviar el mensaje %s. Conexion perdida con la Memoria", msg_str);
         u_free(msg_str);
     }
 
@@ -173,7 +173,7 @@ void  discordia_iniciar_tarea(uint32_t tid, const char* tarea)
     if(!u_socket_send(conn, u_buffer_get_content(package_ser), u_buffer_get_size(package_ser)))
     {
         char* msg_str = u_msg_inicio_tarea_to_string(msg);
-        U_LOG_ERROR("No se pudo mandar el mensaje %s al FileSystem", msg_str);
+        U_LOG_ERROR("No se pudo mandar el mensaje %s. Conexion perdida con el FS", msg_str);
         u_free(msg_str);
     }
 
@@ -201,7 +201,7 @@ void  discordia_finalizar_tarea(uint32_t tid, const char* tarea)
     if(!u_socket_send(conn, u_buffer_get_content(package_ser), u_buffer_get_size(package_ser)))
     {
         char* msg_str = u_msg_finalizacion_tarea_to_string(msg);
-        U_LOG_ERROR("No se pudo enviar el mensaje %s al FileSystem", msg_str);
+        U_LOG_ERROR("No se pudo enviar el mensaje %s. Conexion perdida con el FS", msg_str);
         u_free(msg_str);
     }
 
@@ -229,7 +229,7 @@ void  discordia_tripulante_atiende_sabotaje(uint32_t tid)
     if(!u_socket_send(conn, u_buffer_get_content(package_ser), u_buffer_get_size(package_ser)))
     {
         char* msg_str = u_msg_atiende_sabotaje_to_string(msg);
-        U_LOG_ERROR("No se pudo enviar el mensaje %s al FileSystem", msg_str);
+        U_LOG_ERROR("No se pudo enviar el mensaje %s. Conexion perdida con el FS", msg_str);
         u_free(msg_str);
     }
 
@@ -258,7 +258,7 @@ void  discordia_tripulante_resuelve_sabotaje(uint32_t tid)
     if(!u_socket_send(conn, u_buffer_get_content(package_ser), u_buffer_get_size(package_ser)))
     {
         char* msg_str = u_msg_resuelve_sabotaje_to_string(msg);
-        U_LOG_ERROR("No se pudo enviar el mensaje %s al FileSystem", msg_str);
+        U_LOG_ERROR("No se pudo enviar el mensaje %s. Conexion perdida con el FS", msg_str);
         u_free(msg_str);
     }
 
@@ -288,7 +288,7 @@ char* discordia_obtener_proxima_tarea(uint32_t tid)
         tarea = discordia_obtener_tarea_de_memoria(conn);
     else
         U_LOG_ERROR(
-            "No se pudo obtener la proxima tarea para el tripulante %d. Se perdio la conexion con la Memoria",
+            "No se pudo obtener la proxima tarea para el tripulante %d. Conexion perdida con la Memoria",
             tid);
 
     u_msg_proxima_tarea_eliminar(msg);
@@ -303,10 +303,33 @@ char* discordia_obtener_proxima_tarea(uint32_t tid)
 
 void  discordia_tripulante_nuevo_estado(uint32_t tid, char estado)
 {
-    // TODO: Corregir struct u_msg_tripulante_nuevo_estaod
-    (void)tid;
-    (void)estado;
-    U_LOG_TRACE("Corregir struct u_msg_tripulante_nuevo_estado");
+    int32_t conn = discordia_conectar_con_memoria();
+
+    if(conn == -1)
+        return;
+
+    u_msg_tripulante_nuevo_estado_t* msg = u_msg_tripulante_nuevo_estado_crear(
+        tid,
+        estado
+    );
+
+    u_buffer_t*  msg_ser     = u_msg_tripulante_nuevo_estado_serializar(msg);
+    u_package_t* package     = u_package_create(TRIPULANTE_NUEVO_ESTADO, msg_ser);
+    u_buffer_t*  package_ser = u_package_serialize(package);
+
+    if(!u_socket_send(conn, u_buffer_get_content(package_ser), u_buffer_get_size(package_ser)))
+    {
+        char* msg_str = u_msg_tripulante_nuevo_estado_to_string(msg);
+        U_LOG_ERROR("No se pudo enviar el mensaje %s. Conexion perdida con la Memoria", msg_str);
+        u_free(msg_str);
+    }
+
+    u_msg_tripulante_nuevo_estado_eliminar(msg);
+    u_buffer_delete(msg_ser);
+    u_buffer_delete(package_ser);
+    u_package_delete(package);
+
+    u_socket_close(conn);
 }
 
 void discordia_inicializar_patota(const char* ruta_tareas, uint32_t cant_trip, t_list* posiciones_trip)
@@ -415,7 +438,7 @@ private void discordia_eliminar_tripulante_de_memoria(uint32_t tid)
     if(!u_socket_send(conn, u_buffer_get_content(package_ser), u_buffer_get_size(package_ser)))
     {
         char* msg_str = u_msg_eliminar_tripulante_to_string(msg);
-        U_LOG_ERROR("No se pudo enviar el mensaje %s a la Memoria", msg_str);
+        U_LOG_ERROR("No se pudo enviar el mensaje %s. Conexion perdida con la Memoria", msg_str);
         u_free(msg_str);
     }
 }
@@ -435,7 +458,7 @@ private void discordia_eliminar_tripulante_de_fs(uint32_t tid)
     if(!u_socket_send(conn, u_buffer_get_content(package_ser), u_buffer_get_size(package_ser)))
     {
         char* msg_str = u_msg_eliminar_tripulante_to_string(msg);
-        U_LOG_ERROR("No se pudo enviar el mensaje %s al FS", msg_str);
+        U_LOG_ERROR("No se pudo enviar el mensaje %s. Conexion perdida con el FS", msg_str);
         u_free(msg_str);
     }
 }
@@ -668,7 +691,7 @@ private uint32_t discordia_enviar_patota_a_memoria(const char* tareas)
     if(!u_socket_send(conn, u_buffer_get_content(package_ser), u_buffer_get_size(package_ser)))
     {
         char* msg_str = u_msg_iniciar_patota_to_string(msg);
-        U_LOG_ERROR("No se pudo enviar el mensaje %s a la memoria", msg_str);
+        U_LOG_ERROR("No se pudo enviar el mensaje %s. Conexion perdida con la Memoria", msg_str);
         u_free(msg_str);
     }
 
@@ -714,7 +737,7 @@ private bool discordia_recibir_respuesta_memoria(int32_t conn)
             U_LOG_ERROR("Memoria contesto FAIL. No se pudo obtener una descripcion");
     }
     else
-        U_LOG_ERROR("No se pudo obtener una respuesta desde la Memoria. Se perdio la conexion");
+        U_LOG_ERROR("No se pudo obtener una respuesta. Conexion perdida con la Memoria");
 
     return false;
 }
@@ -748,7 +771,7 @@ private void discordia_inicializar_tripulantes(uint32_t pid, int32_t cant_trips,
         if(!u_socket_send(conn, u_buffer_get_content(package_ser), u_buffer_get_size(package_ser)))
         {
             char* msg_str = u_msg_iniciar_tripulante_to_string(msg);
-            U_LOG_ERROR("No se pudo mandar el mensaje %s a la Memoria", msg_str);
+            U_LOG_ERROR("No se pudo mandar el mensaje %s. Conexion perdida con la Memoria", msg_str);
             u_free(msg_str);
         }
 

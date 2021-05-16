@@ -199,7 +199,7 @@ void client_handler_manage_opcode(int32_t sock_client, u_opcode_e op_code, u_buf
             u_msg_tripulante_nuevo_estado_t* nuevo_estado = u_msg_tripulante_nuevo_estado_deserializar(buffer);
             
             U_LOG_TRACE("Recibido msg TRIPULANTE_NUEVO_ESTADO");
-            U_LOG_TRACE("tid: %d, estado nuevo: %d", nuevo_estado->tripulante_id, nuevo_estado->nuevo_estado);
+            U_LOG_TRACE("tid: %d, estado nuevo: %c", nuevo_estado->tripulante_id, nuevo_estado->nuevo_estado);
 
             admin_memoria_tripulante_nuevo_estado(nuevo_estado->tripulante_id, nuevo_estado->nuevo_estado);
             u_msg_tripulante_nuevo_estado_eliminar(nuevo_estado);
