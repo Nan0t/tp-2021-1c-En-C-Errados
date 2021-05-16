@@ -431,16 +431,13 @@ void test_proxima_tarea_serializar_y_deserializar(void)
 
 // Act
 //----
-    ser_msg = u_msg_proxima_tarea_crear(10, 10);
+    ser_msg = u_msg_proxima_tarea_crear(10);
     buffer = u_msg_proxima_tarea_serializar(ser_msg);
     deser_msg = u_msg_proxima_tarea_deserializar(buffer);
 
 // Assert
 //-------
-    CU_ASSERT_EQUAL(ser_msg->patota_id, 10);
     CU_ASSERT_EQUAL(ser_msg->tripulante_id, 10);
-
-    CU_ASSERT_EQUAL(ser_msg->patota_id, deser_msg->patota_id);
     CU_ASSERT_EQUAL(ser_msg->tripulante_id, deser_msg->tripulante_id);
 
     u_msg_proxima_tarea_eliminar(ser_msg);
