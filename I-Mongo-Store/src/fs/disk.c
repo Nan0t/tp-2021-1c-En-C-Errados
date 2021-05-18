@@ -20,7 +20,10 @@ void fs_physical_disk_init(uint64_t size)
     char*   disk_file_dir = string_from_format("%s/Blocks.ims", u_config_get_string_value("PUNTO_MONTAJE"));
     int32_t disk_file_fd  = open(disk_file_dir, O_RDWR, 0666);
 
-    U_ASSERT(disk_file_fd != -1, "No se pudo inicializar el Disco Fisico del FileSystem. %s", strerror(errno));
+    U_ASSERT(disk_file_fd != -1,
+        "No se pudo inicializar el Disco Fisico del FileSystem en la ruta %s. %s",  disk_file_dir, strerror(errno));
+        
+    u_free(disk_file_dir);
 
     void* zero_memory = u_malloc(size);
     memset(zero_memory, 0, size);
@@ -30,7 +33,7 @@ void fs_physical_disk_init(uint64_t size)
     p_physical_disk      = mmap(NULL, size, PROT_WRITE | PROT_READ, MAP_SHARED, disk_file_fd, 0);
     p_physical_disk_size = size;
 
-    U_LOG_TRACE("Disco Inicializado. Tamaño: %d", size);
+    U_LOG_TRACE("Disco Inicializado. Tamaño: %ld", size);
 }
 
 void fs_physical_disk_write(const void* data, uint64_t size, uint64_t offset)
@@ -61,5 +64,5 @@ void  fs_physical_disk_flush(uint64_t offset, uint64_t size)
         offset + size < p_physical_disk_size,
         "Trying to flush in OutOfBound memory disk. Offset: %ld | Size: %ld", offset, size);
 
-    msync(p_physical_disk_size + offset, size, MS_SYNC);
+    msync(p_physical_disk + offset, size, MS_SYNC);
 }
