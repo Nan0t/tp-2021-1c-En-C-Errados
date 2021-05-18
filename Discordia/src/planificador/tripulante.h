@@ -26,5 +26,6 @@ typedef struct
 } tripulante_t;
 
 void tripulante_init(tripulante_t* trip_info);
+tarea_t* parsear_tarea (char* tarea_sin_parsear);
 
 #endif
