@@ -3,6 +3,8 @@
 
 #include "discordia/parser_test.h"
 
+#include "fs/block_manager_test.h"
+
 #include <CUnit/Basic.h>
 
 #define FUNCTION_TEST(f) { "\033[93m"#f"\033[0m", f }
@@ -18,6 +20,7 @@ typedef struct {
 
 static void utils_tests(void);
 static void discordia_tests(void);
+static void fs_tests(void);
 
 int main(int argc, char** argv)
 {
@@ -28,6 +31,7 @@ int main(int argc, char** argv)
     {
         utils_tests();
         discordia_tests();
+        fs_tests();
     }
     else
     {
@@ -35,6 +39,8 @@ int main(int argc, char** argv)
             utils_tests();
         else if(!strcmp(argv[1], "discordia"))
             discordia_tests();
+        else if(!strcmp(argv[1], "fs"))
+            fs_tests();
     }
 
     CU_basic_run_tests();
@@ -124,4 +130,22 @@ static void discordia_tests(void)
     };
 
     ADD_TEST_TO_TEST_SUITE(parser_test_suite, parser_test_cases)
+}
+
+static void fs_tests(void)
+{
+    CU_pSuite block_manager_test_suite = CU_add_suite_with_setup_and_teardown(
+        "I-Mongo-Store BlockManager Test Suite",
+        NULL,
+        NULL,
+        test_fs_block_manager_setup,
+        test_fs_block_manager_tear_down
+    );
+
+    test_case_t block_manager_test_cases[] =
+    {
+        FUNCTION_TEST(test_fs_block_manager_request_and_release_blocks)
+    };
+
+    ADD_TEST_TO_TEST_SUITE(block_manager_test_suite, block_manager_test_cases)
 }

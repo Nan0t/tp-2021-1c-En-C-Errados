@@ -8,6 +8,9 @@ project "tests"
 
     files {
         "%{wks.location}/Discordia/src/console/parser.c",
+        "%{wks.location}/I-Mongo-Store/src/fs/blocks_manager.c",
+        "%{wks.location}/I-Mongo-Store/src/fs/block.c",
+        "%{wks.location}/I-Mongo-Store/src/fs/disk.c",
         "%{prj.location}/src/**.h",
         "%{prj.location}/src/**.c"
     }
@@ -16,6 +19,7 @@ project "tests"
         "%{CommonLocations.Commons.IncludeDir}",
         "%{CommonLocations.Utils.IncludeDir}",
         "%{wks.location}/Discordia/src",
+        "%{wks.location}/I-Mongo-Store/src",
         "%{prj.location}/src"
     }
 
@@ -24,7 +28,8 @@ project "tests"
         "commons",
         "cunit",
         "pthread",
-        "readline"
+        "readline",
+        "m"
     }
     
     filter "configurations:Debug"
