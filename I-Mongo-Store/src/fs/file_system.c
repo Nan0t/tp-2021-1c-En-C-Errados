@@ -2,14 +2,7 @@
 #include "sabotage_notifier.h"
 #include <pthread.h>
 
-// typedef struct
-// {
-//     uint32_t tid;
-//     char*    content;
-// } fs_bitacora_t;
 
-// pthread_mutex_t p_bitacora_tripulantes_mx = PTHREAD_MUTEX_INITIALIZER;
-// t_list*         p_bitacora_tripulantes    = NULL;
 
 private void  file_system_create_bitacora(uint32_t tid);
 private void  file_system_remove_bitacora(uint32_t tid);
