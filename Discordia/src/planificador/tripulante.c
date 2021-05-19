@@ -8,7 +8,7 @@
 
 private void tripulante_loop(tripulante_t* trip_info);
 private bool tarea_es_bloqueante (char* tarea);
-private void eliminar_tarea (tarea_t* tarea);
+
 
 void tripulante_init(tripulante_t* trip_info)
 {
@@ -22,7 +22,7 @@ private void tripulante_loop(tripulante_t* trip_info)
     bool termino_hilo = false;
     char* proxima_tarea = discordia_obtener_proxima_tarea(trip_info->tid);
 
-    // TODO: Parsear tarea.
+    trip_info->tarea_actual = parsear_tarea(proxima_tarea);
 
     while(!termino_hilo)
     {
@@ -75,7 +75,7 @@ tarea_t* parsear_tarea (char* tarea_sin_parsear){
 
         return tarea;
     }
-private void eliminar_tarea (tarea_t* tarea){
+void eliminar_tarea (tarea_t* tarea){
     free(tarea->tarea);
     free(tarea);
 }
