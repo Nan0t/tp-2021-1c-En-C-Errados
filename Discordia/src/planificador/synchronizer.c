@@ -49,7 +49,8 @@ void ds_synchronizer_init(uint32_t devices_count)
     sem_init(&p_synchronizer_instance->start_cicle_sem, 0, 0);
 
     pthread_t synchronizer_thread;
-    U_ASSERT(pthread_create(&synchronizer_thread, NULL, (void*)ds_synchronizer_loop, NULL));
+    U_ASSERT(pthread_create(&synchronizer_thread, NULL, (void*)ds_synchronizer_loop, NULL) != - 1,
+        "No se pudo crear el hilo del Sincronizador");
     pthread_detach(synchronizer_thread);
 }
 
