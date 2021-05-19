@@ -15,7 +15,6 @@ void io_init(void) {
         manejo_de_bloqueados();
         mover_tripulantes_terminados();
 
-
         ds_synchronizer_notify_end_of_cicle();
     }
 }
