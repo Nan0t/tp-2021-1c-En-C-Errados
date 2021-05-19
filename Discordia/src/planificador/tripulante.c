@@ -39,7 +39,7 @@ private void tripulante_loop(tripulante_t* trip_info)
             }
             else
             {
-                // TODO: Parsear tarea.
+                trip_info->tarea_actual = parsear_tarea(proxima_tarea);
             }
         }
         
