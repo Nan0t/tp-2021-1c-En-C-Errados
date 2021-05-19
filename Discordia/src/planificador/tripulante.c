@@ -55,8 +55,7 @@ private void tripulante_loop(tripulante_t* trip_info)
 
             discordia_iniciar_tarea(trip_info->tid, trip_info->tarea_actual->tarea);
         }
-
-        planificador_replanificar(trip_info);
+        
         sem_post(&trip_info->sem_end_exec);
     }
 }
