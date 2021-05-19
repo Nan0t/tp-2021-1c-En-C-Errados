@@ -1,4 +1,5 @@
 #include "synchronizer.h"
+#include <unistd.h>
 #include <semaphore.h>
 #include <pthread.h>
 
@@ -12,8 +13,10 @@ typedef struct
     pthread_mutex_t devices_notifier_mx;
     uint32_t        devices_notifier;
 
+    uint32_t cycle_delay;
+
     sem_t*   devices_sems;
-    sem_t    start_cicle_sem;
+    sem_t    start_cycle_sem;
     sem_t    sched_pause_sem;
 } ds_synchronizer_t;
 
@@ -40,13 +43,15 @@ void ds_synchronizer_init(uint32_t devices_count)
     p_synchronizer_instance->devices_notifier = 0;
     pthread_mutex_init(&p_synchronizer_instance->devices_notifier_mx, NULL);
 
+    p_synchronizer_instance->cycle_delay = u_config_get_int_value("RETARDO_CICLO_CPU");
+
     p_synchronizer_instance->devices_sems  = u_malloc(devices_count * sizeof(sem_t));
 
     for(uint32_t i = 0; i < devices_count; i ++)
         sem_init(&p_synchronizer_instance->devices_sems[i], 0, 0);
 
     sem_init(&p_synchronizer_instance->sched_pause_sem, 0, 1);
-    sem_init(&p_synchronizer_instance->start_cicle_sem, 0, 0);
+    sem_init(&p_synchronizer_instance->start_cycle_sem, 0, 0);
 
     pthread_t synchronizer_thread;
     U_ASSERT(pthread_create(&synchronizer_thread, NULL, (void*)ds_synchronizer_loop, NULL) != - 1,
@@ -83,7 +88,7 @@ void ds_synchronizer_notify_end_of_cicle(void)
     if(p_synchronizer_instance->devices_notifier == p_synchronizer_instance->devices_count)
     {
         p_synchronizer_instance->devices_count = 0;
-        sem_post(&p_synchronizer_instance->start_cicle_sem);
+        sem_post(&p_synchronizer_instance->start_cycle_sem);
     }
 
     pthread_mutex_unlock(&p_synchronizer_instance->devices_notifier_mx);
@@ -93,7 +98,7 @@ private void ds_synchronizer_loop(void)
 {
     while(1)
     {
-        sem_wait(&p_synchronizer_instance->start_cicle_sem);
+        sem_wait(&p_synchronizer_instance->start_cycle_sem);
         sem_wait(&p_synchronizer_instance->sched_pause_sem);
         
         for(uint32_t i = 0; i < p_synchronizer_instance->devices_count; i ++)
@@ -102,6 +107,7 @@ private void ds_synchronizer_loop(void)
 #ifndef NDEBUG
         U_LOG_TRACE("Tick: %d", ++ p_tick_counter);
 #endif
+        sleep(p_synchronizer_instance->cycle_delay);
     }
 }
 
