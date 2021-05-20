@@ -41,7 +41,7 @@ void ds_block_tripulantes_iterate(void(*closure)(tripulante_t*))
   list_iterate(p_block_tripulantes_list, (void*)closure);
 }
 
-bool ds_block_tareas_any_satisfy(bool(*closure)(tripulante_t*))
+bool ds_block_tripulantes_any_satisfy(bool(*closure)(tripulante_t*))
 {
    return list_any_satisfy(p_block_tripulantes_list, (void*)closure);
 }

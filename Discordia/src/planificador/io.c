@@ -38,7 +38,7 @@ private void mover_tripulantes_terminados()
         return tripulante->tarea_actual->tiempo_bloqueado == 0;
     }
 
-    while(ds_block_tareas_any_satisfy((void*)_puede_desbloquearse)) 
+    while(ds_block_tripulantes_any_satisfy((void*)_puede_desbloquearse)) 
     {
         tripulante_t* tripulante = ds_block_tripulantes_remove_by_condition((void*)_puede_desbloquearse);
         ds_ready_queue_push(tripulante);
