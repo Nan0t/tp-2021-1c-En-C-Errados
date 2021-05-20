@@ -8,7 +8,7 @@ project "tests"
 
     files {
         "%{wks.location}/Discordia/src/console/parser.c",
-        "%{wks.location}/Discordia/src/planificador/tripulante.c",
+        "%{wks.location}/Discordia/src/planificador/tareas.c",
         "%{prj.location}/src/**.h",
         "%{prj.location}/src/**.c"
     }

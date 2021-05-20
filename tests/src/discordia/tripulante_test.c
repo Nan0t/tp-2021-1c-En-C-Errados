@@ -1,5 +1,5 @@
 #include "tripulante_test.h"
-#include "planificador/tripulante.h"
+#include "planificador/tareas.h"
 #include "stdlib.h"
 #include <CUnit/Basic.h>
 
