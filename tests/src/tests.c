@@ -4,6 +4,7 @@
 #include "discordia/parser_test.h"
 
 #include "fs/block_manager_test.h"
+#include "fs/block_tests.h"
 
 #include <CUnit/Basic.h>
 
@@ -144,8 +145,30 @@ static void fs_tests(void)
 
     test_case_t block_manager_test_cases[] =
     {
-        FUNCTION_TEST(test_fs_block_manager_request_and_release_blocks)
+        FUNCTION_TEST(test_fs_block_manager_request_and_release_blocks),
+        FUNCTION_TEST(test_fs_block_manager_request_and_get_a_intermidiate_block),
+        FUNCTION_TEST(test_fs_block_manager_request_and_reject)
     };
 
     ADD_TEST_TO_TEST_SUITE(block_manager_test_suite, block_manager_test_cases)
+
+    CU_pSuite block_test_suite = CU_add_suite_with_setup_and_teardown(
+        "I-Mongo-Store Block Test Suite",
+        NULL,
+        NULL,
+        test_block_setup,
+        test_block_tear_down
+    );
+
+    test_case_t block_test_cases[] =
+    {
+        FUNCTION_TEST(test_block_write_with_no_overflow),
+        FUNCTION_TEST(test_block_write_with_overflow),
+        FUNCTION_TEST(test_block_write_in_non_contiguous_blocks),
+        FUNCTION_TEST(test_block_read_with_no_overflow),
+        FUNCTION_TEST(test_block_read_with_overflow),
+        FUNCTION_TEST(test_block_read_in_non_contiguous_blocks)
+    };
+
+    ADD_TEST_TO_TEST_SUITE(block_test_suite, block_test_cases)
 }
