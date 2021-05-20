@@ -1,7 +1,7 @@
 #ifndef PLANIFICADOR_BLOCK_TRIPULANTES_H
 #define PLANIFICADOR_BLOCK_TRIPULANTES_H
 
-#include "../tripulante.h"
+#include "planificador/tripulante/tripulante.h"
 
 void ds_block_tripulantes_init(void);
 

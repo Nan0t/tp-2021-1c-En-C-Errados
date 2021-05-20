@@ -1,7 +1,7 @@
 #ifndef PLANIFICADOR_EXEC_QUEUE_H
 #define PLANIFICADOR_EXEC_QUEUE_H
 
-#include "../tripulante.h"
+#include "planificador/tripulante/tripulante.h"
 
 void exec_queue_init(void);
 

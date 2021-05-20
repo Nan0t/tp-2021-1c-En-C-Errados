@@ -1,7 +1,7 @@
 #ifndef PLANIFICADOR_NEW_QUEUE_H
 #define PLANIFICADOR_NEW_QUEUE_H
 
-#include "../tripulante.h"
+#include "planificador/tripulante/tripulante.h"
 
 void ds_new_queue_init(void);
 
