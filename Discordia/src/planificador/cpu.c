@@ -14,7 +14,10 @@ void cpu_init(void)
         tripulante_t* tripulante = ds_exec_queue_pop();
 
         if(tripulante)
+        {
             exec_trip(tripulante);
+            ds_exec_queue_push(tripulante);
+        }
 
         ds_synchronizer_notify_end_of_cicle();
     }
