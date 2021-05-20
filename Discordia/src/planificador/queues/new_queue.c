@@ -15,7 +15,7 @@ void ds_new_init(void)
     sem_init(&p_new_queue_sem, 0, 0);
 }
 
-void ds_new_push(tripulante_t* trip)
+void ds_new_queue_push(tripulante_t* trip)
 {
     pthread_mutex_lock(&p_new_queue_mx);
     queue_push(p_new_queue, trip);
@@ -24,7 +24,7 @@ void ds_new_push(tripulante_t* trip)
     sem_post(&p_new_queue_sem);
 }
 
-tripulante_t* ds_new_pop(void)
+tripulante_t* ds_new_queue_pop(void)
 {
     if(sem_trywait(&p_new_queue_sem) == -1)
         return NULL;
