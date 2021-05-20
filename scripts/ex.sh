@@ -14,7 +14,7 @@ function print_help {
     echo ""
     echo "Options:"
     echo "--cfg             Target proyect configuration to execute. One of debug|release"
-    echo "--debug-tool      Debuggin tool to attach. One of gdb|valgrind"
+    echo "--debug-tool      Debuggin tool to attach. One of gdb|valgrind|helgrind"
     echo "--args            Arguments of the executable"
     echo "--arch            Current target architecture"
 
@@ -37,7 +37,7 @@ function set_debug_tool {
     if [ "$1" == "gdb" ];then
         OPT="gdb --args"
     elif [ "$1" ==  "valgrind" ];then
-        OPT="valgrind --leak-check=full --log-file=valgrind.log"
+        OPT="valgrind --leak-check=full --log-file=valgrind.log --show-reachable=no --show-possibly-lost=no"
     elif [ "$1" == "helgrind" ];then
         OPT="valgrind --tool=helgrind"
     else
