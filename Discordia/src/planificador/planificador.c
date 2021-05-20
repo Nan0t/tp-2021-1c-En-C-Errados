@@ -1,6 +1,6 @@
 #include "discordia/discordia.h"
 #include "planificador.h"
-#include "tripulante_queue.h"
+#include "queues/new_queue.h"
 #include "cpu.h"
 
 typedef struct
@@ -13,9 +13,6 @@ typedef struct
 
     pthread_mutex_t esta_pausado_mx;
     bool            esta_pausado;
-
-    tripulante_queue_t* new_queue;
-    tripulante_queue_t* exec_queue;
 } planificador_t;
 
 private planificador_t* p_planificador = NULL;
@@ -37,7 +34,7 @@ void planificador_init(void)
     
     for(uint32_t i = 0; i < p_planificador->cant_cpu; i ++)
     {
-        U_ASSERT(pthread_create(&thread_cpu, NULL, (void*)cpu_init, p_planificador->exec_queue) != -1,
+        U_ASSERT(pthread_create(&thread_cpu, NULL, (void*)cpu_init, NULL) != -1,
             "No se pudo crear el hilo de la CPU");
 
         pthread_detach(thread_cpu);
@@ -57,8 +54,7 @@ void planificador_iniciar_tripulante(uint32_t tid, const u_pos_t* pos)
 
     sem_init(&trip_info->sem_sync, 0, 0);
     sem_init(&trip_info->sem_end_exec, 0, 0);
-
-    tripulante_queue_push(p_planificador->new_queue, trip_info);
+    ds_new_queue_push(trip_info);
 }
 
 bool planificador_esta_pausado(void)
