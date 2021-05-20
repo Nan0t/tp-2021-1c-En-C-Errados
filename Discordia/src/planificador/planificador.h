@@ -1,7 +1,7 @@
 #ifndef PLANIFICADOR_H
 #define PLANIFICADOR_H
 
-#include "tripulante.h"
+#include "tripulante/tripulante.h"
 #include <utils/utils.h>
 
 void planificador_init(void);
