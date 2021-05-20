@@ -3,8 +3,9 @@
 
 #include "block.h"
 
-void              fs_blocks_manager_init(void);
-const fs_block_t* fs_blocks_manager_request_block(void);
-void              fs_blocks_manager_release_block(const fs_block_t* block);
+void     fs_blocks_manager_init(void);
+uint32_t fs_blocks_manager_request_block(void);
+
+void     fs_blocks_manager_release_block(uint32_t block_id);
 
 #endif

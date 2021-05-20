@@ -1,45 +1,21 @@
 #include "block.h"
 #include "disk.h"
 
-struct fs_block_t
-{
-    uint32_t number;
-    uint32_t disk_offset;
-    uint32_t block_size;
-};
+extern uint64_t fs_blocks_manager_write_in_block(uint32_t block_id, const void* data, uint64_t data_size, uint64_t offset);
+extern uint64_t fs_blocks_manager_read_in_block(uint32_t block_id, void* data, uint64_t data_size, uint64_t offset);
+extern uint32_t fs_blocks_manager_get_disk_offset_of_block(uint32_t block_id);
 
-void fs_block_init(fs_block_t* this, uint32_t number, uint32_t disk_offset, uint32_t block_size)
+uint64_t fs_block_write(uint32_t block_id, const void* data, uint64_t data_size, uint64_t offset)
 {
-    this->number      = number;
-    this->disk_offset = disk_offset;
-    this->block_size  = block_size;
+    return fs_blocks_manager_write_in_block(block_id, data, data_size, offset);
 }
 
-void fs_block_delete(fs_block_t* this)
+uint64_t fs_block_read(uint32_t block_id, void* data, uint64_t data_size, uint64_t offset)
 {
-    u_free(this);
+    return fs_blocks_manager_read_in_block(block_id, data, data_size, offset);
 }
 
-uint32_t fs_block_write(fs_block_t* this, const void* data, uint64_t data_size, uint64_t offset)
+uint32_t fs_block_get_disk_offset(uint32_t block_id)
 {
-    uint32_t bytes_to_write =
-        (data_size + offset < this->block_size) ?
-            data_size :
-            data_size - (data_size + offset - this->block_size);
-
-    fs_physical_disk_write(data, bytes_to_write, this->disk_offset + offset);
-
-    return bytes_to_write;
-}
-
-uint32_t fs_block_read(fs_block_t* this, void* data, uint64_t data_size, uint64_t offset)
-{
-    uint32_t bytes_to_read =
-        (data_size + offset < this->block_size) ?
-            data_size :
-            data_size - (data_size + offset - this->block_size);
-
-    fs_physical_disk_read(data, bytes_to_read, this->disk_offset + offset);
-
-    return bytes_to_read;
+    return fs_blocks_manager_get_disk_offset_of_block(block_id);
 }
