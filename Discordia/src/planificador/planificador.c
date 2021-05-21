@@ -24,6 +24,11 @@ typedef struct
     uint32_t cant_cpu;
     uint32_t quantum;
     uint32_t duracion_sabotaje;
+
+    pthread_mutex_t pause_mx;
+    pthread_cond_t  pause_cond;
+    bool            pause;
+
     ds_algo_sched_func algorithm;
 } planificador_t;
 
@@ -80,9 +85,19 @@ void planificador_iniciar_tripulante(uint32_t tid, const u_pos_t* pos)
     ds_new_queue_push(trip_info);
 }
 
-bool planificador_esta_pausado(void)
+void ds_planificador_iniciar(void)
 {
-    return true;
+    pthread_mutex_lock(&p_planificador->pause_mx);
+    p_planificador->pause = false;
+    pthread_cond_signal(&p_planificador->pause_cond);
+    pthread_mutex_unlock(&p_planificador->pause_mx);
+}
+
+void ds_planificador_pausar(void)
+{
+    pthread_mutex_lock(&p_planificador->pause_mx);
+    p_planificador->pause = true;
+    pthread_mutex_unlock(&p_planificador->pause_mx);
 }
 
 private void ds_algorithm_fifo(tripulante_t* trip)
@@ -159,6 +174,11 @@ private void ds_planificador_loop(void)
 {
     while(1)
     {
+        pthread_mutex_lock(&p_planificador->pause_mx);
+        if(p_planificador->pause)
+            pthread_cond_wait(&p_planificador->pause_cond, &p_planificador->pause_mx);
+        pthread_mutex_unlock(&p_planificador->pause_mx);
+
         ds_planificador_admit_from_new_to_ready();
         ds_planificador_check_exec_queue();
 
