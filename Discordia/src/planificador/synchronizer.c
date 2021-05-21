@@ -76,7 +76,7 @@ void ds_synchronizer_wait_for_next_cicle(uint32_t device_id)
         "ID de dispositivo invalido: %d", device_id);
 
 #ifndef NDEBUG
-    U_LOG_TRACE("Devices %d start his cicle: %d", device_id);
+    U_LOG_TRACE("Devices %d start his cicle", device_id);
 #endif
 
     sem_wait(&p_synchronizer_instance->devices_sems[device_id]);
