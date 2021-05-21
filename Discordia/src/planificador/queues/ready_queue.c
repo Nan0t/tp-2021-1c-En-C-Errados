@@ -6,7 +6,7 @@ private pthread_mutex_t p_ready_queue_mx = PTHREAD_MUTEX_INITIALIZER;
 private sem_t           p_ready_queue_sem;
 private t_queue*        p_ready_queue    = NULL;
 
-void ds_ready_init(void)
+void ds_ready_queue_init(void)
 {
     if(p_ready_queue)
         return;

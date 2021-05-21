@@ -10,4 +10,6 @@ bool ds_exec_is_full(void);
 void          ds_exec_queue_push(tripulante_t* trip);
 tripulante_t* ds_exec_queue_pop(void);
 
+uint64_t ds_exec_queue_size(void);
+
 #endif

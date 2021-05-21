@@ -8,7 +8,7 @@ private t_queue*        p_exec_queue    = NULL;
 private sem_t           p_exec_queue_sem;
 private sem_t           p_exec_queue_full_sem;
 
-void ds_exec_init(uint32_t max_size)
+void ds_exec_queue_init(uint32_t max_size)
 {
     if(p_exec_queue)
         return;
@@ -45,4 +45,9 @@ tripulante_t* ds_exec_queue_pop(void)
     sem_post(&p_exec_queue_full_sem);
 
     return trip;
+}
+
+uint64_t ds_exec_queue_size(void)
+{
+    return queue_size(p_exec_queue);
 }

@@ -6,7 +6,7 @@ private pthread_mutex_t p_new_queue_mx = PTHREAD_MUTEX_INITIALIZER;
 private sem_t           p_new_queue_sem;
 private t_queue*        p_new_queue    = NULL;
 
-void ds_new_init(void)
+void ds_new_queue_init(void)
 {
     if(p_new_queue)
         return;
