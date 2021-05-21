@@ -18,6 +18,7 @@ typedef struct
     sem_t*   devices_sems;
     sem_t    start_cycle_sem;
     sem_t    sched_pause_sem;
+    sem_t    sched_notify_end_of_cycle_sem;
 } ds_synchronizer_t;
 
 #ifndef NDEBUG
@@ -52,6 +53,7 @@ void ds_synchronizer_init(uint32_t devices_count)
 
     sem_init(&p_synchronizer_instance->sched_pause_sem, 0, 1);
     sem_init(&p_synchronizer_instance->start_cycle_sem, 0, 0);
+    sem_init(&p_synchronizer_instance->sched_notify_end_of_cycle_sem, 0, 0);
 
     pthread_t synchronizer_thread;
     U_ASSERT(pthread_create(&synchronizer_thread, NULL, (void*)ds_synchronizer_loop, NULL) != - 1,
@@ -94,6 +96,16 @@ void ds_synchronizer_notify_end_of_cicle(void)
     pthread_mutex_unlock(&p_synchronizer_instance->devices_notifier_mx);
 }
 
+void ds_synchronizer_sched_notify_new_cycle(void)
+{
+    sem_post(&p_synchronizer_instance->sched_pause_sem);
+}
+
+void ds_synchronizer_sched_wait_end_of_cicle(void)
+{
+    sem_wait(&p_synchronizer_instance->sched_notify_end_of_cycle_sem);
+}
+
 private void ds_synchronizer_loop(void)
 {
     while(1)
@@ -104,6 +116,7 @@ private void ds_synchronizer_loop(void)
         for(uint32_t i = 0; i < p_synchronizer_instance->devices_count; i ++)
             sem_post(&p_synchronizer_instance->devices_sems[i]);
 
+        sem_post(&p_synchronizer_instance->sched_notify_end_of_cycle_sem);
 #ifndef NDEBUG
         U_LOG_TRACE("Tick: %d", ++ p_tick_counter);
 #endif
