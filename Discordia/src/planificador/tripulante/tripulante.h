@@ -12,6 +12,8 @@ typedef struct
     tarea_t* tarea_actual;
     u_pos_t  pos;
 
+    uint32_t quatum;
+
     bool bloquear; //avisa al CPU si debe bloquearse
 
     sem_t sem_sync; // espera a que un CPU lo ejecute
