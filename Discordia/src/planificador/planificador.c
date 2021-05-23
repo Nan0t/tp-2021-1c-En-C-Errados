@@ -47,7 +47,7 @@ private void ds_planificador_loop(void);
 private void ds_planificador_admit_from_new_to_ready(void);
 private void ds_planificador_check_exec_queue(void);
 
-void planificador_init(void)
+void ds_planificador_init(void)
 {
     if(p_planificador)
         return;
@@ -69,7 +69,7 @@ void planificador_init(void)
     pthread_detach(thread_planificador);
 }
 
-void planificador_iniciar_tripulante(uint32_t tid, const u_pos_t* pos)
+void ds_planificador_iniciar_tripulante(uint32_t tid, const u_pos_t* pos)
 {
     tripulante_t* trip_info = u_malloc(sizeof(tripulante_t));
 
