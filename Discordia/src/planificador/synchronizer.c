@@ -51,8 +51,8 @@ void ds_synchronizer_init(uint32_t devices_count)
     for(uint32_t i = 0; i < devices_count; i ++)
         sem_init(&p_synchronizer_instance->devices_sems[i], 0, 0);
 
-    sem_init(&p_synchronizer_instance->sched_pause_sem, 0, 1);
-    sem_init(&p_synchronizer_instance->start_cycle_sem, 0, 0);
+    sem_init(&p_synchronizer_instance->sched_pause_sem, 0, 0);
+    sem_init(&p_synchronizer_instance->start_cycle_sem, 0, 1);
     sem_init(&p_synchronizer_instance->sched_notify_end_of_cycle_sem, 0, 0);
 
     pthread_t synchronizer_thread;
@@ -89,7 +89,7 @@ void ds_synchronizer_notify_end_of_cicle(void)
 
     if(p_synchronizer_instance->devices_notifier == p_synchronizer_instance->devices_count)
     {
-        p_synchronizer_instance->devices_count = 0;
+        p_synchronizer_instance->devices_notifier = 0;
         sem_post(&p_synchronizer_instance->start_cycle_sem);
     }
 
@@ -113,13 +113,14 @@ private void ds_synchronizer_loop(void)
         sem_wait(&p_synchronizer_instance->start_cycle_sem);
         sem_wait(&p_synchronizer_instance->sched_pause_sem);
         
+#ifndef NDEBUG
+        U_LOG_TRACE("Tick: %d", ++ p_tick_counter);
+#endif
+
         for(uint32_t i = 0; i < p_synchronizer_instance->devices_count; i ++)
             sem_post(&p_synchronizer_instance->devices_sems[i]);
 
         sem_post(&p_synchronizer_instance->sched_notify_end_of_cycle_sem);
-#ifndef NDEBUG
-        U_LOG_TRACE("Tick: %d", ++ p_tick_counter);
-#endif
         sleep(p_synchronizer_instance->cycle_delay);
     }
 }
