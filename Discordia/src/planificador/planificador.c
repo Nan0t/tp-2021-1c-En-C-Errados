@@ -58,6 +58,10 @@ void ds_planificador_init(void)
     p_planificador->quantum           = u_config_get_int_value("QUANTUM");
     p_planificador->duracion_sabotaje = u_config_get_int_value("DURACION_SABOTAJE");
     p_planificador->algorithm         = ds_planificador_select_algorithm();
+    p_planificador->pause             = true;
+
+    pthread_mutex_init(&p_planificador->pause_mx, NULL);
+    pthread_cond_init(&p_planificador->pause_cond, NULL);
 
     ds_planificador_init_queues();
     ds_planificador_init_devices();
@@ -211,6 +215,9 @@ private void ds_planificador_check_exec_queue(void)
     while(!ds_exec_is_full())
     {
         tripulante_t* trip = ds_ready_queue_pop();
-        ds_exec_queue_push(trip);
+        if(trip != NULL)
+            ds_exec_queue_push(trip);
+        else
+            break;
     }
 }
