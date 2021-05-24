@@ -28,7 +28,7 @@ private void tripulante_loop(tripulante_t* trip_info)
 
         if(trip_info->tarea_actual->is_finished)
         {
-            discordia_finalizar_tarea(trip_info->tid, trip_info->tarea_actual);
+            discordia_finalizar_tarea(trip_info->tid, trip_info->tarea_actual->tarea);
             tripulante_obtener_proxima_tarea(trip_info);
 
             if(trip_info->tarea_actual == NULL)
