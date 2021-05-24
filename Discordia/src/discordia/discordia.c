@@ -1,4 +1,5 @@
 #include "discordia.h"
+#include "planificador/planificador.h"
 #include "server/server.h"
 #include "console/console.h"
 
@@ -50,6 +51,7 @@ int discordia_init(void)
     p_discordia_instance->pid = 0;
     p_discordia_instance->tid = 0;
 
+    ds_planificador_init();
     ds_console_init();
     return 0;
 }
@@ -356,11 +358,13 @@ void discordia_expulsar_tripulante(uint32_t tid)
 void  discordia_iniciar_planificacion(void)
 {
     U_LOG_TRACE("Iniciar Planificador");
+    ds_planificador_iniciar();
 }
 
 void  discordia_pausar_planificacion(void)
 {
     U_LOG_TRACE("Pausar Planificador");
+    ds_planificador_pausar();
 }
 
 void  discordia_notificar_sabotaje(const u_pos_t* pos)
@@ -757,10 +761,11 @@ private void discordia_inicializar_tripulantes(uint32_t pid, int32_t cant_trips,
         if(positions && i < list_size(positions))
             pos = list_get(positions, i);
 
+        uint32_t tid = discordia_obtener_nuevo_tid();
 
         u_msg_iniciar_tripulante_t* msg = u_msg_iniciar_tripulante_crear(
             pid,
-            discordia_obtener_nuevo_tid(),
+            tid,
             *pos
         );
 
@@ -781,9 +786,9 @@ private void discordia_inicializar_tripulantes(uint32_t pid, int32_t cant_trips,
         u_buffer_delete(msg_ser);
         u_buffer_delete(package_ser);
         u_package_delete(package);
-    }
 
-    //TODO: Ingresar tripulante al planificador
+        ds_planificador_iniciar_tripulante(tid, pos);
+    }
 }
 
 private char* discordia_leer_archivo_tareas(const char* ruta_tareas)
