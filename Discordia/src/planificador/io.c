@@ -41,6 +41,7 @@ private void mover_tripulantes_terminados()
     while(ds_block_tripulantes_any_satisfy((void*)_puede_desbloquearse)) 
     {
         tripulante_t* tripulante = ds_block_tripulantes_remove_by_condition((void*)_puede_desbloquearse);
+        tripulante->tarea_actual->is_finished = true;
         ds_ready_queue_push(tripulante);
     }
 }

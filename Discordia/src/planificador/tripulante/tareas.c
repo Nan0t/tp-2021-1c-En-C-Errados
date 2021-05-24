@@ -5,6 +5,9 @@
 private bool tarea_es_bloqueante (char* tarea);
 
 tarea_t* parsear_tarea (char* tarea_sin_parsear){
+    if(tarea_sin_parsear == NULL)
+        return NULL;
+    
     tarea_t* tarea = malloc(sizeof(tarea_t));
     char** tarea_separada = string_split(tarea_sin_parsear, ";");
     tarea->tarea = string_duplicate(tarea_separada[0]);
