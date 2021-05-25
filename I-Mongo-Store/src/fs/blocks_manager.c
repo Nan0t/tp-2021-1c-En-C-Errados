@@ -1,6 +1,8 @@
 #include "blocks_manager.h"
 #include "disk.h"
 
+#include <commons/bitarray.h>
+
 #include <pthread.h>
 #include <unistd.h>
 #include <sys/mman.h>
@@ -9,10 +11,6 @@
 #include <string.h>
 #include <errno.h>
 #include <math.h>
-
-#define BLOCKS_SIZE(super_block_mem)   *((uint32_t*)(super_block_mem))
-#define BLOCKS_COUNT(super_block_mem)  *((uint32_t*)(super_block_mem + sizeof(uint32_t)))
-#define BLOCKS_BITMAP_BYTE(super_block_mem, byte) *((uint8_t*)(super_block_mem + sizeof(uint32_t) * 2 + byte))
 
 typedef struct
 {
@@ -30,8 +28,7 @@ typedef struct
     uint32_t blocks_count;
 
     pthread_mutex_t blocks_bitmap_mx;
-    uint32_t        blocks_bitmap_size;
-    char*           blocks_bitmap;
+    t_bitarray*     bitmap;
 } fs_blocks_manager_t;
 
 private void     fs_block_init(fs_block_t* block, uint32_t number, uint32_t disk_offset, uint32_t block_size);
@@ -158,15 +155,14 @@ private void fs_blocks_mangager_get_metadata(int32_t super_block_file)
     if(is_clean_initialization)
         fs_blocks_manager_init_bitmap(super_block_file);
     
-    p_blocks_manager_instance->blocks_bitmap_size = ceil(p_blocks_manager_instance->blocks_count / 8);
-    p_blocks_manager_instance->blocks_bitmap = mmap(
-        NULL,
-        p_blocks_manager_instance->blocks_bitmap_size,
-        PROT_READ | PROT_WRITE, MAP_SHARED, super_block_file,
-        0);
+    uint32_t bitmap_size = ceil(p_blocks_manager_instance->blocks_count / 8);
+    void*    bitmap_mem  =
+        mmap(NULL, bitmap_size, PROT_READ | PROT_WRITE, MAP_SHARED, super_block_file, 0) + sizeof(uint32_t) * 2;
 
-    U_ASSERT(p_blocks_manager_instance->blocks_bitmap != MAP_FAILED,
+    U_ASSERT(bitmap_mem != MAP_FAILED,
         "No se pudo mapear el bitmap del SuperBloque.ims: %s", strerror(errno));
+
+    p_blocks_manager_instance->bitmap = bitarray_create(bitmap_mem, bitmap_size);
 }
 
 private void fs_blocks_manager_init_bitmap(int32_t super_block_file)
@@ -207,16 +203,10 @@ private uint32_t fs_blocks_manager_get_free_block_index(void)
 
     for(uint32_t i = 0; i < p_blocks_manager_instance->blocks_count; i ++)
     {
-        uint8_t byte_in_bitmap  = i / 8;
-        uint8_t neg_bitmap_byte = ~BLOCKS_BITMAP_BYTE(p_blocks_manager_instance->blocks_bitmap, byte_in_bitmap);
-
-        if(neg_bitmap_byte)
+        if(bitarray_test_bit(p_blocks_manager_instance->bitmap, i) == 0)
         {
-            index = (uint8_t)log2(~(neg_bitmap_byte | -neg_bitmap_byte) + 1) + 1;
-            BLOCKS_BITMAP_BYTE(p_blocks_manager_instance->blocks_bitmap, byte_in_bitmap) |= (uint8_t)(1 << (index - 1));
-
-            index += byte_in_bitmap * 8;
-            
+            index = i + 1;
+            bitarray_set_bit(p_blocks_manager_instance->bitmap, i);
             break;
         }
     }
@@ -231,11 +221,7 @@ private void fs_blocks_manager_release_block_at(uint32_t index)
     U_ASSERT(index <= p_blocks_manager_instance->blocks_count, "Se intenta liberar un bloque invalido");
 
     pthread_mutex_lock(&p_blocks_manager_instance->blocks_bitmap_mx);
-    
-    uint32_t byte_in_bitmap = index / 8;
-    uint8_t bit_selected_to_release = 1 << ((index / 8) - 1);
-    BLOCKS_BITMAP_BYTE(p_blocks_manager_instance->blocks_bitmap, byte_in_bitmap) &= 0XFF^bit_selected_to_release; 
-
+    bitarray_clean_bit(p_blocks_manager_instance->bitmap, index - 1);
     pthread_mutex_unlock(&p_blocks_manager_instance->blocks_bitmap_mx);
 }
 
