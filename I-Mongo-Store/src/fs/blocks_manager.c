@@ -157,12 +157,12 @@ private void fs_blocks_mangager_get_metadata(int32_t super_block_file)
     
     uint32_t bitmap_size = ceil(p_blocks_manager_instance->blocks_count / 8);
     void*    bitmap_mem  =
-        mmap(NULL, bitmap_size, PROT_READ | PROT_WRITE, MAP_SHARED, super_block_file, 0) + sizeof(uint32_t) * 2;
+        mmap(NULL, bitmap_size, PROT_READ | PROT_WRITE, MAP_SHARED, super_block_file, 0);
 
     U_ASSERT(bitmap_mem != MAP_FAILED,
         "No se pudo mapear el bitmap del SuperBloque.ims: %s", strerror(errno));
 
-    p_blocks_manager_instance->bitmap = bitarray_create(bitmap_mem, bitmap_size);
+    p_blocks_manager_instance->bitmap = bitarray_create(bitmap_mem + sizeof(uint32_t) * 2, bitmap_size);
 }
 
 private void fs_blocks_manager_init_bitmap(int32_t super_block_file)
