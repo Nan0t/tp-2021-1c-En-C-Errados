@@ -35,18 +35,3 @@ tripulante_t* ds_block_tripulantes_get_and_remove(void)
 
     return trip;
 }
-
-void ds_block_tripulantes_iterate(void(*closure)(tripulante_t*))
-{
-  list_iterate(p_block_tripulantes_list, (void*)closure);
-}
-
-bool ds_block_tripulantes_any_satisfy(bool(*closure)(tripulante_t*))
-{
-   return list_any_satisfy(p_block_tripulantes_list, (void*)closure);
-}
-
-tripulante_t* ds_block_tripulantes_remove_by_condition(bool(*closure)(tripulante_t*))
-{
-    return list_remove_by_condition(p_block_tripulantes_list, (void*)closure);
-}
