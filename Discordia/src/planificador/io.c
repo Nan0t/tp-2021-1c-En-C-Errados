@@ -2,46 +2,66 @@
 #include "synchronizer.h"
 #include "queues/block_tripulantes_list.h"
 #include "queues/ready_queue.h"
+#include "discordia/discordia.h"
 
-private void manejo_de_bloqueados_por_io(void);
-private void mover_tripulantes_terminados(void);
+private void manejo_de_bloqueado_por_io(tripulante_t* tripulante);
+private void mover_tripulante_terminado(tripulante_t* tripulante);
+private bool puede_desbloquearse(tripulante_t* tripulante);
+private void tripulante_obtener_proxima_tarea(tripulante_t* tripulante);
 
 void io_init(void) 
 {
     uint32_t io_id = ds_synchronizer_get_device_id();
-
+    bool se_debe_buscar_trupulante = true;
+    tripulante_t* tripulante;
     while(1) 
     {
         ds_synchronizer_wait_for_next_cicle(io_id);
 
-        manejo_de_bloqueados_por_io();
-        mover_tripulantes_terminados();
+        if(se_debe_buscar_trupulante)
+        {
+            tripulante = ds_block_tripulantes_get_and_remove();
+        }
+        if(tripulante)
+        {
+            se_debe_buscar_trupulante = false;
+            manejo_de_bloqueado_por_io(tripulante);
 
+            if(puede_desbloquearse(tripulante))
+            {
+                mover_tripulante_terminado(tripulante);
+                se_debe_buscar_trupulante = true;
+                tripulante = NULL;
+            }
+        }
         ds_synchronizer_notify_end_of_cicle();
     }
 }
 
-private void manejo_de_bloqueados_por_io(void) 
+private void manejo_de_bloqueado_por_io(tripulante_t* tripulante) 
 {
-    void _restar_un_tiempo(tripulante_t* tripulante) 
-    {
         tripulante->tarea_actual->tiempo_bloqueado --;
-    }
-
-    ds_block_tripulantes_iterate((void*)_restar_un_tiempo);
 }
 
-private void mover_tripulantes_terminados() 
+private void mover_tripulante_terminado(tripulante_t* tripulante) 
 {
-    bool _puede_desbloquearse(tripulante_t* tripulante) 
-    {
-        return tripulante->tarea_actual->tiempo_bloqueado == 0;
-    }
+        tripulante->tarea_actual->is_finished = true;    
+        tripulante_obtener_proxima_tarea(tripulante);
+        if(tripulante->tarea_actual){
+            ds_ready_queue_push(tripulante);
+        }
+        else
+        {
+            //TODO: push a exit.
+        }
+}
 
-    while(ds_block_tripulantes_any_satisfy((void*)_puede_desbloquearse)) 
-    {
-        tripulante_t* tripulante = ds_block_tripulantes_remove_by_condition((void*)_puede_desbloquearse);
-        tripulante->tarea_actual->is_finished = true;
-        ds_ready_queue_push(tripulante);
-    }
+private bool puede_desbloquearse(tripulante_t* tripulante) 
+{
+    return tripulante->tarea_actual->tiempo_bloqueado == 0;
+}
+
+private void tripulante_obtener_proxima_tarea(tripulante_t* tripulante){
+    char* proxima_tarea = discordia_obtener_proxima_tarea(tripulante->tid);
+    tripulante->tarea_actual = parsear_tarea(proxima_tarea);
 }
