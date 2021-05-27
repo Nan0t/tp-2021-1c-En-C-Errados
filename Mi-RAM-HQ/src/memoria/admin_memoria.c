@@ -1,9 +1,33 @@
 #include "admin_memoria.h"
 #include <stdlib.h>
 #include <time.h>
+#include "estructuras.h"
+
+char* esquema_de_memoria;
 
 bool admin_memoria_iniciar_patota(uint32_t pid, const char* lista_tareas)
 {
+	esquema_de_memoria = PAGINACION; // reemplazar luego hardcode, se toma de archivo de conf.
+
+	uint32_t tam_patota = 8 + strlen(lista_tareas);
+
+	if(!hay_espacio_para_estructura(tam_patota))
+    return false;
+
+    patota_t* nueva_patota = u_malloc(sizeof(patota_t));
+	nueva_patota->pid = pid;
+
+	if(esquema_de_memoria == PAGINACION)
+    {
+      nueva_patota->_tabla = crear_tabla_de_paginas(tam_patota);
+    }
+    else
+    {
+      nueva_patota->_tabla = crear_tabla_de_segmentos(tam_patota);
+    }
+	agregar_a_lista_de_patotas(nueva_patota);
+	agregar_patota_a_memoria(uint32_t pid, const char* lista_tareas);
+
     return true;
 }
 
