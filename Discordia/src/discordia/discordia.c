@@ -22,7 +22,6 @@ private int32_t discordia_conectar_con_memoria(void);
 private int32_t discordia_conectar_con_fs(void);
 
 private void  discordia_eliminar_tripulante_de_memoria(uint32_t tid);
-private void  discordia_eliminar_tripulante_de_fs(uint32_t tid);
 private char* discordia_obtener_bitacora_del_fs(int32_t conn);
 private char* discordia_obtener_tarea_de_memoria(int32_t conn);
 private char* discordia_recibir_tripulantes_de_memoria(int32_t conn);
@@ -352,7 +351,6 @@ void discordia_inicializar_patota(const char* ruta_tareas, uint32_t cant_trip, t
 void discordia_expulsar_tripulante(uint32_t tid)
 {
     discordia_eliminar_tripulante_de_memoria(tid);
-    discordia_eliminar_tripulante_de_fs(tid);
 }
 
 void  discordia_iniciar_planificacion(void)
@@ -443,26 +441,6 @@ private void discordia_eliminar_tripulante_de_memoria(uint32_t tid)
     {
         char* msg_str = u_msg_eliminar_tripulante_to_string(msg);
         U_LOG_ERROR("No se pudo enviar el mensaje %s. Conexion perdida con la Memoria", msg_str);
-        u_free(msg_str);
-    }
-}
-
-private void discordia_eliminar_tripulante_de_fs(uint32_t tid)
-{
-    int32_t conn = discordia_conectar_con_fs();
-
-    if(conn == -1)
-        return;
-
-    u_msg_eliminar_tripulante_t* msg         = u_msg_eliminar_tripulante_crear(tid);
-    u_buffer_t*                  msg_ser     = u_msg_eliminar_tripulante_serializar(msg);
-    u_package_t*                 package     = u_package_create(ELIMINAR_TRIPULANTE, msg_ser);
-    u_buffer_t*                  package_ser = u_package_serialize(package);
-
-    if(!u_socket_send(conn, u_buffer_get_content(package_ser), u_buffer_get_size(package_ser)))
-    {
-        char* msg_str = u_msg_eliminar_tripulante_to_string(msg);
-        U_LOG_ERROR("No se pudo enviar el mensaje %s. Conexion perdida con el FS", msg_str);
         u_free(msg_str);
     }
 }
