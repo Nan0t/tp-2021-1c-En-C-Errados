@@ -86,6 +86,12 @@ void ds_planificador_iniciar_tripulante(uint32_t tid, const u_pos_t* pos)
 
     sem_init(&trip_info->sem_sync, 0, 0);
     sem_init(&trip_info->sem_end_exec, 0, 0);
+
+    pthread_t trip_thread;
+    U_ASSERT(pthread_create(&trip_thread, NULL, (void*)tripulante_init, trip_info) != -1,
+        "No se pudo crear el hilo del tripulante %d", tid);
+    pthread_detach(trip_thread);
+
     ds_new_queue_push(trip_info);
 }
 
