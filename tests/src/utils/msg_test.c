@@ -209,16 +209,18 @@ void test_iniciar_patota_serializar_y_deserializar(void)
 
 // Act
 //----
-    ser_msg = u_msg_iniciar_patota_crear(10, expected_lista_tareas);
+    ser_msg = u_msg_iniciar_patota_crear(10, 5, expected_lista_tareas);
     buffer = u_msg_iniciar_patota_serializar(ser_msg);
     deser_msg = u_msg_iniciar_patota_deserializar(buffer);
 
 // Assert
 //-------
     CU_ASSERT_EQUAL(ser_msg->pid, 10);
+    CU_ASSERT_EQUAL(ser_msg->cant_trips, 5);
     CU_ASSERT_STRING_EQUAL(ser_msg->lista_tareas, expected_lista_tareas);
 
     CU_ASSERT_EQUAL(ser_msg->pid, deser_msg->pid);
+    CU_ASSERT_EQUAL(ser_msg->cant_trips, deser_msg->cant_trips);
     CU_ASSERT_STRING_EQUAL(ser_msg->lista_tareas, deser_msg->lista_tareas);
 
     u_msg_iniciar_patota_eliminar(ser_msg);
