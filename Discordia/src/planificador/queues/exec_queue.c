@@ -41,6 +41,7 @@ void ds_exec_queue_push(tripulante_t* trip)
 {
     pthread_mutex_lock(&p_exec_queue->mx);
     queue_push(p_exec_queue->queue, trip);
+    p_exec_queue->curr_elements ++;
     pthread_mutex_unlock(&p_exec_queue->mx);
 }
 
@@ -50,10 +51,11 @@ tripulante_t* ds_exec_queue_pop(void)
     if(p_exec_queue->curr_elements == 0)
     {
         pthread_mutex_unlock(&p_exec_queue->mx);
-        return false;
+        return NULL;
     }
     
     tripulante_t* trip = queue_pop(p_exec_queue->queue);
+    p_exec_queue->curr_elements --;
     pthread_mutex_unlock(&p_exec_queue->mx);
 
     return trip;
@@ -61,5 +63,5 @@ tripulante_t* ds_exec_queue_pop(void)
 
 uint64_t ds_exec_queue_size(void)
 {
-    return queue_size(p_exec_queue->queue);
+    return p_exec_queue->curr_elements;
 }
