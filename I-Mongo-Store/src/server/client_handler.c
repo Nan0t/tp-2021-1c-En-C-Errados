@@ -12,7 +12,6 @@ private void fs_client_handler_msg_inicio_tarea(const u_buffer_t* buffer);
 private void fs_client_handler_msg_finalizacion_tarea(const u_buffer_t* buffer);
 private void fs_client_handler_msg_atiende_sabotaje(const u_buffer_t* buffer);
 private void fs_client_handler_msg_resuelve_sabotaje(const u_buffer_t* buffer);
-private void fs_client_handler_msg_eliminar_tripulante(const u_buffer_t* buffer);
 private void fs_client_handler_msg_obtener_bitacora(int32_t client_sock, const u_buffer_t* buffer);
 
 private bool fs_client_handler_is_valid_opcode(u_opcode_e opcode);
@@ -83,10 +82,6 @@ private void fs_client_handler_deserialize_msg(int32_t client_sock, u_opcode_e o
         fs_client_handler_msg_resuelve_sabotaje(buffer);
         break;
 
-    case ELIMINAR_TRIPULANTE:
-        fs_client_handler_msg_eliminar_tripulante(buffer);
-        break;
-
     default:
         fs_client_handler_msg_obtener_bitacora(client_sock, buffer);
     }
@@ -132,14 +127,6 @@ private void fs_client_handler_msg_resuelve_sabotaje(const u_buffer_t* buffer)
     file_system_resuelve_sabotaje(msg->tripulante_id);
 
     u_msg_resuelve_sabotaje_eliminar(msg);
-}
-
-private void fs_client_handler_msg_eliminar_tripulante(const u_buffer_t* buffer)
-{
-    u_msg_eliminar_tripulante_t* msg = u_msg_eliminar_tripulante_deserializar(buffer);
-    file_system_eliminar_tripulante(msg->tripulante_id);
-
-    u_msg_eliminar_tripulante_eliminar(msg);
 }
 
 private void fs_client_handler_msg_obtener_bitacora(int32_t client_sock, const u_buffer_t* buffer)

@@ -61,11 +61,6 @@ void  file_system_resuelve_sabotaje(uint32_t tid)
     file_system_update_bitacora(tid, resuelve_sabotaje);
 }
 
-void  file_system_eliminar_tripulante(uint32_t tid)
-{
-    file_system_remove_bitacora(tid);
-}
-
 char* file_system_obtener_bitacora(uint32_t tid)
 {
     return file_system_get_bitacora(tid);
