@@ -49,7 +49,7 @@ private void tripulante_loop(tripulante_t* trip_info)
                 else
                 {
                     trip_info->tarea_actual->tiempo_bloqueado --;
-                    trip_info->tarea_actual->is_finished = trip_info->tarea_actual->tiempo_bloqueado == 0;
+                    trip_info->tarea_actual->is_finished = trip_info->tarea_actual->tiempo_bloqueado == 0; //TODO: PEDIR NUEVA TAREA Y MANEJAR SI DEVUELVE NULL
                 }
             }
             else
