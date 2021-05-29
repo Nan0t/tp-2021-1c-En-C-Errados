@@ -96,14 +96,17 @@ void test_eliminar_tripulante_serializar_y_deserializar(void)
 
 // Act
 //----
-    ser_msg = u_msg_eliminar_tripulante_crear(10);
+    ser_msg = u_msg_eliminar_tripulante_crear(10, 1);
     buffer = u_msg_eliminar_tripulante_serializar(ser_msg);
     deser_msg = u_msg_eliminar_tripulante_deserializar(buffer);
 
 // Assert
 //-------
-    CU_ASSERT_EQUAL(ser_msg->tripulante_id, 10);
-    CU_ASSERT_EQUAL(ser_msg->tripulante_id, deser_msg->tripulante_id);
+    CU_ASSERT_EQUAL(ser_msg->pid, 10);
+    CU_ASSERT_EQUAL(ser_msg->tid, 1);
+
+    CU_ASSERT_EQUAL(ser_msg->pid, deser_msg->pid);
+    CU_ASSERT_EQUAL(ser_msg->tid, deser_msg->tid);
 
     u_msg_eliminar_tripulante_eliminar(ser_msg);
     u_msg_eliminar_tripulante_eliminar(deser_msg);
@@ -338,16 +341,18 @@ void test_movimiento_tripulante_serializar_y_deserializar(void)
 
 // Act
 //----
-    ser_msg = u_msg_movimiento_tripulante_crear(10, (u_pos_t){ 3, 4 });
+    ser_msg = u_msg_movimiento_tripulante_crear(10, 1, (u_pos_t){ 3, 4 });
     buffer = u_msg_movimiento_tripulante_serializar(ser_msg);
     deser_msg = u_msg_movimiento_tripulante_deserializar(buffer);
 
 // Assert
 //-------
-    CU_ASSERT_EQUAL(ser_msg->tid, 10);
+    CU_ASSERT_EQUAL(ser_msg->pid, 10);
+    CU_ASSERT_EQUAL(ser_msg->tid, 1);
     CU_ASSERT_EQUAL(ser_msg->pos.x, 3);
     CU_ASSERT_EQUAL(ser_msg->pos.y, 4);
 
+    CU_ASSERT_EQUAL(ser_msg->pid, ser_msg->pid);
     CU_ASSERT_EQUAL(ser_msg->tid, ser_msg->tid);
     CU_ASSERT_EQUAL(ser_msg->pos.x, ser_msg->pos.x);
     CU_ASSERT_EQUAL(ser_msg->pos.y, ser_msg->pos.y);
@@ -433,14 +438,17 @@ void test_proxima_tarea_serializar_y_deserializar(void)
 
 // Act
 //----
-    ser_msg = u_msg_proxima_tarea_crear(10);
+    ser_msg = u_msg_proxima_tarea_crear(10, 1);
     buffer = u_msg_proxima_tarea_serializar(ser_msg);
     deser_msg = u_msg_proxima_tarea_deserializar(buffer);
 
 // Assert
 //-------
-    CU_ASSERT_EQUAL(ser_msg->tripulante_id, 10);
-    CU_ASSERT_EQUAL(ser_msg->tripulante_id, deser_msg->tripulante_id);
+    CU_ASSERT_EQUAL(ser_msg->pid, 10);
+    CU_ASSERT_EQUAL(ser_msg->tid, 1);
+
+    CU_ASSERT_EQUAL(ser_msg->pid, deser_msg->pid);
+    CU_ASSERT_EQUAL(ser_msg->tid, deser_msg->tid);
 
     u_msg_proxima_tarea_eliminar(ser_msg);
     u_msg_proxima_tarea_eliminar(deser_msg);
@@ -483,16 +491,18 @@ void test_tripulante_nuevo_estado_serializar_y_deserializar(void)
 
 // Act
 //----
-    ser_msg = u_msg_tripulante_nuevo_estado_crear(10, expected_state);
-    buffer = u_msg_tripulante_nuevo_estado_serializar(ser_msg);
+    ser_msg   = u_msg_tripulante_nuevo_estado_crear(10, 1, expected_state);
+    buffer    = u_msg_tripulante_nuevo_estado_serializar(ser_msg);
     deser_msg = u_msg_tripulante_nuevo_estado_deserializar(buffer);
 
 // Assert
 //-------
-    CU_ASSERT_EQUAL(ser_msg->tripulante_id, 10);
+    CU_ASSERT_EQUAL(ser_msg->pid, 10);
+    CU_ASSERT_EQUAL(ser_msg->tid, 1);
     CU_ASSERT_EQUAL(ser_msg->nuevo_estado, expected_state);
 
-    CU_ASSERT_EQUAL(ser_msg->tripulante_id, deser_msg->tripulante_id);
+    CU_ASSERT_EQUAL(ser_msg->pid, deser_msg->pid);
+    CU_ASSERT_EQUAL(ser_msg->tid, deser_msg->tid);
     CU_ASSERT_EQUAL(ser_msg->nuevo_estado, deser_msg->nuevo_estado);
 
     u_msg_tripulante_nuevo_estado_eliminar(ser_msg);
