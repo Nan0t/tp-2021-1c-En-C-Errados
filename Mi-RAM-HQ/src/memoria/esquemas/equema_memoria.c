@@ -84,7 +84,7 @@ private void init_paginacion(void)
 
 private void init_segmentacion(void)
 {
-    paginacion_memoria_init();
+    segmentacion_memoria_init();
 
     p_esquema_memoria_instance->inicializar_patota             = segmentacion_memoria_inicializar_patota;
     p_esquema_memoria_instance->inicializar_tripulante         = segmentacion_memoria_inicializar_tripulante;
