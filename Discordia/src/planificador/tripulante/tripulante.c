@@ -8,8 +8,6 @@ private void tripulante_loop(tripulante_t* trip_info);
 private void tripulante_mover(tripulante_t* tripulante);
 private void tripulante_obtener_proxima_tarea(tripulante_t* tripulante);
 
-
-
 void tripulante_init(tripulante_t* trip_info)
 {
     pthread_t tripulante_thread;
@@ -49,6 +47,9 @@ private void tripulante_loop(tripulante_t* trip_info)
                 else
                 {
                     trip_info->tarea_actual->tiempo_bloqueado --;
+                    U_LOG_INFO("Tripulante %d ejecuta tarea %s. Tiempo restante: %d",
+                        trip_info->tid, trip_info->tarea_actual->tarea, trip_info->tarea_actual->tiempo_bloqueado);
+
                     trip_info->tarea_actual->is_finished = trip_info->tarea_actual->tiempo_bloqueado == 0; //TODO: PEDIR NUEVA TAREA Y MANEJAR SI DEVUELVE NULL
                 }
             }
@@ -64,6 +65,7 @@ private void tripulante_loop(tripulante_t* trip_info)
 
 private void tripulante_mover(tripulante_t* tripulante)
 {
+    u_pos_t prev_pos = { .x = tripulante->pos.x, .y = tripulante->pos.y };
 
 	if (tripulante->pos.x != tripulante->tarea_actual->pos.x) 
     {
@@ -88,6 +90,8 @@ private void tripulante_mover(tripulante_t* tripulante)
 		}
 	}
     discordia_mover_tripulante(tripulante->tid, &tripulante->pos);
+    U_LOG_INFO("Tripulante %d se mueve de { %d, %d } a { %d, %d }",
+        tripulante->tid, prev_pos.x, prev_pos.y, tripulante->pos.x, tripulante->pos.y);
 }
 
 private void tripulante_obtener_proxima_tarea(tripulante_t* tripulante){
