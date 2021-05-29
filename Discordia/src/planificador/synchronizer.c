@@ -21,13 +21,7 @@ typedef struct
     sem_t    sched_notify_end_of_cycle_sem;
 } ds_synchronizer_t;
 
-#ifndef NDEBUG
-private uint32_t p_tick_counter    = 0;
-#endif
-
 private ds_synchronizer_t* p_synchronizer_instance = NULL;
-
-private void ds_synchronizer_loop(void);
 
 void ds_synchronizer_init(uint32_t devices_count)
 {
@@ -51,14 +45,14 @@ void ds_synchronizer_init(uint32_t devices_count)
     for(uint32_t i = 0; i < devices_count; i ++)
         sem_init(&p_synchronizer_instance->devices_sems[i], 0, 0);
 
-    sem_init(&p_synchronizer_instance->sched_pause_sem, 0, 0);
+    // sem_init(&p_synchronizer_instance->sched_pause_sem, 0, 0);
     sem_init(&p_synchronizer_instance->start_cycle_sem, 0, 1);
     sem_init(&p_synchronizer_instance->sched_notify_end_of_cycle_sem, 0, 0);
 
-    pthread_t synchronizer_thread;
-    U_ASSERT(pthread_create(&synchronizer_thread, NULL, (void*)ds_synchronizer_loop, NULL) != - 1,
-        "No se pudo crear el hilo del Sincronizador");
-    pthread_detach(synchronizer_thread);
+    // pthread_t synchronizer_thread;
+    // U_ASSERT(pthread_create(&synchronizer_thread, NULL, (void*)ds_synchronizer_loop, NULL) != - 1,
+    //     "No se pudo crear el hilo del Sincronizador");
+    // pthread_detach(synchronizer_thread);
 }
 
 uint32_t ds_synchronizer_get_device_id(void)
@@ -96,37 +90,21 @@ void ds_synchronizer_notify_end_of_cicle(void)
     pthread_mutex_unlock(&p_synchronizer_instance->devices_notifier_mx);
 }
 
-void ds_synchronizer_sched_notify_new_cycle(void)
+// void ds_synchronizer_sched_notify_new_cycle(void)
+// {
+//     sem_post(&p_synchronizer_instance->sched_pause_sem);
+// }
+
+// void ds_synchronizer_sched_wait_end_of_cicle(void)
+// {
+//     sem_wait(&p_synchronizer_instance->sched_notify_end_of_cycle_sem);
+// }
+
+void ds_synchronizer_execute_next_cicle(void)
 {
-    sem_post(&p_synchronizer_instance->sched_pause_sem);
-}
+    for(uint32_t i = 0; i < p_synchronizer_instance->devices_count; i ++)
+        sem_post(&p_synchronizer_instance->devices_sems[i]);
 
-void ds_synchronizer_sched_wait_end_of_cicle(void)
-{
-    sem_wait(&p_synchronizer_instance->sched_notify_end_of_cycle_sem);
-}
-
-private void ds_synchronizer_loop(void)
-{
-    while(1)
-    {
-        sem_wait(&p_synchronizer_instance->start_cycle_sem);
-        sem_wait(&p_synchronizer_instance->sched_pause_sem);
-        
-#ifndef NDEBUG
-        U_LOG_TRACE("Tick: %d", ++ p_tick_counter);
-#endif
-
-        for(uint32_t i = 0; i < p_synchronizer_instance->devices_count; i ++)
-            sem_post(&p_synchronizer_instance->devices_sems[i]);
-
-        sem_post(&p_synchronizer_instance->sched_notify_end_of_cycle_sem);
-        sleep(p_synchronizer_instance->cycle_delay);
-    }
-}
-
-// Usado por el planificador.
-void ds_syncronizer_sched_notify_next_cicle(void)
-{
-    sem_post(&p_synchronizer_instance->sched_pause_sem);
+    sleep(p_synchronizer_instance->cycle_delay);
+    sem_wait(&p_synchronizer_instance->start_cycle_sem);
 }

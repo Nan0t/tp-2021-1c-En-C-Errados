@@ -8,4 +8,6 @@ uint32_t ds_synchronizer_get_device_id(void);
 void     ds_synchronizer_wait_for_next_cicle(uint32_t device_id);
 void     ds_synchronizer_notify_end_of_cicle(void);
 
+uint32_t ds_synchronizer_get_tick(void);
+
 #endif
