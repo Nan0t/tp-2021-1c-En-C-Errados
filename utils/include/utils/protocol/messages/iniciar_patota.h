@@ -6,6 +6,7 @@
 typedef struct
 {
     uint32_t pid;
+    uint32_t cant_trips;
     char*    lista_tareas;
 } u_msg_iniciar_patota_t;
 
@@ -13,14 +14,15 @@ typedef struct
  * @NAME: u_msg_iniciar_patota_crear
  * @DESC: Crea un mensaje u_msg_iniciar_patota_t
  * @PARAMS:
- *  [in] uint32_t    pid          - id de la patota
+ *  [in] uint32_t    pid          - id de la patota.
+ *  [in] uint32_t    cant_trips   - cantidad de tripulantes de la patota.
  *  [in] const char* lista_tareas - string con la lista de tareas.
  * 
  * @RETURN: Un struct u_msg_iniciar_patota_t*.
  * 
  * @NOTA: El struct resultante debe ser liberado posteriormente llamanda a u_msg_iniciar_patota_eliminar.
  */
-u_msg_iniciar_patota_t* u_msg_iniciar_patota_crear(uint32_t pid, const char* lista_tareas);
+u_msg_iniciar_patota_t* u_msg_iniciar_patota_crear(uint32_t pid, uint32_t cant_trips, const char* lista_tareas);
 
 /**
  * @NAME: u_msg_iniciar_patota_serializar
