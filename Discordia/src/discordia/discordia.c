@@ -41,7 +41,7 @@ int discordia_init(void)
     if(p_discordia_instance)
         return 0;
 
-    U_LOG_TRACE("Modulo Discordia");
+    U_LOG_INFO("Modulo Discordia");
     if(ds_server_init(u_config_get_string_value("PUERTO")) == -1)
         return -1;
 
@@ -355,24 +355,24 @@ void discordia_expulsar_tripulante(uint32_t tid)
 
 void  discordia_iniciar_planificacion(void)
 {
-    U_LOG_TRACE("Iniciar Planificador");
+    U_LOG_INFO("Iniciar Planificador");
     ds_planificador_iniciar();
 }
 
 void  discordia_pausar_planificacion(void)
 {
-    U_LOG_TRACE("Pausar Planificador");
+    U_LOG_INFO("Pausar Planificador");
     ds_planificador_pausar();
 }
 
 void  discordia_notificar_sabotaje(const u_pos_t* pos)
 {
-    U_LOG_TRACE("Nuevo Sabotaje: { X: %d | Y:%d }", pos->x, pos->y);
+    U_LOG_INFO("Nuevo Sabotaje: { X: %d | Y:%d }", pos->x, pos->y);
 }
 
 void  discordia_finaliza_fsck(void)
 {
-    U_LOG_TRACE("Finalización del FSCK. Se reanuda la planificacion");
+    U_LOG_INFO("Finalización del FSCK. Se reanuda la planificacion");
 }
 
 // ======================================================
@@ -610,7 +610,13 @@ private char* discordia_lista_tripulantes_to_string(const u_msg_lista_tripulante
 
          string_append_with_format(&lista_tripulantes,
             "Tripulante: %d\tPatota: %d\tStatus: %s\n",
-            trip->tid, trip->pid, (trip->estado == 'E') ? "EXEC" : (trip->estado == 'B') ? "BLOCKED I/O" : "READY"
+            trip->tid, trip->pid, (trip->estado == 'E')
+                ? "EXEC"
+                : (trip->estado == 'B')
+                ? "BLOCKED I/O"
+                : (trip->estado == 'N')
+                ? "NEW"
+                :"READY"
         );
     }
 
