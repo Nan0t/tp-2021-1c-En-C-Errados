@@ -4,7 +4,8 @@
 #include "utils/protocol/buffer.h"
 
 typedef struct {
-    uint32_t tripulante_id;
+    uint32_t pid;
+    uint32_t tid;
     char     nuevo_estado;
 } u_msg_tripulante_nuevo_estado_t;
 
@@ -14,12 +15,13 @@ typedef struct {
  * @NAME: u_msg_tripulante_nuevo_estado_crear
  * @DESC: Crea un mensaje u_msg_tripulante_nuevo_estado_t
  * @PARAMS:
- * 			[in] uint32_t _tripulante_id - id del tripulante.
- *          [in] char     _nuevo_estado  - estado del tripulante (uno de R, E, B).
+ *          [in] uint32_t pid            - id de la patota
+ * 			[in] uint32_t pid            - id del tripulante.
+ *          [in] char     _nuevo_estado  - estado del tripulante (uno de N, R, E, B).
  * @RETURN: Un struct u_msg_tripulante_nuevo_estado_t.
  * @NOTA: El struct resultante debe ser liberado posteriormente llamanda a u_msg_tripulante_nuevo_estado_eliminar.
  */
-u_msg_tripulante_nuevo_estado_t* u_msg_tripulante_nuevo_estado_crear(uint32_t _tripulante_id, char _nuevo_estado);
+u_msg_tripulante_nuevo_estado_t* u_msg_tripulante_nuevo_estado_crear(uint32_t pid, uint32_t tid, char _nuevo_estado);
 
 /**
  * @NAME: u_msg_tripulante_nuevo_estado_serializar
