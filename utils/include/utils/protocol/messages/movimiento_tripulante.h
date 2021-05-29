@@ -5,6 +5,7 @@
 
 typedef struct
 {
+    uint32_t pid;
     uint32_t tid;
     u_pos_t  pos;
 } u_msg_movimiento_tripulante_t;
@@ -13,14 +14,15 @@ typedef struct
  * @NAME: u_msg_movimiento_tripulante_crear
  * @DESC: Crea un mensaje u_msg_movimiento_tripulante_t
  * @PARAMS:
- *  [in] uint32_t tid - id del tripulante
+ *  [in] uint32_t pid - id de la patota.
+ *  [in] uint32_t tid - id del tripulante.
  *  [in] u_post_t pos - posicion del tripulante.
  * 
  * @RETURN: Un struct u_msg_movimiento_tripulante_t*.
  * 
  * @NOTA: El struct resultante debe ser liberado posteriormente llamanda a u_msg_movimiento_tripulante_eliminar.
  */
-u_msg_movimiento_tripulante_t* u_msg_movimiento_tripulante_crear(uint32_t tid, u_pos_t pos);
+u_msg_movimiento_tripulante_t* u_msg_movimiento_tripulante_crear(uint32_t pid, uint32_t tid, u_pos_t pos);
 
 /**
  * @NAME: u_msg_movimiento_tripulante_serializar
