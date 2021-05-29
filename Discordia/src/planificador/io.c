@@ -45,14 +45,18 @@ private void manejo_de_bloqueado_por_io(tripulante_t* tripulante)
 
 private void mover_tripulante_terminado(tripulante_t* tripulante) 
 {
-        tripulante->tarea_actual->is_finished = true;    
+        tripulante->tarea_actual->is_finished = true;
         tripulante_obtener_proxima_tarea(tripulante);
         if(tripulante->tarea_actual){
             ds_ready_queue_push(tripulante);
+            discordia_tripulante_nuevo_estado(tripulante->tid, 'R');
+            U_LOG_INFO("Tripulante %d pasa de BLOCK por Tareas a READY", tripulante->tid);
         }
         else
         {
-            //TODO: push a exit.
+            discordia_expulsar_tripulante(tripulante->tid);
+            U_LOG_INFO("Tripulante %d pasa de BLOCK por Tareas a EXIT", tripulante->tid);
+            // TODO:
         }
 }
 
