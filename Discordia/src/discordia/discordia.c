@@ -21,7 +21,7 @@ private uint32_t discordia_obtener_nuevo_tid(void);
 private int32_t discordia_conectar_con_memoria(void);
 private int32_t discordia_conectar_con_fs(void);
 
-private void  discordia_eliminar_tripulante_de_memoria(uint32_t tid);
+private void  discordia_eliminar_tripulante_de_memoria(uint32_t pid, uint32_t tid);
 private char* discordia_obtener_bitacora_del_fs(int32_t conn);
 private char* discordia_obtener_tarea_de_memoria(int32_t conn);
 private char* discordia_recibir_tripulantes_de_memoria(int32_t conn);
@@ -30,7 +30,7 @@ private char* discordia_lista_tripulantes_to_string(const u_msg_lista_tripulante
 
 private void discordia_recibir_fail(int32_t conn);
 
-private uint32_t discordia_enviar_patota_a_memoria(const char* tareas);
+private uint32_t discordia_enviar_patota_a_memoria(uint32_t cant_trips, const char* tareas);
 private bool     discordia_recibir_respuesta_memoria(int32_t conn);
 private void     discordia_inicializar_tripulantes(uint32_t pid, int32_t cant_trips, t_list* positions);
 
@@ -130,14 +130,14 @@ void  discordia_desplazamiento_tripulante(uint32_t tid, const u_pos_t* origen, c
     u_socket_close(conn);
 }
 
-void  discordia_mover_tripulante(uint32_t tid, const u_pos_t* pos)
+void  discordia_mover_tripulante(uint32_t pid, uint32_t tid, const u_pos_t* pos)
 {
     int32_t conn = discordia_conectar_con_memoria();
 
     if(conn == -1)
         return;
 
-    u_msg_movimiento_tripulante_t* msg = u_msg_movimiento_tripulante_crear(tid, *pos);
+    u_msg_movimiento_tripulante_t* msg = u_msg_movimiento_tripulante_crear(pid, tid, *pos);
 
     u_buffer_t*  msg_ser     = u_msg_movimiento_tripulante_serializar(msg);
     u_package_t* package     = u_package_create(MOVIMIENTO_TRIPULANTE, msg_ser);
@@ -271,7 +271,7 @@ void  discordia_tripulante_resuelve_sabotaje(uint32_t tid)
     u_socket_close(conn);
 }
 
-char* discordia_obtener_proxima_tarea(uint32_t tid)
+char* discordia_obtener_proxima_tarea(uint32_t pid, uint32_t tid)
 {
     int32_t conn = discordia_conectar_con_memoria();
     char* tarea = NULL;
@@ -279,7 +279,7 @@ char* discordia_obtener_proxima_tarea(uint32_t tid)
     if(conn == -1)
         return NULL;
 
-    u_msg_proxima_tarea_t* msg = u_msg_proxima_tarea_crear(tid);
+    u_msg_proxima_tarea_t* msg = u_msg_proxima_tarea_crear(pid, tid);
     
     u_buffer_t*  msg_ser     = u_msg_proxima_tarea_serializar(msg);
     u_package_t* package     = u_package_create(PROXIMA_TAREA, msg_ser);
@@ -302,7 +302,7 @@ char* discordia_obtener_proxima_tarea(uint32_t tid)
     return tarea;
 }
 
-void  discordia_tripulante_nuevo_estado(uint32_t tid, char estado)
+void  discordia_tripulante_nuevo_estado(uint32_t pid, uint32_t tid, char estado)
 {
     int32_t conn = discordia_conectar_con_memoria();
 
@@ -310,6 +310,7 @@ void  discordia_tripulante_nuevo_estado(uint32_t tid, char estado)
         return;
 
     u_msg_tripulante_nuevo_estado_t* msg = u_msg_tripulante_nuevo_estado_crear(
+        pid,
         tid,
         estado
     );
@@ -343,14 +344,19 @@ void discordia_inicializar_patota(const char* ruta_tareas, uint32_t cant_trip, t
         return;
     }
 
-    uint32_t pid = discordia_enviar_patota_a_memoria(tareas);
+    uint32_t pid = discordia_enviar_patota_a_memoria(cant_trip, tareas);
     if(pid)
         discordia_inicializar_tripulantes(pid, cant_trip, posiciones_trip);
 }
 
 void discordia_expulsar_tripulante(uint32_t tid)
 {
-    discordia_eliminar_tripulante_de_memoria(tid);
+    ds_planificador_eliminar_tripulante(tid);
+}
+
+void discordia_eliminar_tripulante(uint32_t pid, uint32_t tid)
+{
+    discordia_eliminar_tripulante_de_memoria(pid, tid);
 }
 
 void  discordia_iniciar_planificacion(void)
@@ -425,14 +431,14 @@ private int32_t discordia_conectar_con_fs(void)
     return conn;
 }
 
-private void discordia_eliminar_tripulante_de_memoria(uint32_t tid)
+private void discordia_eliminar_tripulante_de_memoria(uint32_t pid, uint32_t tid)
 {
     int32_t conn = discordia_conectar_con_memoria();
 
     if(conn == -1)
         return;
 
-    u_msg_eliminar_tripulante_t* msg         = u_msg_eliminar_tripulante_crear(tid);
+    u_msg_eliminar_tripulante_t* msg         = u_msg_eliminar_tripulante_crear(pid, tid);
     u_buffer_t*                  msg_ser     = u_msg_eliminar_tripulante_serializar(msg);
     u_package_t*                 package     = u_package_create(ELIMINAR_TRIPULANTE, msg_ser);
     u_buffer_t*                  package_ser = u_package_serialize(package);
@@ -662,7 +668,7 @@ private void discordia_recibir_fail(int32_t conn)
     }
 }
 
-private uint32_t discordia_enviar_patota_a_memoria(const char* tareas)
+private uint32_t discordia_enviar_patota_a_memoria(uint32_t cant_trips, const char* tareas)
 {
     int32_t conn = discordia_conectar_con_memoria();
 
@@ -671,7 +677,7 @@ private uint32_t discordia_enviar_patota_a_memoria(const char* tareas)
 
     uint32_t pid = discordia_obtener_nuevo_pid();
 
-    u_msg_iniciar_patota_t* msg         = u_msg_iniciar_patota_crear(pid, tareas);
+    u_msg_iniciar_patota_t* msg         = u_msg_iniciar_patota_crear(pid, cant_trips, tareas);
     u_buffer_t*             msg_ser     = u_msg_iniciar_patota_serializar(msg);
     u_package_t*            package     = u_package_create(INICIAR_PATOTA, msg_ser);
     u_buffer_t*             package_ser = u_package_serialize(package);
@@ -771,7 +777,7 @@ private void discordia_inicializar_tripulantes(uint32_t pid, int32_t cant_trips,
         u_buffer_delete(package_ser);
         u_package_delete(package);
 
-        ds_planificador_iniciar_tripulante(tid, pos);
+        ds_planificador_iniciar_tripulante(pid, tid, pos);
     }
 }
 
