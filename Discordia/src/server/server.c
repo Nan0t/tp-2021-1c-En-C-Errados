@@ -21,12 +21,12 @@ int ds_server_init(const char* port)
         return -1;
     }
 
-    U_LOG_TRACE("Server created and listen on port %s...", port);
-
     pthread_t server_thread;
     U_ASSERT(pthread_create(&server_thread, NULL, (void*)ds_server_loop, server_sock) != -1,
         "No se pudo crear un nuevo hilo para el servidor: %s", strerror(errno));
     pthread_detach(server_thread);
+
+        U_LOG_INFO("Servidor listo y escuchando en puerto %s...", port);
 
     return 0;
 }
