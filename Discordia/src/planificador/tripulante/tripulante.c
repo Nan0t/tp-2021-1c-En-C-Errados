@@ -89,12 +89,12 @@ private void tripulante_mover(tripulante_t* tripulante)
 			tripulante->pos.y --;
 		}
 	}
-    discordia_mover_tripulante(tripulante->tid, &tripulante->pos);
+    discordia_mover_tripulante(tripulante->pid, tripulante->tid, &tripulante->pos);
     U_LOG_INFO("Tripulante %d se mueve de { %d, %d } a { %d, %d }",
         tripulante->tid, prev_pos.x, prev_pos.y, tripulante->pos.x, tripulante->pos.y);
 }
 
 private void tripulante_obtener_proxima_tarea(tripulante_t* tripulante){
-    char* proxima_tarea = discordia_obtener_proxima_tarea(tripulante->tid);
+    char* proxima_tarea = discordia_obtener_proxima_tarea(tripulante->pid, tripulante->tid);
     tripulante->tarea_actual = parsear_tarea(proxima_tarea);
 }

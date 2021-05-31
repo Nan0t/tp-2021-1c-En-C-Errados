@@ -8,6 +8,7 @@
 
 typedef struct
 {
+    uint32_t pid;
     uint32_t tid;
     tarea_t* tarea_actual;
     u_pos_t  pos;
