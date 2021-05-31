@@ -61,12 +61,20 @@ typedef struct
 
 typedef struct
 {
+    uint32_t pid;
     uint32_t tid;
     u_pos_t  pos;
 } ds_command_mover_tripulante_t;
 
 typedef struct
 {
+    uint32_t pid;
+    uint32_t tid;
+} ds_command_proxima_tarea_t;
+ 
+typedef struct
+{
+    uint32_t pid;
     uint32_t tid;
     char     estado;
 } ds_command_tripulante_nuevo_estado_t;

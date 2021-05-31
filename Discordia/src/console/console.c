@@ -83,8 +83,8 @@ void ds_console_init(void)
     char* input = NULL;
     ds_parser_result_t result = { 0 };
 
-    ds_print("Bienvenido a la consola de Discordia.\n");
-    ds_print("Para salir: Ctrl + C\n\n");
+    ds_print("Bienvenido a la consola del Discordiador.\n");
+    ds_print("Para salir: Ctrl + C o SALIR\n\n");
 
     bool should_exit = false;
 
@@ -92,7 +92,7 @@ void ds_console_init(void)
 
     while(!should_exit)
     {
-        input = u_console_read("[Discordia]:> ");
+        input = u_console_read("[Discordiador]:> ");
 
         char**   args = string_split(input, " ");
         uint32_t argc = ds_calculate_args_count(args);
@@ -258,23 +258,23 @@ private bool _debug_ds_mover_tripulante(const ds_parser_result_t* result)
     ds_command_mover_tripulante_t* command =
         (ds_command_mover_tripulante_t*)result->data;
 
-    discordia_mover_tripulante(command->tid, &command->pos);
+    discordia_mover_tripulante(command->pid, command->tid, &command->pos);
 
     return false;
 }
 
 private bool _debug_ds_proxima_tarea(const ds_parser_result_t* result)
 {
-    uint32_t* tid = (uint32_t*)result->data;
-    char* tarea = discordia_obtener_proxima_tarea(*tid);
+    ds_command_proxima_tarea_t* command = (ds_command_proxima_tarea_t*)result->data;
+    char* tarea = discordia_obtener_proxima_tarea(command->pid, command->tid);
 
     if(tarea)
     {
-        ds_print("Tarea obtenida del tripulante %d: %s\n", *tid, tarea);
+        ds_print("Tarea obtenida del tripulante %d: %s\n", command->tid, tarea);
         u_free(tarea);
     }
     else
-        ds_print("No se pudo obtener ninguna tarea para el tripulante %d\n", *tid);
+        ds_print("No se pudo obtener ninguna tarea para el tripulante %d\n", command->tid);
 
     return false;
 }
@@ -284,7 +284,7 @@ private bool _debug_ds_tripulante_nuevo_estado(const ds_parser_result_t* result)
     ds_command_tripulante_nuevo_estado_t* command =
         (ds_command_tripulante_nuevo_estado_t*)result->data;
 
-    discordia_tripulante_nuevo_estado(command->tid, command->estado);
+    discordia_tripulante_nuevo_estado(command->pid, command->tid, command->estado);
     return false;
 }
 

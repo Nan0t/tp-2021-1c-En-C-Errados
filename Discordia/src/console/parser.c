@@ -27,6 +27,7 @@ private void ds_command_iniciar_tarea_delete(ds_command_iniciar_tarea_t* command
 private void ds_command_finalizar_tarea_delete(ds_command_finalizar_tarea_t* command);
 private void ds_command_mover_tripulante_delete(ds_command_mover_tripulante_t* command);
 private void ds_command_tripulante_nuevo_estado(ds_command_tripulante_nuevo_estado_t* command);
+private void ds_command_proxima_tarea(ds_command_proxima_tarea_t* command);
 #endif
 
 private void ds_parser_write_error(ds_parser_result_t* result, const char* msg_format, ...);
@@ -62,16 +63,19 @@ private void ds_parser_dummy_func(uint32_t argc, char** argv, ds_parser_result_t
 #define DS_TRIP_RESUELVE_SABOTAJE__CANT_ARGS 2
 #define DS_TRIP_RESUELVE_SABOTAJE__TID_INDEX 1
 
-#define DS_MOVER_TRIPULANTE__CANT_ARGS 3
-#define DS_MOVER_TRIPULANTE__TID_INDEX 1
-#define DS_MOVER_TRIPULANTE__POS       2
+#define DS_MOVER_TRIPULANTE__CANT_ARGS 4
+#define DS_MOVER_TRIPULANTE__PID_INDEX 1
+#define DS_MOVER_TRIPULANTE__TID_INDEX 2
+#define DS_MOVER_TRIPULANTE__POS       3
 
-#define DS_PROXIMA_TAREA__CANT_ARGS 2
-#define DS_PROXIMA_TAREA__TID_INDEX 1
+#define DS_PROXIMA_TAREA__CANT_ARGS 3
+#define DS_PROXIMA_TAREA__PID_INDEX 1
+#define DS_PROXIMA_TAREA__TID_INDEX 2
 
-#define DS_TRIP_NUEVO_ESTADO__CANT_ARGS    3
-#define DS_TRIP_NUEVO_ESTADO__TID_INDEX    1
-#define DS_TRIP_NUEVO_ESTADO__ESTADO_INDEX 2
+#define DS_TRIP_NUEVO_ESTADO__CANT_ARGS    4
+#define DS_TRIP_NUEVO_ESTADO__PID_INDEX    1
+#define DS_TRIP_NUEVO_ESTADO__TID_INDEX    2
+#define DS_TRIP_NUEVO_ESTADO__ESTADO_INDEX 3
 
 private void ds_parser_desplazamiento_tripulante(uint32_t argc, char** argv, ds_parser_result_t* result);
 private void ds_parser_iniciar_tarea(uint32_t argc, char** argv, ds_parser_result_t* result);
@@ -151,9 +155,12 @@ void ds_parser_result_free(ds_parser_result_t* result)
         ds_command_tripulante_nuevo_estado((ds_command_tripulante_nuevo_estado_t*)result->data);
         break;
 
+    case _DEBUG_DS_PROXIMA_TAREA:
+        ds_command_proxima_tarea((ds_command_proxima_tarea_t*)result->data);
+        break;
+
     case _DEBUG_DS_TRIPULANTE_ATIENDE_SABOTAJE:
     case _DEBUG_DS_TRIPULANTE_RESUELVE_SABOTAJE:
-    case _DEBUG_DS_PROXIMA_TAREA:
         u_free(result->data);
         break;
 #endif
@@ -263,6 +270,11 @@ private void ds_command_mover_tripulante_delete(ds_command_mover_tripulante_t* c
 }
 
 private void ds_command_tripulante_nuevo_estado(ds_command_tripulante_nuevo_estado_t* command)
+{
+    u_free(command);
+}
+
+private void ds_command_proxima_tarea(ds_command_proxima_tarea_t* command)
 {
     u_free(command);
 }
@@ -548,7 +560,13 @@ private void ds_parser_mover_tripulante(uint32_t argc, char** argv, ds_parser_re
 {
     if(argc < DS_MOVER_TRIPULANTE__CANT_ARGS)
     {
-        ds_parser_not_enough_args_error(result, "MOVER_TRIPULANTE [TID] [POS]");
+        ds_parser_not_enough_args_error(result, "MOVER_TRIPULANTE [PID] [TID] [POS]");
+        return;
+    }
+
+    if(!ds_is_valid_number(argv[DS_MOVER_TRIPULANTE__PID_INDEX]))
+    {
+        ds_parser_tid_error(result, argv[DS_MOVER_TRIPULANTE__PID_INDEX]);
         return;
     }
 
@@ -566,6 +584,7 @@ private void ds_parser_mover_tripulante(uint32_t argc, char** argv, ds_parser_re
 
     ds_command_mover_tripulante_t* command = u_malloc(sizeof(ds_command_mover_tripulante_t));
 
+    command->pid = atoi(argv[DS_MOVER_TRIPULANTE__PID_INDEX]);
     command->tid = atoi(argv[DS_MOVER_TRIPULANTE__TID_INDEX]);
 
     char** pos_coords = string_split(argv[DS_MOVER_TRIPULANTE__POS], "|");
@@ -584,27 +603,53 @@ private void ds_parser_proxima_tarea(uint32_t argc, char** argv, ds_parser_resul
 {
     if(argc < DS_PROXIMA_TAREA__CANT_ARGS)
     {
-        ds_parser_not_enough_args_error(result, "PROXIMA_TAREA [TID]");
+        ds_parser_not_enough_args_error(result, "PROXIMA_TAREA [PID] [TID]");
         return;
     }
 
-    uint32_t* tid = u_malloc(sizeof(uint32_t));
-    *tid = atoi(argv[DS_PROXIMA_TAREA__TID_INDEX]);
+    if(!ds_is_valid_number(argv[DS_PROXIMA_TAREA__PID_INDEX]))
+    {
+        ds_parser_tid_error(result, argv[DS_PROXIMA_TAREA__PID_INDEX]);
+        return;
+    }
 
-    result->data = tid;
+    if(!ds_is_valid_number(argv[DS_PROXIMA_TAREA__TID_INDEX]))
+    {
+        ds_parser_tid_error(result, argv[DS_PROXIMA_TAREA__TID_INDEX]);
+        return;
+    }
+
+    ds_command_proxima_tarea_t* command = u_malloc(sizeof(ds_command_proxima_tarea_t));
+
+    command->pid = atoi(argv[DS_PROXIMA_TAREA__PID_INDEX]);
+    command->tid = atoi(argv[DS_PROXIMA_TAREA__TID_INDEX]);
+
+    result->data = command;
 }
 
 __attribute__((always_inline)) inline
 private bool _is_valid_state(char s)
 {
-    return (s == 'E' || s == 'R' || s == 'B');
+    return (s == 'N' || s == 'E' || s == 'R' || s == 'B');
 }
 
 private void ds_parser_trip_nuevo_estado(uint32_t argc, char** argv, ds_parser_result_t* result)
 {
     if(argc < DS_TRIP_NUEVO_ESTADO__CANT_ARGS)
     {
-        ds_parser_not_enough_args_error(result, "TRIPULANTE_NUEVO_ESTADO [TID] [ESTADO]");
+        ds_parser_not_enough_args_error(result, "TRIPULANTE_NUEVO_ESTADO [PID] [TID] [ESTADO]");
+        return;
+    }
+
+    if(!ds_is_valid_number(argv[DS_TRIP_NUEVO_ESTADO__PID_INDEX]))
+    {
+        ds_parser_tid_error(result, argv[DS_TRIP_NUEVO_ESTADO__PID_INDEX]);
+        return;
+    }
+
+    if(!ds_is_valid_number(argv[DS_TRIP_NUEVO_ESTADO__TID_INDEX]))
+    {
+        ds_parser_tid_error(result, argv[DS_TRIP_NUEVO_ESTADO__TID_INDEX]);
         return;
     }
 
@@ -617,6 +662,7 @@ private void ds_parser_trip_nuevo_estado(uint32_t argc, char** argv, ds_parser_r
     ds_command_tripulante_nuevo_estado_t* command =
         u_malloc(sizeof(ds_command_tripulante_nuevo_estado_t));
 
+    command->pid    = atoi(argv[DS_TRIP_NUEVO_ESTADO__PID_INDEX]);
     command->tid    = atoi(argv[DS_TRIP_NUEVO_ESTADO__TID_INDEX]);
     command->estado = argv[DS_TRIP_NUEVO_ESTADO__ESTADO_INDEX][0];
 
