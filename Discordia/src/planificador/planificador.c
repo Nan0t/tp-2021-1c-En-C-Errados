@@ -69,6 +69,14 @@ void ds_planificador_init(void)
     ds_planificador_init_queues();
     ds_planificador_init_devices();
 
+    U_LOG_INFO("Planificador inicializado:");
+    U_LOG_INFO("  Grado Multiprocesamiento: %d", p_planificador->cant_cpu);
+    U_LOG_INFO("  Duracion Sabotajes: %d", p_planificador->duracion_sabotaje);
+    U_LOG_INFO("  Algoritmo Seleccionado: %s", u_config_get_string_value("ALGORITMO"));
+    
+    if(p_planificador->algorithm == ds_algorithm_rr)
+        U_LOG_INFO("  Quantum: %d", p_planificador->quantum);
+
     pthread_t thread_planificador;
     U_ASSERT(pthread_create(&thread_planificador, NULL, (void*)ds_planificador_loop, NULL) != -1,
         "No se pudo crear el hilo del Planificador: %s", strerror(errno));
@@ -76,10 +84,11 @@ void ds_planificador_init(void)
     pthread_detach(thread_planificador);
 }
 
-void ds_planificador_iniciar_tripulante(uint32_t tid, const u_pos_t* pos)
+void ds_planificador_iniciar_tripulante(uint32_t pid, uint32_t tid, const u_pos_t* pos)
 {
     tripulante_t* trip_info = u_malloc(sizeof(tripulante_t));
 
+    trip_info->pid = pid;
     trip_info->tid = tid;
     trip_info->pos.x = pos->x;
     trip_info->pos.y = pos->y;
@@ -97,6 +106,12 @@ void ds_planificador_iniciar_tripulante(uint32_t tid, const u_pos_t* pos)
     pthread_detach(trip_thread);
 
     ds_new_queue_push(trip_info);
+}
+
+void ds_planificador_eliminar_tripulante(uint32_t tid)
+{
+    (void)tid;
+    // TODO: Eliminar un tripulante del planificador
 }
 
 void ds_planificador_iniciar(void)
@@ -119,7 +134,7 @@ private void ds_algorithm_fifo(tripulante_t* trip)
     if(trip->bloquear)
     {
         trip->bloquear = false;
-        discordia_tripulante_nuevo_estado(trip->tid, 'B');
+        discordia_tripulante_nuevo_estado(trip->pid, trip->tid, 'B');
         U_LOG_INFO("Tripulante %d pasa de EXEC a BLOCK por Tarea", trip->tid);
         ds_block_tripulantes_add(trip);
     }
@@ -135,14 +150,14 @@ private void ds_algorithm_rr(tripulante_t* trip)
     {
         trip->bloquear = false;
         trip->quatum = p_planificador->quantum;
-        discordia_tripulante_nuevo_estado(trip->tid, 'B');
+        discordia_tripulante_nuevo_estado(trip->pid, trip->tid, 'B');
         U_LOG_INFO("Tripulante %d pasa de EXEC a BLOCK por Tarea", trip->tid);
         ds_block_tripulantes_add(trip);
     }
     else if(trip->quatum == 0)
     {
         trip->quatum = p_planificador->quantum;
-        discordia_tripulante_nuevo_estado(trip->tid, 'R');
+        discordia_tripulante_nuevo_estado(trip->pid, trip->tid, 'R');
         U_LOG_INFO("Tripulante %d pasa de EXEC a READY por fin de Quatum", trip->tid);
         ds_ready_queue_push(trip);
     }
@@ -216,7 +231,7 @@ private void ds_planificador_admit_from_new_to_ready(void)
 
     while(trip != NULL)
     {
-        discordia_tripulante_nuevo_estado(trip->tid, 'R');
+        discordia_tripulante_nuevo_estado(trip->pid, trip->tid, 'R');
         U_LOG_INFO("Tripulante %d pasa de NEW a READY", trip->tid);
         ds_ready_queue_push(trip);
         trip = ds_new_queue_pop();
@@ -230,7 +245,7 @@ private void ds_planificador_admit_from_ready_to_exec(void)
         tripulante_t* trip = ds_ready_queue_pop();
         if(trip != NULL)
         {
-            discordia_tripulante_nuevo_estado(trip->tid, 'E');
+            discordia_tripulante_nuevo_estado(trip->pid, trip->tid, 'E');
             U_LOG_INFO("Tripulante %d pasa de READY a EXEC", trip->tid);
             ds_exec_queue_push(trip);
         }
