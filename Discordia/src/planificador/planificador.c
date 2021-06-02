@@ -86,26 +86,10 @@ void ds_planificador_init(void)
 
 void ds_planificador_iniciar_tripulante(uint32_t pid, uint32_t tid, const u_pos_t* pos)
 {
-    tripulante_t* trip_info = u_malloc(sizeof(tripulante_t));
+    tripulante_t* trip = tripulante_create(pid, tid, pos, p_planificador->quantum);
+    tripulante_init(trip);
 
-    trip_info->pid = pid;
-    trip_info->tid = tid;
-    trip_info->pos.x = pos->x;
-    trip_info->pos.y = pos->y;
-    trip_info->quatum = p_planificador->quantum;
-
-    trip_info->tarea_actual = NULL;
-    trip_info->bloquear     = false;
-
-    sem_init(&trip_info->sem_sync, 0, 0);
-    sem_init(&trip_info->sem_end_exec, 0, 0);
-
-    pthread_t trip_thread;
-    U_ASSERT(pthread_create(&trip_thread, NULL, (void*)tripulante_init, trip_info) != -1,
-        "No se pudo crear el hilo del tripulante %d", tid);
-    pthread_detach(trip_thread);
-
-    ds_new_queue_push(trip_info);
+    ds_new_queue_push(trip);
 }
 
 void ds_planificador_eliminar_tripulante(uint32_t tid)
