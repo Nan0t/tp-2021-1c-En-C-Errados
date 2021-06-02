@@ -102,6 +102,7 @@ void ds_console_init(void)
 
         ds_delete_args(args);
         ds_parser_result_free(&result);
+        u_free(input);
     }
 }
 

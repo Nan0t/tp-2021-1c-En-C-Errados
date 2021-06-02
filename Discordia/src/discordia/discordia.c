@@ -347,6 +347,8 @@ void discordia_inicializar_patota(const char* ruta_tareas, uint32_t cant_trip, t
     uint32_t pid = discordia_enviar_patota_a_memoria(cant_trip, tareas);
     if(pid)
         discordia_inicializar_tripulantes(pid, cant_trip, posiciones_trip);
+
+    u_free(tareas);
 }
 
 void discordia_expulsar_tripulante(uint32_t tid)
@@ -410,6 +412,8 @@ private int32_t discordia_conectar_con_memoria(void)
         U_LOG_ERROR(
             "No se pudo establecer conexion con la Memoria: %s",
             u_sock_err_get_description(err));
+
+    u_sock_err_delete(err);
 
     return conn;
 }
@@ -792,8 +796,9 @@ private char* discordia_leer_archivo_tareas(const char* ruta_tareas)
     uint64_t file_size = ftell(file) / sizeof(char);
     fseek(file, 0, SEEK_SET);
 
-    char* content = u_malloc(file_size);
+    char* content = u_malloc(file_size + 1);
     fread(content, sizeof(char), file_size, file);
+    content[file_size] = '\0';
     fclose(file);
 
     return content;

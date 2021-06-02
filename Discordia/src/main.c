@@ -8,7 +8,7 @@ app_attr_t get_app_setup(void)
         .config_file_path   = "config/Discordia.conf",
         .log_active_console = true,
         .log_file_path      = "Discordia.log",
-        .log_level          = U_LOG_LEVEL_TRACE
+        .log_level          = U_LOG_LEVEL_INFO
     };
 }
 

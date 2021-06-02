@@ -96,5 +96,6 @@ private void tripulante_mover(tripulante_t* tripulante)
 
 private void tripulante_obtener_proxima_tarea(tripulante_t* tripulante){
     char* proxima_tarea = discordia_obtener_proxima_tarea(tripulante->pid, tripulante->tid);
+    eliminar_tarea(tripulante->tarea_actual);
     tripulante->tarea_actual = parsear_tarea(proxima_tarea);
 }

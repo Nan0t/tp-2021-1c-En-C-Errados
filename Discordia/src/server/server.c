@@ -26,7 +26,8 @@ int ds_server_init(const char* port)
         "No se pudo crear un nuevo hilo para el servidor: %s", strerror(errno));
     pthread_detach(server_thread);
 
-        U_LOG_INFO("Servidor listo y escuchando en puerto %s...", port);
+    U_LOG_INFO("Servidor listo y escuchando en puerto %s...", port);
+    u_sock_err_delete(err);
 
     return 0;
 }
