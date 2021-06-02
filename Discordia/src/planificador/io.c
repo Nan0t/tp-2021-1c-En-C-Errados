@@ -7,7 +7,6 @@
 private void manejo_de_bloqueado_por_io(tripulante_t* tripulante);
 private void mover_tripulante_terminado(tripulante_t* tripulante);
 private bool puede_desbloquearse(tripulante_t* tripulante);
-private void tripulante_obtener_proxima_tarea(tripulante_t* tripulante);
 
 void io_init(void) 
 {
@@ -46,8 +45,8 @@ private void manejo_de_bloqueado_por_io(tripulante_t* tripulante)
 private void mover_tripulante_terminado(tripulante_t* tripulante) 
 {
         tripulante->tarea_actual->is_finished = true;
-        tripulante_obtener_proxima_tarea(tripulante);
-        if(tripulante->tarea_actual){
+        
+        if(tripulante_obtener_proxima_tarea(tripulante)){
             ds_ready_queue_push(tripulante);
             discordia_tripulante_nuevo_estado(tripulante->pid, tripulante->tid, 'R');
             U_LOG_INFO("Tripulante %d pasa de BLOCK por Tareas a READY", tripulante->tid);
@@ -63,10 +62,4 @@ private void mover_tripulante_terminado(tripulante_t* tripulante)
 private bool puede_desbloquearse(tripulante_t* tripulante) 
 {
     return tripulante->tarea_actual->tiempo_bloqueado == 0;
-}
-
-private void tripulante_obtener_proxima_tarea(tripulante_t* tripulante){
-    char* proxima_tarea = discordia_obtener_proxima_tarea(tripulante->pid, tripulante->tid);
-    eliminar_tarea(tripulante->tarea_actual);
-    tripulante->tarea_actual = parsear_tarea(proxima_tarea);
 }
