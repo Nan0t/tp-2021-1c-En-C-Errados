@@ -432,6 +432,8 @@ private int32_t discordia_conectar_con_fs(void)
             "No se pudo establecer conexion con el FS: %s",
             u_sock_err_get_description(err));
 
+    u_sock_err_delete(err);
+
     return conn;
 }
 
@@ -453,9 +455,13 @@ private void discordia_eliminar_tripulante_de_memoria(uint32_t pid, uint32_t tid
         U_LOG_ERROR("No se pudo enviar el mensaje %s. Conexion perdida con la Memoria", msg_str);
         u_free(msg_str);
     }
+
+    u_msg_eliminar_tripulante_eliminar(msg);
+    u_buffer_delete(msg_ser);
+    u_buffer_delete(package_ser);
+    u_package_delete(package);
 }
 
-// Eww, to many ifs
 private char* discordia_obtener_bitacora_del_fs(int32_t conn)
 {
     u_opcode_e opcode;
