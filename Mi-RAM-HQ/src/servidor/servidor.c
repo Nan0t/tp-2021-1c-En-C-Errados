@@ -126,8 +126,9 @@ void client_handler_manage_opcode(int32_t sock_client, u_opcode_e op_code, u_buf
                 u_buffer_delete(package_ser);
                 u_package_delete(package);
             }
-
+            
             u_msg_iniciar_patota_eliminar(patota);
+            
 
             break;
 

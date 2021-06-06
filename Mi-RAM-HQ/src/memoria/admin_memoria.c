@@ -5,15 +5,7 @@
 //iniciar patota
 bool admin_memoria_iniciar_patota(uint32_t pid, const char* lista_tareas)
 {
-    bool respuesta;
-    switch(esquema){
-        case SEGMENTACION:;
-            break;
-        case PAGINACION:;
-            respuesta = admin_memoria_paginacion_iniciar_patota(pid, lista_tareas);
-            break;
-    }
-    return respuesta;
+
 }
 
 bool admin_memoria_paginacion_iniciar_patota(uint32_t pid, const char* lista_tareas){ //TODO esto va a recibir la cantidad de tripulantes, para calcular los frames

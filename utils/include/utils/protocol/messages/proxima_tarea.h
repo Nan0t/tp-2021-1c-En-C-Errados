@@ -4,7 +4,8 @@
 #include "utils/protocol/buffer.h"
 
 typedef struct {
-    uint32_t tripulante_id;
+    uint32_t pid;
+    uint32_t tid;
 } u_msg_proxima_tarea_t;
 
 
@@ -13,11 +14,12 @@ typedef struct {
  * @NAME: u_msg_proxima_tarea_crear
  * @DESC: Crea un mensaje u_msg_proxima_tarea_t
  * @PARAMS:
- * 			[in] uint32_t _tripulante_id - id del tripulante.
+ *          [in] uint32_t pid - id de la patota.
+ * 			[in] uint32_t tid - id del tripulante.
  * @RETURN: Un struct u_msg_proxima_tarea_t.
  * @NOTA: El struct resultante debe ser liberado posteriormente llamanda a u_msg_informar_proxima_tarea_eliminar.
  */
-u_msg_proxima_tarea_t* u_msg_proxima_tarea_crear(uint32_t _tripulante_id);
+u_msg_proxima_tarea_t* u_msg_proxima_tarea_crear(uint32_t pid, uint32_t tid);
 
 /**
  * @NAME: u_msg_proxima_tarea_serializar
