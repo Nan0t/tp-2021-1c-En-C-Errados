@@ -2,9 +2,37 @@
 #include <stdlib.h>
 #include <time.h>
 
+//iniciar patota
 bool admin_memoria_iniciar_patota(uint32_t pid, const char* lista_tareas)
 {
-    return true;
+    bool respuesta;
+    switch(esquema){
+        case SEGMENTACION:;
+            break;
+        case PAGINACION:;
+            respuesta = admin_memoria_paginacion_iniciar_patota(pid, lista_tareas);
+            break;
+    }
+    return respuesta;
+}
+
+bool admin_memoria_paginacion_iniciar_patota(uint32_t pid, const char* lista_tareas){ //TODO esto va a recibir la cantidad de tripulantes, para calcular los frames
+    int cantidad_de_tripulantes; // en realidad se recibe por parametro
+    int tamanio_data = 2 + 21* cantidad_de_tripulantes; 
+    int frames_necesarios = memoria_frames_necesarios(tamanio_data);
+    if(memoria_tiene_frames_libres(frames_necesarios)){ //TODO aca primero tendria q armar los frames necesarios para esa patota
+        m_pid_con_tabla_t* patota = u_malloc(sizeof(patota));
+        patota->pid = pid;
+        patota->tabla = list_create();
+        list_add(listado_patotas, patota);
+        //return true;   
+        return  memoria_iniciar_patota(pid, lista_tareas, cantidad_de_tripulantes, frames_necesarios);
+    }else{
+        return false;
+    }
+    
+    //return memoria_escribir_paginacion(pid, lista_tareas);
+    //return true;
 }
 
 bool admin_memoria_iniciar_tripulante(uint32_t pid, uint32_t tid,  u_pos_t pos)//cambiado const u_pos_t*
@@ -56,3 +84,4 @@ t_list* admin_memoria_obtener_tripulantes(void)
 
     return tripulantes;
 }
+
