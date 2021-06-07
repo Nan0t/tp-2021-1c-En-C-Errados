@@ -1,7 +1,7 @@
 #include <utils/entry_point.h>
 #include "servidor/servidor.h"
 #include <utils/utils.h>
-#include "memoria/memoria.h"
+#include "memoria/esquemas/esquema_memoria.h"
 
 app_attr_t get_app_setup(void)
 {
@@ -20,6 +20,6 @@ int entry_point(int argc, char** argv)
     (void)argv; // --> para evitar el warning unused_parameter
 
     U_LOG_INFO("Modulo Mi-RAM-HQ iniciado");
-    memoria_iniciar();
+    esquema_memoria_init();
     return servidor_init(u_config_get_string_value("PUERTO"));
 }

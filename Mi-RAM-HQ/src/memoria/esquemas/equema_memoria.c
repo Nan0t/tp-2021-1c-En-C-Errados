@@ -5,13 +5,13 @@
 typedef struct
 {
     bool(*inicializar_patota)(uint32_t, uint32_t, const char*);
-    void(*inicializar_tripulante)(uint32_t, uint32_t, u_pos_t);
-    void(*actualizar_posicion_tripulante)(uint32_t, uint32_t, u_pos_t);
-    void(*actualizar_estado_tripulante)(uint32_t, uint32_t, char);
+    bool(*inicializar_tripulante)(uint32_t, uint32_t, u_pos_t);
+    bool(*actualizar_posicion_tripulante)(uint32_t, uint32_t, u_pos_t);
+    bool(*actualizar_estado_tripulante)(uint32_t, uint32_t, char);
     char*(*obtener_proxima_tarea)(uint32_t, uint32_t);
     tripulantes_t*(*obtener_tripulante)(uint32_t, uint32_t);
     t_list*(*obtener_todos_los_tripulantes)(void);
-    void(*expulsar_tripulante)(uint32_t, uint32_t);
+    bool(*expulsar_tripulante)(uint32_t, uint32_t);
 } esquema_memoria_t;
 
 private esquema_memoria_t* p_esquema_memoria_instance = NULL;
@@ -22,6 +22,7 @@ private void init_segmentacion(void);
 void esquema_memoria_init(void)
 {
     const char* esquema_memoria = u_config_get_string_value("ESQUEMA_MEMORIA");
+    p_esquema_memoria_instance = u_malloc(sizeof(esquema_memoria_t));
 
     if(!strcmp(esquema_memoria, "PAGINACION"))
         init_paginacion();
@@ -34,19 +35,19 @@ bool esquema_memoria_inicializar_patota(uint32_t pid, uint32_t cant_tripulantes,
     return p_esquema_memoria_instance->inicializar_patota(pid, cant_tripulantes, tareas);
 }
 
-void esquema_memoria_inicializar_tripulante(uint32_t pid, uint32_t tid, u_pos_t pos)
+bool esquema_memoria_inicializar_tripulante(uint32_t pid, uint32_t tid, u_pos_t pos)
 {
-    p_esquema_memoria_instance->inicializar_tripulante(pid, tid, pos);
+    return p_esquema_memoria_instance->inicializar_tripulante(pid, tid, pos);
 }
 
-void esquema_memoria_actualizar_posicion_tripulante(uint32_t pid, uint32_t tid, u_pos_t pos)
+bool esquema_memoria_actualizar_posicion_tripulante(uint32_t pid, uint32_t tid, u_pos_t pos)
 {
-    p_esquema_memoria_instance->actualizar_posicion_tripulante(pid, tid, pos);
+    return p_esquema_memoria_instance->actualizar_posicion_tripulante(pid, tid, pos);
 }
 
-void esquema_memoria_actualizar_estado_tripulante(uint32_t pid, uint32_t tid, char estado)
+bool esquema_memoria_actualizar_estado_tripulante(uint32_t pid, uint32_t tid, char estado)
 {
-    p_esquema_memoria_instance->actualizar_estado_tripulante(pid, tid, estado);
+    return p_esquema_memoria_instance->actualizar_estado_tripulante(pid, tid, estado);
 }
 
 char* esquema_memoria_obtener_proxima_tarea(uint32_t pid, uint32_t tid)
@@ -64,16 +65,16 @@ t_list* esquema_memoria_obtener_todos_los_tripulantes(void)
     return p_esquema_memoria_instance->obtener_todos_los_tripulantes();
 }
 
-void esquema_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid)
+bool esquema_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid)
 {
-    p_esquema_memoria_instance->expulsar_tripulante(pid, tid);
+    return p_esquema_memoria_instance->expulsar_tripulante(pid, tid);
 }
 
 private void init_paginacion(void)
 {
     paginacion_memoria_init();
 
-    p_esquema_memoria_instance->inicializar_patota             = paginacion_memoria_inicializar_patota;
+    p_esquema_memoria_instance->inicializar_patota             = *paginacion_memoria_inicializar_patota;
     p_esquema_memoria_instance->inicializar_tripulante         = paginacion_memoria_inicializar_tripulante;
     p_esquema_memoria_instance->actualizar_posicion_tripulante = paginacion_memoria_actualizar_posicion_tripulante;
     p_esquema_memoria_instance->obtener_proxima_tarea          = paginacion_memoria_obtener_proxima_tarea;
