@@ -1,5 +1,4 @@
 #include "discordia.h"
-#include "planificador/planificador.h"
 #include "server/server.h"
 #include "console/console.h"
 
@@ -50,7 +49,6 @@ int discordia_init(void)
     p_discordia_instance->pid_counter = 0;
     p_discordia_instance->tid_counter = 0;
 
-    ds_planificador_init();
     ds_console_init();
     return 0;
 }
@@ -357,7 +355,7 @@ void discordia_inicializar_patota(const char* ruta_tareas, uint32_t cant_trip, t
 
 void discordia_expulsar_tripulante(uint32_t tid)
 {
-    ds_planificador_eliminar_tripulante(tid);
+    U_LOG_TRACE("Sin funcionalidad");
 }
 
 void discordia_eliminar_tripulante(uint32_t pid, uint32_t tid)
@@ -368,13 +366,11 @@ void discordia_eliminar_tripulante(uint32_t pid, uint32_t tid)
 void  discordia_iniciar_planificacion(void)
 {
     U_LOG_INFO("Iniciar Planificador");
-    ds_planificador_iniciar();
 }
 
 void  discordia_pausar_planificacion(void)
 {
     U_LOG_INFO("Pausar Planificador");
-    ds_planificador_pausar();
 }
 
 void  discordia_notificar_sabotaje(const u_pos_t* pos)
@@ -790,8 +786,6 @@ private void discordia_inicializar_tripulantes(uint32_t pid, int32_t cant_trips,
         u_buffer_delete(msg_ser);
         u_buffer_delete(package_ser);
         u_package_delete(package);
-
-        ds_planificador_iniciar_tripulante(pid, tid, pos);
     }
 }
 
