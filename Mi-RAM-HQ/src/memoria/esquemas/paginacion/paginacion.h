@@ -10,7 +10,21 @@ typedef struct
     uint32_t tiempo_en_memoria;
     uint32_t uso;
     //uint32_t pid;
-}m_frame_t;
+}p_frame_t;
+
+typedef struct
+{
+    uint32_t pid;
+    t_list* tabla;
+    uint32_t direccion_tareas;
+}p_patota_y_tabla_t; 
+
+typedef struct
+{
+    uint32_t num_pagina;
+    uint32_t frame_memoria;
+    uint32_t frame_swap;
+}p_fila_tabla_de_paginas;
 
 t_list* lista_frames_memoria;
 t_list* lista_frames_swap;
@@ -33,7 +47,5 @@ bool           paginacion_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid
 
 //-----------------------
 
-private void paginacion_inicializar_frames_memoria(int);
-private void paginacion_mostrar_frames(int);
 
 #endif

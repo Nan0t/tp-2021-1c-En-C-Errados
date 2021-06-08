@@ -105,7 +105,7 @@ void client_handler_manage_opcode(int32_t sock_client, u_opcode_e op_code, u_buf
             u_msg_iniciar_patota_t* patota = u_msg_iniciar_patota_deserializar(buffer);
             
             U_LOG_TRACE("Recibido msg INICIAR_PATOTA");
-            U_LOG_TRACE("pid: %d, lista_tareas: %s", patota->pid, patota->lista_tareas);
+            U_LOG_TRACE("pid: %d, cant_tripulantes: %d, lista_tareas: %s", patota->pid, patota->cant_trips, patota->lista_tareas);
             
             if(admin_memoria_iniciar_patota(patota->pid, patota->cant_trips,patota->lista_tareas))
             {
