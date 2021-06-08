@@ -37,7 +37,7 @@ function set_debug_tool {
     if [ "$1" == "gdb" ];then
         OPT="gdb --args"
     elif [ "$1" ==  "valgrind" ];then
-        OPT="valgrind --leak-check=full --log-file=valgrind.log"
+        OPT="valgrind --leak-check=full --log-file=valgrind.log --show-possibly-lost=no --show-reachable=no"
     elif [ "$1" == "helgrind" ];then
         OPT="valgrind --tool=helgrind --log-file=helgrind.log"
     else
