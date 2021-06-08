@@ -9,8 +9,8 @@
 
 typedef struct
 {
-    uint32_t pid;
-    uint32_t tid;
+    uint32_t pid_counter;
+    uint32_t tid_counter;
 } discordia_t;
 
 private discordia_t* p_discordia_instance = NULL;
@@ -47,8 +47,8 @@ int discordia_init(void)
 
     p_discordia_instance = u_malloc(sizeof(discordia_t));
 
-    p_discordia_instance->pid = 0;
-    p_discordia_instance->tid = 0;
+    p_discordia_instance->pid_counter = 0;
+    p_discordia_instance->tid_counter = 0;
 
     ds_planificador_init();
     ds_console_init();
@@ -149,6 +149,8 @@ void  discordia_mover_tripulante(uint32_t pid, uint32_t tid, const u_pos_t* pos)
         U_LOG_ERROR("No se pudo enviar el mensaje %s. Conexion perdida con la Memoria", msg_str);
         u_free(msg_str);
     }
+
+    discordia_recibir_respuesta_memoria(conn);
 
     u_msg_movimiento_tripulante_eliminar(msg);
     u_buffer_delete(msg_ser);
@@ -326,6 +328,8 @@ void  discordia_tripulante_nuevo_estado(uint32_t pid, uint32_t tid, char estado)
         u_free(msg_str);
     }
 
+    discordia_recibir_respuesta_memoria(conn);
+
     u_msg_tripulante_nuevo_estado_eliminar(msg);
     u_buffer_delete(msg_ser);
     u_buffer_delete(package_ser);
@@ -389,13 +393,13 @@ void  discordia_finaliza_fsck(void)
 
 private uint32_t discordia_obtener_nuevo_pid(void)
 {
-    uint32_t new_pid = ++ p_discordia_instance->pid;
+    uint32_t new_pid = ++ p_discordia_instance->pid_counter;
     return new_pid;
 }
 
 private uint32_t discordia_obtener_nuevo_tid(void)
 {
-    uint32_t new_tid = ++ p_discordia_instance->tid;
+    uint32_t new_tid = ++ p_discordia_instance->tid_counter;
     return new_tid;
 }
 
