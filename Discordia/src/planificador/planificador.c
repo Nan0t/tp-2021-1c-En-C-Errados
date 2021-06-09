@@ -169,7 +169,7 @@ private void ds_algorithm_rr(void)
 
         if(trip->bloquear)
         {
-            ds_queue_mt_pop_by_tid(exec_queue, trip->tid);
+            ds_queue_mt_iterator_remove(it);
 
             trip->bloquear = false;
             trip->quatum   = p_planificador->quantum;
