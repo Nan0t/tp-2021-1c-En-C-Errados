@@ -1,5 +1,4 @@
 #include "block.h"
-#include "disk.h"
 
 extern uint64_t fs_blocks_manager_write_in_block(uint32_t block_id, const void* data, uint64_t data_size, uint64_t offset);
 extern uint64_t fs_blocks_manager_read_in_block(uint32_t block_id, void* data, uint64_t data_size, uint64_t offset);

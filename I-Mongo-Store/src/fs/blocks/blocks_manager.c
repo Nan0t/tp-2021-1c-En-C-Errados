@@ -1,5 +1,5 @@
 #include "blocks_manager.h"
-#include "disk.h"
+#include "fs/disk/disk.h"
 
 #include <commons/bitarray.h>
 

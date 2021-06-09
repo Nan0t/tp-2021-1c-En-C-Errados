@@ -1,4 +1,4 @@
-#include "fs/disk.h"
+#include "disk.h"
 
 #include <pthread.h>
 #include <unistd.h>
