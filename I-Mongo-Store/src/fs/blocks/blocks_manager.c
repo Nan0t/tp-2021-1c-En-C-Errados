@@ -106,6 +106,11 @@ uint32_t fs_blocks_manager_get_disk_offset_of_block(uint32_t block_id)
     return p_blocks_manager_instance->blocks[block_id - 1].disk_offset;
 }
 
+uint32_t fs_blocks_manager_get_blocks_size(void)
+{
+    return p_blocks_manager_instance->blocks_size;
+}
+
 
 // =======================================================
 //              *** Private Functions ***
