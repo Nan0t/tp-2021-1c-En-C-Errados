@@ -180,9 +180,9 @@ private void ds_algorithm_rr(void)
             ds_queue_mt_push(block_queue, trip);
             ds_queue_manager_release(DS_QUEUE_BLOCK);
         }
-        else
+        else if(trip->quatum == 0)
         {
-            ds_queue_mt_pop_by_tid(exec_queue, trip->tid);
+            ds_queue_mt_iterator_remove(it);
 
             trip->quatum = p_planificador->quantum;
             tripulante_change_state(trip, TRIP_STATE_READY);
