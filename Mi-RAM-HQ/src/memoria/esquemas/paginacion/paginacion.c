@@ -29,8 +29,9 @@ void paginacion_memoria_init(void)
 bool paginacion_memoria_inicializar_patota(uint32_t pid, uint32_t cant_tripulantes, const char* tareas)
 {
     //8 tamaño pcb + 21 por cada uno de los tripulantes + el tamaño de las tareas. 
-    int tamanio_data = 2*(sizeof(uint32_t)) + 21* cant_tripulantes + strlen(tareas); 
+    int tamanio_data = 2*(sizeof(uint32_t)) + 21* cant_tripulantes + strlen(tareas)+1; 
     int frames_necesarios = paginacion_frames_necesarios(tamanio_data);
+    U_LOG_TRACE("Frames necesarios %d", frames_necesarios);
     if(!paginacion_tiene_frames_libres(frames_necesarios, lista_frames_memoria)){ 
         return false;
     }
@@ -103,6 +104,9 @@ private bool paginacion_tiene_frames_libres(int frames, t_list* lista_frames){
 }
 
 private int paginacion_frames_necesarios(int tamanio_data){
+    if(tamanio_data%tamanio_pagina>0){
+        return tamanio_data/tamanio_pagina+1;
+    }
     return tamanio_data/tamanio_pagina;
 }
 
@@ -168,7 +172,7 @@ private bool paginacion_agregar_patota_en_memoria(uint32_t pid, uint32_t cant_tr
     int offset_tareas = 0;
     while(offset_tareas < strlen(tareas)+1){
         int start = tamanio_pagina * numero_de_frame + offset_general; 
-        int end = start + minimo(tamanio_pagina - offset_general, strlen(tareas)+1);
+        int end = start + minimo(tamanio_pagina - offset_general, strlen(tareas)+1 - offset_tareas);
         for(i=start; i<end; i++){
             esquema_memoria_mfisica[i] = tareas[offset_tareas];
             offset_tareas++;
