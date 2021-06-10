@@ -3,7 +3,7 @@
 
 #include "block.h"
 
-void     fs_blocks_manager_init(void);
+void     fs_blocks_manager_init(const char* mount_point);
 uint32_t fs_blocks_manager_request_block(void);
 
 void     fs_blocks_manager_release_block(uint32_t block_id);

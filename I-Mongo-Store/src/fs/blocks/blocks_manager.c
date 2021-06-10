@@ -26,6 +26,8 @@ typedef struct
     uint32_t blocks_size;
     uint32_t blocks_count;
 
+    char*    mount_point;
+
     pthread_mutex_t blocks_bitmap_mx;
     t_bitarray*     bitmap;
 } fs_blocks_manager_t;
@@ -45,18 +47,18 @@ private void     fs_blocks_manager_release_block_at(uint32_t index);
 
 private bool fs_blocks_manager_check_for_clean_initialization(void);
 
-void fs_blocks_manager_init(void)
+void fs_blocks_manager_init(const char* mount_point)
 {
     if(p_blocks_manager_instance != NULL)
         return;
 
     p_blocks_manager_instance = u_malloc(sizeof(fs_blocks_manager_t));
+    p_blocks_manager_instance->mount_point = strdup(mount_point);
 
     pthread_mutex_init(&p_blocks_manager_instance->blocks_bitmap_mx, NULL);
     pthread_mutex_init(&p_blocks_manager_instance->blocks_mx, NULL);
 
-    const char* mount_point     = u_config_get_string_value("PUNTO_MONTAJE");
-    char* super_block_file_path = string_from_format("%s/SuperBloque.ims", mount_point);
+    char* super_block_file_path = string_from_format("%s/SuperBloque.ims", p_blocks_manager_instance->mount_point);
 
     int32_t super_block_file = open(super_block_file_path, O_RDWR, 0666);
     U_ASSERT(super_block_file != -1, "No se pudo abrir el archivo de SuperBloque.ims: %s", strerror(errno));
@@ -229,7 +231,7 @@ private void fs_blocks_manager_release_block_at(uint32_t index)
 
 private bool fs_blocks_manager_check_for_clean_initialization(void)
 {
-    char* disk_file_name = string_from_format("%s/Blocks.ims", u_config_get_string_value("PUNTO_MONTAJE"));
+    char* disk_file_name = string_from_format("%s/Blocks.ims", p_blocks_manager_instance->mount_point);
     bool disk_exist = access(disk_file_name, F_OK) == 0;
     u_free(disk_file_name);
 
