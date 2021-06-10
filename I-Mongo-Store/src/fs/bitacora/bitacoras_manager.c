@@ -33,6 +33,8 @@ void fs_bitacoras_manager_init(const char* mount_point)
     if(p_bitacoras_manager_instance)
         return;
 
+    p_bitacoras_manager_instance = u_malloc(sizeof(fs_bitacoras_manager_t));
+    
     p_bitacoras_manager_instance->mount_point = strdup(mount_point);
     p_bitacoras_manager_instance->bitacoras   = dictionary_create();
     
