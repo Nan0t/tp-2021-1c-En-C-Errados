@@ -8,9 +8,9 @@ project "tests"
 
     files {
         "%{wks.location}/Discordia/src/console/parser.c",
-        "%{wks.location}/I-Mongo-Store/src/fs/blocks_manager.c",
-        "%{wks.location}/I-Mongo-Store/src/fs/block.c",
-        "%{wks.location}/I-Mongo-Store/src/fs/disk.c",
+        "%{wks.location}/I-Mongo-Store/src/fs/blocks/blocks_manager.c",
+        "%{wks.location}/I-Mongo-Store/src/fs/blocks/block.c",
+        "%{wks.location}/I-Mongo-Store/src/fs/disk/disk.c",
         "%{prj.location}/src/**.h",
         "%{prj.location}/src/**.c"
     }

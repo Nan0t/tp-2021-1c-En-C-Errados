@@ -2,8 +2,8 @@
 
 #include <CUnit/Basic.h>
 
-#include <fs/blocks_manager.h>
-#include <fs/disk.h>
+#include <fs/blocks/blocks_manager.h>
+#include <fs/disk/disk.h>
 
 #include <stdlib.h>
 #include <stdio.h>

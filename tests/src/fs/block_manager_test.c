@@ -1,5 +1,5 @@
 #include "block_manager_test.h"
-#include "fs/blocks_manager.h"
+#include "fs/blocks/blocks_manager.h"
 #include <CUnit/Basic.h>
 #include <stdlib.h>
 
