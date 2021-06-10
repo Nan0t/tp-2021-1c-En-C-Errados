@@ -11,6 +11,7 @@ private p_frame_t* paginacion_cambiar_frame(p_frame_t*);
 private int minimo(int, int);
 private void paginacion_frame_modificado(p_frame_t* frame);
 private void paginacion_modificar_tabla(p_patota_y_tabla_t* patota, int numero_de_frame, int numero_pagina);
+private void mostrar_tabla_de_paginas(int pid);
 
 void paginacion_memoria_init(void)
 {
@@ -122,7 +123,7 @@ private p_patota_y_tabla_t* paginacion_agregar_patota_a_listado(uint32_t pid, ui
     patota->direccion_tareas = sizeof(uint32_t) + 21 * cant_tripulantes;
     patota->tabla = list_create();
     for(i=0; i<paginas; i++){
-        p_fila_tabla_de_paginas* fila = u_malloc(sizeof(p_fila_tabla_de_paginas));
+        p_fila_tabla_de_paginas_t* fila = u_malloc(sizeof(p_fila_tabla_de_paginas_t));
         fila->num_pagina = i;
         list_add(patota->tabla, fila);
     }
@@ -138,16 +139,18 @@ private bool paginacion_agregar_patota_en_memoria(uint32_t pid, uint32_t cant_tr
     int j;
     p_frame_t* frame_a_escribir = list_find(lista_frames_memoria, paginacion_frame_esta_libre);
     int numero_de_frame = frame_a_escribir->num_frame;
-    int numero_de_pagina = -1;
+    int numero_de_pagina = 0;
+    paginacion_modificar_tabla(patota, numero_de_frame, numero_de_pagina);
     //escribo el pid y direccion logica inicio de tareas
     for(i = 0; i<2; i++){
         memcpy(esquema_memoria_mfisica + numero_de_frame*tamanio_pagina + offset_general, &pid_y_direccion_tareas[i], sizeof(uint32_t));//ver si estoy copiando bien
         offset_general = offset_general + sizeof(uint32_t);
         if(offset_general == tamanio_pagina){  
-            frame_a_escribir = paginacion_cambiar_frame(frame_a_escribir); // esto anda bien?  OJO; 
+            frame_a_escribir = paginacion_cambiar_frame(frame_a_escribir); 
             numero_de_frame = frame_a_escribir->num_frame;
             offset_general = 0;
-            paginacion_modificar_tabla(patota, numero_de_frame, numero_de_pagina+1);
+            numero_de_pagina ++;
+            paginacion_modificar_tabla(patota, numero_de_frame, numero_de_pagina);
         }
     }
     U_LOG_TRACE("Pid: %d, y direccion de tareas: %d copiado con exito", pid_y_direccion_tareas[0], pid_y_direccion_tareas[1]);
@@ -160,7 +163,8 @@ private bool paginacion_agregar_patota_en_memoria(uint32_t pid, uint32_t cant_tr
                 frame_a_escribir = paginacion_cambiar_frame(frame_a_escribir); 
                 offset_general = 0;
                 numero_de_frame = frame_a_escribir->num_frame;
-                paginacion_modificar_tabla(patota, numero_de_frame, numero_de_pagina+1);
+                numero_de_pagina ++;
+                paginacion_modificar_tabla(patota, numero_de_frame, numero_de_pagina);
             }        
         }
         for(j = 0; j < 2; j++){
@@ -168,7 +172,8 @@ private bool paginacion_agregar_patota_en_memoria(uint32_t pid, uint32_t cant_tr
                 frame_a_escribir = paginacion_cambiar_frame(frame_a_escribir);
                 offset_general = 0;
                 numero_de_frame = frame_a_escribir->num_frame;
-                paginacion_modificar_tabla(patota, numero_de_frame, numero_de_pagina+1);
+                numero_de_pagina ++;
+                paginacion_modificar_tabla(patota, numero_de_frame, numero_de_pagina);
             }    
             memcpy(esquema_memoria_mfisica + numero_de_frame*tamanio_pagina + offset_general, &prox_tarea_y_direccion_pcb[j], sizeof(uint32_t));
             offset_general = offset_general + sizeof(uint32_t);
@@ -177,7 +182,8 @@ private bool paginacion_agregar_patota_en_memoria(uint32_t pid, uint32_t cant_tr
             frame_a_escribir = paginacion_cambiar_frame(frame_a_escribir); 
             offset_general = 0;
             numero_de_frame = frame_a_escribir->num_frame;
-            paginacion_modificar_tabla(patota, numero_de_frame, numero_de_pagina+1);
+            numero_de_pagina ++;
+            paginacion_modificar_tabla(patota, numero_de_frame, numero_de_pagina);
         } 
     }
     U_LOG_TRACE("Proxima tarea y direccion pcb escrito con exito");
@@ -195,11 +201,15 @@ private bool paginacion_agregar_patota_en_memoria(uint32_t pid, uint32_t cant_tr
         if(offset_general == tamanio_pagina){
             frame_a_escribir = paginacion_cambiar_frame(frame_a_escribir); 
             offset_general = 0;
-            paginacion_modificar_tabla(patota, numero_de_frame, numero_de_pagina+1);
+            numero_de_frame = frame_a_escribir->num_frame;
+            numero_de_pagina ++;
+            paginacion_modificar_tabla(patota, numero_de_frame, numero_de_pagina);
         } 
     }
     U_LOG_TRACE("Tareas escritas con exito");
     paginacion_frame_modificado(frame_a_escribir);
+    paginacion_mostrar_frames(esquema_memoria_tamanio/tamanio_pagina); //sacar
+    mostrar_tabla_de_paginas(pid); //sacar
     return true;
 }
 
@@ -220,8 +230,24 @@ private void paginacion_frame_modificado(p_frame_t* frame){
 }
 
 private void paginacion_modificar_tabla(p_patota_y_tabla_t* patota, int numero_de_frame, int numero_pagina){
-    p_fila_tabla_de_paginas* fila = list_get(patota->tabla, numero_pagina);
+    p_fila_tabla_de_paginas_t* fila = list_get(patota->tabla, numero_pagina);
     fila->num_pagina = numero_pagina;
     fila->frame_memoria = numero_de_frame;
+    //agregar frame swap 
     U_LOG_TRACE("Se agrego pagina a tabla de paginas");
+}
+
+private void mostrar_tabla_de_paginas(int pid){
+    bool comparar_pid(p_patota_y_tabla_t* patota){
+        if(patota->pid==pid){
+            return true;
+        }
+        return false;
+    };
+    p_patota_y_tabla_t* a_mostrar = list_find(listado_patotas, comparar_pid);
+    int i;
+    for(i=0; i<(list_size(a_mostrar->tabla)); i++){
+        p_fila_tabla_de_paginas_t* fila = list_get(a_mostrar->tabla, i);
+        U_LOG_TRACE("Mostrando tabla de pid: %d, pagina: %d, frame: %d", a_mostrar->pid, fila->num_pagina, fila->frame_memoria);
+    }
 }

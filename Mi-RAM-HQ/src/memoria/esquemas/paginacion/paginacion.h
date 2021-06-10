@@ -24,7 +24,7 @@ typedef struct
     uint32_t num_pagina;
     uint32_t frame_memoria;
     uint32_t frame_swap;
-}p_fila_tabla_de_paginas;
+}p_fila_tabla_de_paginas_t;
 
 t_list* lista_frames_memoria;
 t_list* lista_frames_swap;
