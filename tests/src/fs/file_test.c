@@ -104,6 +104,7 @@ void test_file_add_fill_char_with_overflow(void)
     CU_ASSERT_EQUAL(fs_file_get_blocks_count(file_overflow_2), 3);
 
     fs_file_delete(file_overflow_1);
+    fs_file_delete(file_overflow_2);
 }
 
 void test_file_remove_fill_char_with_no_shrink(void)
