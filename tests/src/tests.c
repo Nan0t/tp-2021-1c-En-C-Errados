@@ -5,6 +5,8 @@
 
 #include "fs/block_manager_test.h"
 #include "fs/block_tests.h"
+#include "fs/file_test.h"
+#include "fs/task_parser_test.h"
 
 #include <CUnit/Basic.h>
 
@@ -171,4 +173,44 @@ static void fs_tests(void)
     };
 
     ADD_TEST_TO_TEST_SUITE(block_test_suite, block_test_cases)
+
+    CU_pSuite file_test_suite = CU_add_suite_with_setup_and_teardown(
+        "I-Mongo-Store File Test Suite",
+        NULL,
+        NULL,
+        test_file_setup,
+        test_file_tear_down
+    );
+
+    test_case_t file_test_cases[] =
+    {
+        FUNCTION_TEST(test_file_create),
+        FUNCTION_TEST(test_file_add_fill_char_with_no_overflow),
+        FUNCTION_TEST(test_file_add_fill_char_with_overflow),
+        FUNCTION_TEST(test_file_remove_fill_char_with_no_shrink),
+        FUNCTION_TEST(test_file_remove_fill_char_with_shrink)
+    };
+
+    ADD_TEST_TO_TEST_SUITE(file_test_suite, file_test_cases)
+
+    CU_pSuite task_parser_test_suite = CU_add_suite_with_setup_and_teardown(
+        "I-Mongo-Store Task Parser Test Suite",
+        NULL,
+        NULL,
+        NULL,
+        NULL
+    );
+
+    test_case_t task_parser_test_cases[] =
+    {
+        FUNCTION_TEST(test_task_parser_unknown_task),
+        FUNCTION_TEST(test_task_parser_generar_oxigeno),
+        FUNCTION_TEST(test_task_parser_consumir_oxigeno),
+        FUNCTION_TEST(test_task_parser_generar_comida),
+        FUNCTION_TEST(test_task_parser_consumir_comida),
+        FUNCTION_TEST(test_task_parser_generar_basura),
+        FUNCTION_TEST(test_task_parser_descartar_basura)
+    };
+
+    ADD_TEST_TO_TEST_SUITE(task_parser_test_suite, task_parser_test_cases)
 }

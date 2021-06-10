@@ -18,6 +18,7 @@ fs_bitacora_t* fs_bitacora_create(const char* mount_point, uint32_t tid)
 void fs_bitacora_delete(fs_bitacora_t* this)
 {
     //TODO: Eliminar la estructura de la bitacora y liberar los bloques que tenga asignado.
+    u_free(this);
 }
 
 void fs_bitacora_add_content(fs_bitacora_t* this, const char* content)
@@ -48,6 +49,12 @@ uint32_t fs_bitacora_get_tid(const fs_bitacora_t* this)
 uint32_t fs_bitacora_get_size(const fs_bitacora_t* this)
 {
     //TODO: Devolver el tamaño de la bitacora.
+    return 0;
+}
+
+uint32_t fs_bitacora_get_block_count(const fs_bitacora_t* bitacora)
+{
+    //TODO: Devolver la catnidad de bloques ocupadas por la bitacora.
     return 0;
 }
 
