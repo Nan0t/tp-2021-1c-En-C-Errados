@@ -12,6 +12,7 @@ project "tests"
         "%{wks.location}/I-Mongo-Store/src/fs/blocks/block.c",
         "%{wks.location}/I-Mongo-Store/src/fs/disk/disk.c",
         "%{wks.location}/I-Mongo-Store/src/fs/file/file.c",
+        "%{wks.location}/I-Mongo-Store/src/fs/bitacora/bitacora.c",
         "%{wks.location}/I-Mongo-Store/src/fs/blocks/block.c",
         "%{wks.location}/I-Mongo-Store/src/fs/task_parser/task_parser.c",
         "%{prj.location}/src/**.h",

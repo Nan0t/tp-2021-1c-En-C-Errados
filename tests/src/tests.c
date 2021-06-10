@@ -6,6 +6,7 @@
 #include "fs/block_manager_test.h"
 #include "fs/block_tests.h"
 #include "fs/file_test.h"
+#include "fs/bitacora_test.h"
 #include "fs/task_parser_test.h"
 
 #include <CUnit/Basic.h>
@@ -192,6 +193,23 @@ static void fs_tests(void)
     };
 
     ADD_TEST_TO_TEST_SUITE(file_test_suite, file_test_cases)
+
+    CU_pSuite bitacora_test_suite = CU_add_suite_with_setup_and_teardown(
+        "I-Mongo-Store Bitacora Test Suite",
+        NULL,
+        NULL,
+        test_bitacora_setup,
+        test_bitacora_tear_down
+    );
+
+    test_case_t bitacora_test_cases[] =
+    {
+        FUNCTION_TEST(test_bitacora_create),
+        FUNCTION_TEST(test_bitacora_add_content_with_no_overflow),
+        FUNCTION_TEST(test_bitacora_add_content_with_overflow)
+    };
+
+    ADD_TEST_TO_TEST_SUITE(bitacora_test_suite, bitacora_test_cases)
 
     CU_pSuite task_parser_test_suite = CU_add_suite_with_setup_and_teardown(
         "I-Mongo-Store Task Parser Test Suite",
