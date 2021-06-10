@@ -16,7 +16,6 @@ typedef struct
 {
     uint32_t number;
     uint32_t disk_offset;
-    uint32_t block_size;
 } fs_block_t;
 
 typedef struct
@@ -31,7 +30,7 @@ typedef struct
     t_bitarray*     bitmap;
 } fs_blocks_manager_t;
 
-private void     fs_block_init(fs_block_t* block, uint32_t number, uint32_t disk_offset, uint32_t block_size);
+private void     fs_block_init(fs_block_t* block, uint32_t number, uint32_t disk_offset);
 private uint64_t fs_block_write_internal(const fs_block_t* this, const void* data, uint64_t data_size, uint64_t offset);
 private uint64_t fs_block_read_internal(const fs_block_t* this, void* data, uint64_t data_size, uint64_t offset);
 
@@ -116,19 +115,18 @@ uint32_t fs_blocks_manager_get_blocks_size(void)
 //              *** Private Functions ***
 // =======================================================
 
-private void fs_block_init(fs_block_t* this, uint32_t number, uint32_t disk_offset, uint32_t block_size)
+private void fs_block_init(fs_block_t* this, uint32_t number, uint32_t disk_offset)
 {
     this->number      = number;
     this->disk_offset = disk_offset;
-    this->block_size  = block_size;
 }
 
 private uint64_t fs_block_write_internal(const fs_block_t* this, const void* data, uint64_t data_size, uint64_t offset)
 {
     uint64_t bytes_to_write =
-        (data_size + offset < this->block_size) ?
+        (data_size + offset < p_blocks_manager_instance->blocks_size) ?
             data_size :
-            data_size - (data_size + offset - this->block_size);
+            data_size - (data_size + offset - p_blocks_manager_instance->blocks_size);
 
     fs_physical_disk_write(data, bytes_to_write, this->disk_offset + offset);
 
@@ -138,9 +136,9 @@ private uint64_t fs_block_write_internal(const fs_block_t* this, const void* dat
 private uint64_t fs_block_read_internal(const fs_block_t* this, void* data, uint64_t data_size, uint64_t offset)
 {
     uint64_t bytes_to_read =
-        (data_size + offset < this->block_size) ?
+        (data_size + offset < p_blocks_manager_instance->blocks_size) ?
             data_size :
-            data_size - (data_size + offset - this->block_size);
+            data_size - (data_size + offset - p_blocks_manager_instance->blocks_size);
 
     fs_physical_disk_read(data, bytes_to_read, this->disk_offset + offset);
 
@@ -196,8 +194,7 @@ private void fs_blocks_manager_init_blocks(void)
         fs_block_init(
             &p_blocks_manager_instance->blocks[i],
             i + 1,
-            i * p_blocks_manager_instance->blocks_size,
-            p_blocks_manager_instance->blocks_size);
+            i * p_blocks_manager_instance->blocks_size);
 }
 
 private uint32_t fs_blocks_manager_get_free_block_index(void)
