@@ -17,6 +17,7 @@ typedef struct
     uint32_t pid;
     t_list* tabla;
     uint32_t direccion_tareas;
+    uint32_t tripulantes_escritos;
 }p_patota_y_tabla_t; 
 
 typedef struct

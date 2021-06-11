@@ -12,6 +12,9 @@ private int minimo(int, int);
 private void paginacion_frame_modificado(p_frame_t* frame);
 private void paginacion_modificar_tabla(p_patota_y_tabla_t* patota, int numero_de_frame, int numero_pagina);
 private void mostrar_tabla_de_paginas(int pid);
+private p_patota_y_tabla_t* buscar_patota_por_pid(uint32_t pid);
+private void paginacion_chequear_overflow_tripulante(int tamanio_dato, int *frame, int *desplazamiento, int *pagina, p_patota_y_tabla_t*);
+private int paginacion_frame_correspondiente_a_pagina(int pagina, p_patota_y_tabla_t* patota);
 
 void paginacion_memoria_init(void)
 {
@@ -45,6 +48,37 @@ bool paginacion_memoria_inicializar_patota(uint32_t pid, uint32_t cant_tripulant
 
 bool paginacion_memoria_inicializar_tripulante(uint32_t pid, uint32_t tid, u_pos_t pos)
 {
+    p_patota_y_tabla_t* patota = buscar_patota_por_pid(pid);
+    uint32_t escritos = patota->tripulantes_escritos;
+    int base = 8 + 21 * escritos; //correspondientes a la estructura del pcb y los tripulantes escritos en memoria;  
+    int pagina = base / tamanio_pagina;
+    int frame = paginacion_frame_correspondiente_a_pagina(pagina, patota);
+    int desplazamiento = base % tamanio_pagina;
+    char estado = 'N';
+    uint32_t identificador_nueva_tarea = 0; 
+    uint32_t puntero_pcb = 0;
+    /*
+    if(desplazamiento + sizeof(uint32_t)>tamanio_pagina){
+        frame++;
+        desplazamiento = 0;
+    }*/
+    paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+    memcpy(esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, &tid, sizeof(uint32_t));
+    desplazamiento = desplazamiento + sizeof(uint32_t);
+
+    paginacion_chequear_overflow_tripulante(sizeof(char), &frame, &desplazamiento, &pagina, patota);
+    memcpy(esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, &estado, sizeof(char));
+    desplazamiento = desplazamiento + sizeof(char);
+
+    
+    uint32_t posicion_tarea_pcb[4] = {pos.x, pos.y, identificador_nueva_tarea, puntero_pcb};
+    int i;
+    for(i=0; i<4; i++){
+        paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+        memcpy(esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, &posicion_tarea_pcb[i], sizeof(uint32_t));
+    }
+    patota->tripulantes_escritos = escritos + 1;
+    U_LOG_TRACE("Tripulante con tid %d guardado correctamente", tid);
     return true;
 }
 
@@ -65,7 +99,10 @@ char* paginacion_memoria_obtener_proxima_tarea(uint32_t pid, uint32_t tid)
 
 tripulantes_t* paginacion_memoria_obtener_info_tripulante(uint32_t pid, uint32_t tid)
 {
+    //p_patota_y_tabla_t* patota = list_find(listado_patotas, buscar_patota_por_pid);
+    //tripulantes_t* tripulante = u_malloc(sizeof(tripulantes_t));
 
+    
 }
 
 t_list*        paginacion_memoria_obtener_todos_los_tripulantes(void)
@@ -121,6 +158,7 @@ private p_patota_y_tabla_t* paginacion_agregar_patota_a_listado(uint32_t pid, ui
     p_patota_y_tabla_t* patota = u_malloc(sizeof(p_patota_y_tabla_t));
     patota->pid = pid;
     patota->direccion_tareas = sizeof(uint32_t) + 21 * cant_tripulantes;
+    patota->tripulantes_escritos = 0;
     patota->tabla = list_create();
     for(i=0; i<paginas; i++){
         p_fila_tabla_de_paginas_t* fila = u_malloc(sizeof(p_fila_tabla_de_paginas_t));
@@ -157,7 +195,7 @@ private bool paginacion_agregar_patota_en_memoria(uint32_t pid, uint32_t cant_tr
     //hago espacio para tripulantes y escribo proxima tarea y direccion logica del pcb
     uint32_t prox_tarea_y_direccion_pcb[2] = {0, 0}; //direccion logica del pcb es 0?
     for(i=0; i<cant_tripulantes; i++){
-        for(j=0; j<13; j++){
+        for(j=0; j<21; j++){
             offset_general++;
             if(offset_general == tamanio_pagina){
                 frame_a_escribir = paginacion_cambiar_frame(frame_a_escribir); 
@@ -167,26 +205,7 @@ private bool paginacion_agregar_patota_en_memoria(uint32_t pid, uint32_t cant_tr
                 paginacion_modificar_tabla(patota, numero_de_frame, numero_de_pagina);
             }        
         }
-        for(j = 0; j < 2; j++){
-            if((offset_general + sizeof(uint32_t)) > tamanio_pagina){
-                frame_a_escribir = paginacion_cambiar_frame(frame_a_escribir);
-                offset_general = 0;
-                numero_de_frame = frame_a_escribir->num_frame;
-                numero_de_pagina ++;
-                paginacion_modificar_tabla(patota, numero_de_frame, numero_de_pagina);
-            }    
-            memcpy(esquema_memoria_mfisica + numero_de_frame*tamanio_pagina + offset_general, &prox_tarea_y_direccion_pcb[j], sizeof(uint32_t));
-            offset_general = offset_general + sizeof(uint32_t);
-        }
-        if(offset_general == tamanio_pagina){
-            frame_a_escribir = paginacion_cambiar_frame(frame_a_escribir); 
-            offset_general = 0;
-            numero_de_frame = frame_a_escribir->num_frame;
-            numero_de_pagina ++;
-            paginacion_modificar_tabla(patota, numero_de_frame, numero_de_pagina);
-        } 
     }
-    U_LOG_TRACE("Proxima tarea y direccion pcb escrito con exito");
     //escribo las tareas
     int offset_tareas = 0;
     while(offset_tareas < strlen(tareas)+1){
@@ -250,4 +269,35 @@ private void mostrar_tabla_de_paginas(int pid){
         p_fila_tabla_de_paginas_t* fila = list_get(a_mostrar->tabla, i);
         U_LOG_TRACE("Mostrando tabla de pid: %d, pagina: %d, frame: %d", a_mostrar->pid, fila->num_pagina, fila->frame_memoria);
     }
+}
+
+private p_patota_y_tabla_t* buscar_patota_por_pid(uint32_t pid){
+    bool buscar_patota(p_patota_y_tabla_t* patota){
+        if(pid == patota->pid){
+            return true;
+        }
+        return false;
+    };
+    p_patota_y_tabla_t* patota_buscada = list_find(listado_patotas, buscar_patota);
+    return patota_buscada; 
+}
+
+private void paginacion_chequear_overflow_tripulante(int tamanio_dato, int *frame, int *desplazamiento, int *pagina, p_patota_y_tabla_t* patota){
+    if((*desplazamiento)+tamanio_dato>tamanio_pagina){
+        *frame = paginacion_frame_correspondiente_a_pagina((*pagina)+1, patota);
+        *desplazamiento = 0;
+        *pagina = (*pagina) + 1;
+    }
+}
+
+private int paginacion_frame_correspondiente_a_pagina(int pagina, p_patota_y_tabla_t* patota){
+    bool paginacion_buscar_frame_de_pagina(p_fila_tabla_de_paginas_t* fila_recibida){
+        if(fila_recibida->num_pagina==pagina){
+            return true;
+        }
+            return false;
+    };
+    p_fila_tabla_de_paginas_t* fila = list_find(patota->tabla, paginacion_buscar_frame_de_pagina);
+    int frame = fila->frame_memoria;
+    return frame;
 }
