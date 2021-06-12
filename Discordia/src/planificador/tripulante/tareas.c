@@ -31,5 +31,5 @@ void eliminar_tarea (tarea_t* tarea){
 }
 
 private bool tarea_es_bloqueante (char* tarea){
-    return string_contains(tarea, " ") || string_contains(tarea, "DESCARTAR_BASURA");
+    return string_contains(tarea, " ");
 }
