@@ -9,13 +9,13 @@ typedef struct
     uint32_t fin_segmento;
     uint32_t tipo_segmento;
     uint32_t id_propietario;
-}p_segmento_t;
+}s_segmento_t;
 
 typedef struct
 {
     uint32_t pid;
     t_list* tabla_segmentos;
-}p_patota_y_tabla_t;
+}s_patota_y_tabla_t;
 
 typedef struct
 {
@@ -24,14 +24,14 @@ typedef struct
     uint32_t inicio_segmento_tareas;
     uint32_t tamanio_segmento_tareas;
 	t_list*  listado_tripulantes;
-}p_segmento_patota_t;
+}s_segmento_patota_t;
 
 typedef struct
 {
 	uint32_t tid;
 	uint32_t inicio_segmento_tcb;
     uint32_t tamanio_segmento_tcb;
-}p_segmento_tripulante_t;
+}s_segmento_tripulante_t;
 
 t_list* listado_segmentos;
 

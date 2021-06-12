@@ -67,7 +67,7 @@ bool segmentacion_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid)
 //---------------------------------------------------------------------------------------
 
 private void segmentacion_inicializar_listado_segmentos(int tamanio_segmento_inicial){
-	   p_segmento_t* segmento = u_malloc(sizeof(p_segmento_t));
+	   s_segmento_t* segmento = u_malloc(sizeof(s_segmento_t));
        segmento->inicio_segmento=0;
        segmento->fin_segmento=tamanio_segmento_inicial - 1;
 	   segmento->tipo_segmento=-1;
@@ -77,32 +77,33 @@ private void segmentacion_inicializar_listado_segmentos(int tamanio_segmento_ini
 
 
 
-private bool segmentacion_obtener_dos_segmentos(uint32_t pid,int tamanio_pcb,int tamanio_tareas){
+private bool segmentacion_obtener_dos_segmentos(uint32_t pid,int tamanio_pcb,int tamanio_tareas){/*
        char* criterio = u_config_get_string_value("CRITERIO_SELECCION");
 
 	   if(!strcmp(criterio, "FF")){
-		   /* Logica CRITERIO FIRST FIT  */
+		   /* Logica CRITERIO FIRST FIT  *//*
            int i;
 		   int indice_listado_segmentos_pcb;
 		   int indice_listado_segmentos_tareas;
 		   int segmento_excedido = u_config_get_int_value("TAMANIO_MEMORIA");
-		   p_segmento_t *aux;
+		   s_segmento_t *aux;
 		   uint32_t inicio_segmento_pcb=segmento_excedido;
 		   uint32_t inicio_segmento_tareas=segmento_excedido;
 		   int tamanio_lista=list_size(listado_segmentos);
 
 		   for(i=0; i<tamanio_lista; i++){
             aux = list_get(listado_segmentos, i);
-			if(aux->id_propietario==-1){
-				  if(((aux->fin_segmento - aux->inicio_segmento + 1)>= tamanio_pcb)& (aux->inicio_segmento<inicio_segmento_pcb)){
+				if(aux->id_propietario==-1){
+				  	if(((aux->fin_segmento - aux->inicio_segmento + 1)>= tamanio_pcb)& (aux->inicio_segmento<inicio_segmento_pcb)){
 					  inicio_segmento_pcb=aux->inicio_segmento;
 					  indice_listado_segmentos_pcb=i;
-				 }
+				 	}
+		   		}
 		   }
 
 		   for(i=0; i<tamanio_lista; i++){
             aux = list_get(listado_segmentos, i);
-			if(aux->id_propietario==-1){
+				if(aux->id_propietario==-1){
 				  if(((aux->fin_segmento - aux->inicio_segmento + 1)>= tamanio_tareas)& (aux->inicio_segmento<inicio_segmento_tareas)){
 					  if(((aux->fin_segmento - aux->inicio_segmento + 1 - tamanio_pcb)>= tamanio_tareas)& (aux->inicio_segmento==inicio_segmento_pcb)){
 						  inicio_segmento_tareas=inicio_segmento_pcb+tamanio_tareas;
@@ -112,7 +113,8 @@ private bool segmentacion_obtener_dos_segmentos(uint32_t pid,int tamanio_pcb,int
 					      inicio_segmento_tareas=aux->inicio_segmento;
 						  indice_listado_segmentos_tareas=i;
 					  }
-				 }
+				  }
+		   		}
 		   }
 
 		   if((inicio_segmento_pcb!=segmento_excedido)& (inicio_segmento_tareas!=segmento_excedido)){
@@ -122,12 +124,12 @@ private bool segmentacion_obtener_dos_segmentos(uint32_t pid,int tamanio_pcb,int
 		   return false;
 
        }
-	   /* Logica CRITERIO BEST FIT  */
+	   /* Logica CRITERIO BEST FIT  *//*
            int i;
 		   int indice_listado_segmentos_pcb;
 		   int indice_listado_segmentos_tareas;
 		   int tamanio_excedido = u_config_get_int_value("TAMANIO_MEMORIA");
-		   p_segmento_t *aux;
+		   s_segmento_t *aux;
 		   uint32_t tamanio_segmento_pcb=tamanio_excedido+1;
 		   uint32_t tamanio_segmento_tareas=tamanio_excedido+1;
 		   uint32_t inicio_segmento_pcb=segmento_excedido;
@@ -165,18 +167,18 @@ private bool segmentacion_obtener_dos_segmentos(uint32_t pid,int tamanio_pcb,int
                   return segmentacion_agregar_patota_en_estructuras(inicio_segmento_pcb,tamanio_pcb,inicio_segmento_tareas,tamanio_tareas,pid,indice_listado_segmentos_pcb,indice_listado_segmentos_tareas);
 		   }
 
-		   return false;
+		   return false;*/
 }
 
 
 private bool segmentacion_agregar_patota_en_estructuras(uint32_t inicio_segmento_pcb,int tamanio_pcb,uint32_t inicio_segmento_tareas,int tamanio_tareas,uint32_t pid,int indice_listado_segmentos_pcb,int indice_listado_segmentos_tareas){
-
-	    p_segmento_t *segmento_pcb=u_malloc(sizeof(p_segmento_t));
-		p_segmento_t *segmento_tareas=u_malloc(sizeof(p_segmento_t));
+/*
+	    s_segmento_t *segmento_pcb=u_malloc(sizeof(s_segmento_t));
+		s_segmento_t *segmento_tareas=u_malloc(sizeof(s_segmento_t));
 		t_list* lista_de_tripulantes=list_create();
-		p_segmento_patota_t *segmento_patota=u_malloc(sizeof(p_segmento_patota_t));
+		s_segmento_patota_t *segmento_patota=u_malloc(sizeof(s_segmento_patota_t));
 		t_list* tabla_segmentos_patota=list_create();
-		p_patota_y_tabla_t *patota_y_tabla=u_malloc(sizeof(p_patota_y_tabla_t));
+		s_patota_y_tabla_t *patota_y_tabla=u_malloc(sizeof(s_patota_y_tabla_t));
 
 		segmento_pcb->inicio_segmento=inicio_segmento_pcb;
 		segmento_pcb->fin_segmento=inicio_segmento_pcb + tamanio_pcb - 1;
@@ -188,13 +190,14 @@ private bool segmentacion_agregar_patota_en_estructuras(uint32_t inicio_segmento
 		segmento_tareas->tipo_segmento=1;
 		segmento_tareas->id_propietario=pid;
 
-		p_segmento_t *segmento_modificado_pcb=list_replace(listado_segmentos, indice_listado_segmentos_pcb, segmento_pcb); /* chequear si se puede usar otra funcion para reemplazar el valor */
+		s_segmento_t *segmento_modificado_pcb=list_replace(listado_segmentos, indice_listado_segmentos_pcb, segmento_pcb); /* chequear si se puede usar otra funcion para reemplazar el valor */
+		/*
 		if(indice_listado_segmentos_tareas==indice_listado_segmentos_pcb){
 			list_add(listado_segmentos, segmento_tareas);
 		}
 		else{
-			p_segmento_t *segmento_modificado_tareas=list_replace(listado_segmentos, indice_listado_segmentos_tareas, segmento_tareas); /* chequear si se puede usar otra funcion para reemplazar el valor */
-		}
+			s_segmento_t *segmento_modificado_tareas=list_replace(listado_segmentos, indice_listado_segmentos_tareas, segmento_tareas); /* chequear si se puede usar otra funcion para reemplazar el valor */
+/*		}
 
 		segmento_patota->inicio_segmento_pcb=inicio_segmento_pcb;
 		segmento_patota->tamanio_segmento_pcb=tamanio_pcb;
@@ -208,11 +211,11 @@ private bool segmentacion_agregar_patota_en_estructuras(uint32_t inicio_segmento
 		patota_y_tabla->tabla_segmentos=tabla_segmentos_patota;
 
 		list_add(tabla_segmentos_patota, segmento_patota);
-		return true;
+		return true;*/
 }
 
 
 
 private bool segmentacion_agregar_patota_en_memoria(uint32_t pid,const char* tareas,int tamanio_pcb,int tamanio_tareas){
-
+	/*return true;*/
 }

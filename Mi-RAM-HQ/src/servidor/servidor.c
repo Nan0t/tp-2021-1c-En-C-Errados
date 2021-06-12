@@ -220,6 +220,7 @@ void client_handler_manage_opcode(int32_t sock_client, u_opcode_e op_code, u_buf
 
         case OBTENER_TRIPULANTES:
         {
+            U_LOG_TRACE("Recibido msg OBTENER_TRIPULANTES");
             t_list* tripulantes = admin_memoria_obtener_tripulantes();
 
             t_list_iterator* it = list_iterator_create(tripulantes);
@@ -233,6 +234,9 @@ void client_handler_manage_opcode(int32_t sock_client, u_opcode_e op_code, u_buf
                     .pid = trip->pid,
                     .estado = trip->estado
                 };
+
+                U_LOG_TRACE("TRIPULANTE A ENVIAR pid: %d, tid: %d, estado: %c, posX: %d, posY: %d",
+                trip->pid, trip->tid, trip->estado, trip->pos.x, trip->pos.y);
 
                 u_msg_lista_tripulantes_agregar(msg, trip_info);
             }

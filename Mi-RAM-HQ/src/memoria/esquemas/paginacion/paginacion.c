@@ -15,6 +15,7 @@ private void mostrar_tabla_de_paginas(int pid);
 private p_patota_y_tabla_t* buscar_patota_por_pid(uint32_t pid);
 private void paginacion_chequear_overflow_tripulante(int tamanio_dato, int *frame, int *desplazamiento, int *pagina, p_patota_y_tabla_t*);
 private int paginacion_frame_correspondiente_a_pagina(int pagina, p_patota_y_tabla_t* patota);
+private tripulantes_t* paginacion_obtener_tripulante_de_patota(p_patota_y_tabla_t* patota, int numero_de_tripulante);
 
 void paginacion_memoria_init(void)
 {
@@ -153,7 +154,18 @@ tripulantes_t* paginacion_memoria_obtener_info_tripulante(uint32_t pid, uint32_t
 
 t_list*        paginacion_memoria_obtener_todos_los_tripulantes(void)
 {
-
+    t_list* lista_de_todos_los_tripulantes = list_create();
+    int cantidad_patotas = list_size(listado_patotas);
+    int i, j;
+    for(i=0; i<cantidad_patotas; i++){
+        p_patota_y_tabla_t* patota = list_get(listado_patotas, i);
+        int cantidad_tripulantes = patota->tripulantes_escritos;
+        for(j=0; j<cantidad_tripulantes; j++){
+            tripulantes_t* tripulante = paginacion_obtener_tripulante_de_patota(patota, j);
+            list_add(lista_de_todos_los_tripulantes, tripulante);
+        }
+    }
+    return lista_de_todos_los_tripulantes;
 }
 
 bool           paginacion_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid)
@@ -362,3 +374,33 @@ private int paginacion_frame_correspondiente_a_pagina(int pagina, p_patota_y_tab
     return frame;
 }
 
+private tripulantes_t* paginacion_obtener_tripulante_de_patota(p_patota_y_tabla_t* patota, int numero_de_tripulante){
+    tripulantes_t* tripulante = u_malloc(sizeof(tripulantes_t));
+
+    int base = 8 + 21 * numero_de_tripulante; //correspondientes a la estructura del pcb y los tripulantes escritos en memoria;  
+    int pagina = base / tamanio_pagina;
+    int frame = paginacion_frame_correspondiente_a_pagina(pagina, patota);
+    int desplazamiento = base % tamanio_pagina;
+    int i;
+    tripulante->pid = patota->pid;
+    
+    paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+        
+    memcpy(&(tripulante->tid), esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t)); //ojo aca
+    desplazamiento = desplazamiento + sizeof(uint32_t);
+
+    paginacion_chequear_overflow_tripulante(sizeof(char), &frame, &desplazamiento, &pagina, patota);
+    memcpy(&(tripulante->estado), esquema_memoria_mfisica+ frame * tamanio_pagina + desplazamiento, sizeof(char));
+    desplazamiento++;
+            
+    paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+    memcpy(&(tripulante->pos.x), esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
+    desplazamiento = desplazamiento + sizeof(uint32_t);
+
+    paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+    memcpy(&(tripulante->pos.y), esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
+    desplazamiento = desplazamiento + sizeof(uint32_t);
+            
+
+    return tripulante;
+}
