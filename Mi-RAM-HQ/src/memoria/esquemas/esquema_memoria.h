@@ -12,7 +12,7 @@ typedef struct
 } tripulantes_t;
 
 int esquema_memoria_tamanio;
-char* esquema_memoria_mfisica;
+void* esquema_memoria_mfisica;
 t_list* listado_patotas;
 int contador_memoria;
 

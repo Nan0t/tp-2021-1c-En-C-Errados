@@ -76,9 +76,36 @@ bool paginacion_memoria_inicializar_tripulante(uint32_t pid, uint32_t tid, u_pos
     for(i=0; i<4; i++){
         paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
         memcpy(esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, &posicion_tarea_pcb[i], sizeof(uint32_t));
+        desplazamiento = desplazamiento + sizeof(uint32_t);
     }
     patota->tripulantes_escritos = escritos + 1;
     U_LOG_TRACE("Tripulante con tid %d guardado correctamente", tid);
+    
+//AGREGADO PARA PROBAR
+    uint32_t tid_mostrar;
+    memcpy(&tid_mostrar, esquema_memoria_mfisica + 8, sizeof(uint32_t));
+    U_LOG_TRACE("PRUEBA TID: %d", tid_mostrar);
+
+    char estado_mostrar;
+    memcpy(&estado_mostrar, esquema_memoria_mfisica + 12, sizeof(char));
+
+    uint32_t posicion_x_mostrar;
+    memcpy(&posicion_x_mostrar, esquema_memoria_mfisica + 13, sizeof(uint32_t));
+
+    uint32_t posicion_y_mostrar;
+    memcpy(&posicion_y_mostrar, esquema_memoria_mfisica + 17, sizeof(uint32_t));
+
+    uint32_t proxima_mostrar;
+    memcpy(&proxima_mostrar, esquema_memoria_mfisica + 21, sizeof(uint32_t));
+
+    uint32_t puntero_mostrar;
+    memcpy(&puntero_mostrar, esquema_memoria_mfisica + 25, sizeof(uint32_t));
+
+    U_LOG_TRACE("PRUEBA ESTADO: %c, POSICION X: %d, POSICION Y: %d, PROXIMA TAREA: %d, PUNTERO: %d", estado_mostrar
+    ,posicion_x_mostrar, posicion_y_mostrar, proxima_mostrar, puntero_mostrar);
+    //tripulantes_t* a_mostrar = paginacion_memoria_obtener_info_tripulante(pid, tid);
+    //U_LOG_TRACE("Info recuperada pid: %d, tid: %d, pos x: %d, pos y: %d, estado:%c", a_mostrar->pid, a_mostrar->tid, a_mostrar->pos.x, a_mostrar->pos.y, a_mostrar->estado);
+    
     return true;
 }
 
@@ -99,10 +126,50 @@ char* paginacion_memoria_obtener_proxima_tarea(uint32_t pid, uint32_t tid)
 
 tripulantes_t* paginacion_memoria_obtener_info_tripulante(uint32_t pid, uint32_t tid)
 {
-    //p_patota_y_tabla_t* patota = list_find(listado_patotas, buscar_patota_por_pid);
-    //tripulantes_t* tripulante = u_malloc(sizeof(tripulantes_t));
+   
+    tripulantes_t* tripulante = u_malloc(sizeof(tripulantes_t));
 
-    
+    p_patota_y_tabla_t* patota = buscar_patota_por_pid(pid);
+    int base = 8; //correspondientes a la estructura del pcb y los tripulantes escritos en memoria;  
+    int pagina = base / tamanio_pagina;
+    int frame = paginacion_frame_correspondiente_a_pagina(pagina, patota);
+    int desplazamiento = base % tamanio_pagina;
+    bool tid_encontrado = false; 
+    int i;
+
+    while(tid_encontrado){
+        paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+        uint32_t tid_comparado;
+        memcpy(&tid_comparado, esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t)); //ojo aca
+        desplazamiento = desplazamiento + sizeof(uint32_t);
+        if(tid_comparado == tid){
+            tid_encontrado = true;
+            tripulante->tid = tid_comparado;
+            tripulante->pid = pid;
+            paginacion_chequear_overflow_tripulante(sizeof(char), &frame, &desplazamiento, &pagina, patota);
+            memcpy(&(tripulante->estado), esquema_memoria_mfisica+ frame * tamanio_pagina + desplazamiento, sizeof(char));
+            desplazamiento++;
+            
+            paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+            memcpy(&(tripulante->pos.x), esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
+            desplazamiento = desplazamiento + sizeof(uint32_t);
+
+            paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+            memcpy(&(tripulante->pos.y), esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
+            desplazamiento = desplazamiento + sizeof(uint32_t);
+            
+
+        }else{
+            desplazamiento = desplazamiento + sizeof(uint32_t);
+            for(i=0; i<21; i++){
+                paginacion_chequear_overflow_tripulante(1, &frame, &desplazamiento, &pagina, patota);
+                desplazamiento++;
+            }
+        }
+    }
+
+
+    return tripulante;
 }
 
 t_list*        paginacion_memoria_obtener_todos_los_tripulantes(void)
@@ -183,6 +250,7 @@ private bool paginacion_agregar_patota_en_memoria(uint32_t pid, uint32_t cant_tr
     for(i = 0; i<2; i++){
         memcpy(esquema_memoria_mfisica + numero_de_frame*tamanio_pagina + offset_general, &pid_y_direccion_tareas[i], sizeof(uint32_t));//ver si estoy copiando bien
         offset_general = offset_general + sizeof(uint32_t);
+       
         if(offset_general == tamanio_pagina){  
             frame_a_escribir = paginacion_cambiar_frame(frame_a_escribir); 
             numero_de_frame = frame_a_escribir->num_frame;
@@ -212,7 +280,8 @@ private bool paginacion_agregar_patota_en_memoria(uint32_t pid, uint32_t cant_tr
         int start = tamanio_pagina * numero_de_frame + offset_general; 
         int end = start + minimo(tamanio_pagina - offset_general, strlen(tareas)+1 - offset_tareas);
         for(i=start; i<end; i++){
-            esquema_memoria_mfisica[i] = tareas[offset_tareas];
+            //esquema_memoria_mfisica[i] = tareas[offset_tareas];
+            memcpy(esquema_memoria_mfisica + i, &tareas[offset_tareas], sizeof(char)); //agregado
             offset_tareas++;
             offset_general++;
             U_LOG_TRACE("Escrito caracter: %d", i);
@@ -229,6 +298,18 @@ private bool paginacion_agregar_patota_en_memoria(uint32_t pid, uint32_t cant_tr
     paginacion_frame_modificado(frame_a_escribir);
     paginacion_mostrar_frames(esquema_memoria_tamanio/tamanio_pagina); //sacar
     mostrar_tabla_de_paginas(pid); //sacar
+
+//agregado para probar
+    uint32_t a_mostrar;
+    memcpy(&a_mostrar, esquema_memoria_mfisica, sizeof(uint32_t));
+    uint32_t direccion_mostrar;
+    memcpy(&direccion_mostrar, esquema_memoria_mfisica + 4, sizeof(uint32_t));
+    char* tareas_mostrar = u_malloc(strlen(tareas)+1);
+    memcpy(tareas_mostrar, esquema_memoria_mfisica + direccion_mostrar, strlen(tareas)+1);
+    U_LOG_TRACE("PRUEBA PID: %d", a_mostrar);
+    U_LOG_TRACE("PRUEBA DIRECCION TAREAS %d", direccion_mostrar);
+    U_LOG_TRACE("PRUEBA TAREAS: %s", tareas_mostrar);
+    //hasta aca. 
     return true;
 }
 
@@ -301,3 +382,4 @@ private int paginacion_frame_correspondiente_a_pagina(int pagina, p_patota_y_tab
     int frame = fila->frame_memoria;
     return frame;
 }
+
