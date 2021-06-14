@@ -257,7 +257,7 @@ void client_handler_manage_opcode(int32_t sock_client, u_opcode_e op_code, u_buf
                     .pid = trip->pid,
                     .estado = trip->estado
                 };
-
+                U_LOG_TRACE("ENVIADO TRIPULANTE tid: %d, pid: %d, posx: %d, posy: %d, estado: %c", trip->tid, trip->pid, trip->pos.x, trip->pos.y, trip->estado);
                 u_msg_lista_tripulantes_agregar(msg, trip_info);
             }
 
