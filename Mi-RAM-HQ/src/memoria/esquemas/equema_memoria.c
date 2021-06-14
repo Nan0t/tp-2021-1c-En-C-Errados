@@ -74,9 +74,10 @@ private void init_paginacion(void)
 {
     paginacion_memoria_init();
 
-    p_esquema_memoria_instance->inicializar_patota             = *paginacion_memoria_inicializar_patota;
+    p_esquema_memoria_instance->inicializar_patota             = paginacion_memoria_inicializar_patota;
     p_esquema_memoria_instance->inicializar_tripulante         = paginacion_memoria_inicializar_tripulante;
     p_esquema_memoria_instance->actualizar_posicion_tripulante = paginacion_memoria_actualizar_posicion_tripulante;
+    p_esquema_memoria_instance->actualizar_estado_tripulante   = paginacion_memoria_actualizar_estado_tripulante;
     p_esquema_memoria_instance->obtener_proxima_tarea          = paginacion_memoria_obtener_proxima_tarea;
     p_esquema_memoria_instance->obtener_tripulante             = paginacion_memoria_obtener_info_tripulante;
     p_esquema_memoria_instance->obtener_todos_los_tripulantes  = paginacion_memoria_obtener_todos_los_tripulantes;
@@ -90,6 +91,7 @@ private void init_segmentacion(void)
     p_esquema_memoria_instance->inicializar_patota             = segmentacion_memoria_inicializar_patota;
     p_esquema_memoria_instance->inicializar_tripulante         = segmentacion_memoria_inicializar_tripulante;
     p_esquema_memoria_instance->actualizar_posicion_tripulante = segmentacion_memoria_actualizar_posicion_tripulante;
+    p_esquema_memoria_instance->actualizar_estado_tripulante   = segmentacion_memoria_actualizar_estado_tripulante;
     p_esquema_memoria_instance->obtener_proxima_tarea          = segmentacion_memoria_obtener_proxima_tarea;
     p_esquema_memoria_instance->obtener_tripulante             = segmentacion_memoria_obtener_info_tripulante;
     p_esquema_memoria_instance->obtener_todos_los_tripulantes  = segmentacion_memoria_obtener_todos_los_tripulantes;
