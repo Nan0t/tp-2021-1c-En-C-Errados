@@ -106,7 +106,7 @@ bool paginacion_memoria_actualizar_posicion_tripulante(uint32_t pid, uint32_t ti
         desplazamiento = desplazamiento + sizeof(uint32_t);
         if(tid_comparado == tid){
             tid_encontrado = true;
-            
+
             paginacion_chequear_overflow_tripulante(1, &frame, &desplazamiento, &pagina, patota);
             desplazamiento++;
 
@@ -124,12 +124,41 @@ bool paginacion_memoria_actualizar_posicion_tripulante(uint32_t pid, uint32_t ti
             }
         }
     }
+    U_LOG_INFO("Actualizado posicion de tid: %d", tid);
     return true;
 }
 
 bool paginacion_memoria_actualizar_estado_tripulante(uint32_t pid, uint32_t tid, char estado)
 {
+    p_patota_y_tabla_t* patota = buscar_patota_por_pid(pid);
+    int base = 8; //correspondientes a la estructura del pcb y el inicio de los tripulantes escritos en memoria;  
+    int pagina = base / tamanio_pagina;
+    int frame = paginacion_frame_correspondiente_a_pagina(pagina, patota); //chequear si la pagina esta en memoria. 
+    int desplazamiento = base % tamanio_pagina;
+    bool tid_encontrado = false; 
+    int i;
+    uint32_t tid_comparado;
 
+    while(!tid_encontrado){
+        paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota); //cuando cambio de pagina chequear si la pagina esta en memoria
+        
+        memcpy(&tid_comparado, esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
+        desplazamiento = desplazamiento + sizeof(uint32_t);
+        if(tid_comparado == tid){
+            tid_encontrado = true;
+
+            paginacion_chequear_overflow_tripulante(1, &frame, &desplazamiento, &pagina, patota);
+            memcpy(esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, &estado, sizeof(char));
+            
+        }else{ 
+            for(i=0; i<17; i++){
+                paginacion_chequear_overflow_tripulante(1, &frame, &desplazamiento, &pagina, patota);
+                desplazamiento++;
+            }
+        }
+    }
+    U_LOG_INFO("Actualizado estado de tid: %d", tid);
+    return true;
 }
 
 char* paginacion_memoria_obtener_proxima_tarea(uint32_t pid, uint32_t tid)
@@ -258,7 +287,7 @@ private p_patota_y_tabla_t* paginacion_agregar_patota_a_listado(uint32_t pid, ui
         list_add(patota->tabla, fila);
     }
     list_add(listado_patotas, patota);   //mutex listado de patotas 
-    U_LOG_TRACE("Se agrego patota con pid: %d, al listado de patotas", pid);
+    U_LOG_INFO("Se agrego patota con pid: %d, al listado de patotas", pid);
     return patota; 
 }
 
@@ -309,7 +338,7 @@ private bool paginacion_agregar_patota_en_memoria(uint32_t pid, uint32_t cant_tr
             memcpy(esquema_memoria_mfisica + i, &tareas[offset_tareas], sizeof(char)); //agregado
             offset_tareas++;
             offset_general++;
-            U_LOG_TRACE("Escrito caracter: %d", i);
+
         }
         if(offset_general == tamanio_pagina){
             frame_a_escribir = paginacion_cambiar_frame(frame_a_escribir); 
@@ -324,17 +353,6 @@ private bool paginacion_agregar_patota_en_memoria(uint32_t pid, uint32_t cant_tr
     paginacion_mostrar_frames(esquema_memoria_tamanio/tamanio_pagina); //sacar
     mostrar_tabla_de_paginas(pid); //sacar
 
-//agregado para probar
-    /*uint32_t a_mostrar;
-    memcpy(&a_mostrar, esquema_memoria_mfisica, sizeof(uint32_t));
-    uint32_t direccion_mostrar;
-    memcpy(&direccion_mostrar, esquema_memoria_mfisica + 4, sizeof(uint32_t));
-    char* tareas_mostrar = u_malloc(strlen(tareas)+1);
-    memcpy(tareas_mostrar, esquema_memoria_mfisica + direccion_mostrar, strlen(tareas)+1);
-    U_LOG_TRACE("PRUEBA PID: %d", a_mostrar);
-    U_LOG_TRACE("PRUEBA DIRECCION TAREAS %d", direccion_mostrar);
-    U_LOG_TRACE("PRUEBA TAREAS: %s", tareas_mostrar);
-    //hasta aca. */
     return true;
 }
 
