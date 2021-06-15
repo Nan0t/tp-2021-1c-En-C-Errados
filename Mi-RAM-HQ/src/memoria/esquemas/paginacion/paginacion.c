@@ -18,6 +18,7 @@ private int paginacion_frame_correspondiente_a_pagina(int pagina, p_patota_y_tab
 private tripulantes_t* paginacion_obtener_tripulante_de_patota(p_patota_y_tabla_t* patota, int numero_de_tripulante);
 private char* paginacion_obtener_tareas_de_pid(uint32_t pid);
 private tripulantes_t* paginacion_obtener_tcb(uint32_t pid, uint32_t tid);
+private void paginacion_modificar_proxima_tarea_tripulante(uint32_t pid, uint32_t tid);
 
 void paginacion_memoria_init(void)
 {
@@ -109,14 +110,14 @@ bool paginacion_memoria_actualizar_posicion_tripulante(uint32_t pid, uint32_t ti
         if(tid_comparado == tid){
             tid_encontrado = true;
 
-            paginacion_chequear_overflow_tripulante(1, &frame, &desplazamiento, &pagina, patota);
+            paginacion_chequear_overflow_tripulante(sizeof(char), &frame, &desplazamiento, &pagina, patota);
             desplazamiento++;
 
             paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
             memcpy(esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, &(pos.x), sizeof(uint32_t));
             desplazamiento = desplazamiento + sizeof(uint32_t);
 
-            paginacion_chequear_overflow_tripulante(1, &frame, &desplazamiento, &pagina, patota);
+            paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
             memcpy(esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, &(pos.y), sizeof(uint32_t));
             
         }else{ 
@@ -172,9 +173,11 @@ char* paginacion_memoria_obtener_proxima_tarea(uint32_t pid, uint32_t tid)
     uint32_t numero_de_tarea = tripulante->proxima_tarea;
     free(tripulante);
 
+    paginacion_modificar_proxima_tarea_tripulante(pid, tid);
+
     char** tareas_separadas = string_split(todas_las_tareas, "\n"); 
     free(todas_las_tareas);
-    
+
     U_LOG_INFO("PROXIMA TAREA DE TRIPULANTE: %d, %s", tid, tareas_separadas[numero_de_tarea]);
     
     return tareas_separadas[numero_de_tarea];
@@ -511,4 +514,49 @@ private tripulantes_t* paginacion_obtener_tcb(uint32_t pid, uint32_t tid){
     }
 
     return tripulante;
+}
+
+private void paginacion_modificar_proxima_tarea_tripulante(uint32_t pid, uint32_t tid){
+    p_patota_y_tabla_t* patota = buscar_patota_por_pid(pid);
+    int base = 8; //correspondientes a la estructura del pcb  
+    int pagina = base / tamanio_pagina;
+    int frame = paginacion_frame_correspondiente_a_pagina(pagina, patota); //chequear si la pagina esta en memoria. 
+    int desplazamiento = base % tamanio_pagina;
+    bool tid_encontrado = false; 
+    int i;
+    uint32_t tid_comparado;
+    uint32_t proxima_tarea;
+
+    while(!tid_encontrado){
+        paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota); //cuando cambio de pagina chequear si la pagina esta en memoria
+        
+        memcpy(&tid_comparado, esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
+        desplazamiento = desplazamiento + sizeof(uint32_t);
+        if(tid_comparado == tid){
+            tid_encontrado = true;
+
+            paginacion_chequear_overflow_tripulante(sizeof(char), &frame, &desplazamiento, &pagina, patota);
+            desplazamiento++;
+
+            paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+            desplazamiento = desplazamiento + sizeof(uint32_t);
+
+            paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+            desplazamiento = desplazamiento + sizeof(uint32_t);
+
+            paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);            
+            memcpy(&proxima_tarea, esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
+            proxima_tarea++;
+
+            memcpy(esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, &proxima_tarea, sizeof(uint32_t));
+            
+        }else{ 
+            for(i=0; i<17; i++){
+                paginacion_chequear_overflow_tripulante(1, &frame, &desplazamiento, &pagina, patota);
+                desplazamiento++;
+            }
+        }
+    }
+    U_LOG_INFO("Actualizado proxima tarea de tid: %d", tid);
+    return true;
 }
