@@ -11,7 +11,7 @@ private void paginacion_frame_modificado(p_frame_t* frame);
 //private void paginacion_modificar_tabla(p_patota_y_tabla_t* patota, int numero_de_frame, int numero_pagina);
 private void mostrar_tabla_de_paginas(uint32_t pid);
 private p_patota_y_tabla_t* buscar_patota_por_pid(uint32_t pid);
-private void paginacion_chequear_overflow_tripulante(int tamanio_dato, int *frame, int *desplazamiento, int *pagina, p_patota_y_tabla_t*);
+private void paginacion_chequear_overflow_de_pagina(int tamanio_dato, int *frame, int *desplazamiento, int *pagina, p_patota_y_tabla_t*);
 private int paginacion_frame_correspondiente_a_pagina(uint32_t pagina, p_patota_y_tabla_t* patota);
 private tripulantes_t* paginacion_obtener_tripulante_de_patota(p_patota_y_tabla_t* patota, int numero_de_tripulante);
 private char* paginacion_obtener_tareas_de_pid(uint32_t pid);
@@ -60,11 +60,11 @@ bool paginacion_memoria_inicializar_tripulante(uint32_t pid, uint32_t tid, u_pos
     uint32_t identificador_nueva_tarea = 0; 
     uint32_t puntero_pcb = 0;
   
-    paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+    paginacion_chequear_overflow_de_pagina(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
     memcpy(esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, &tid, sizeof(uint32_t));
     desplazamiento = desplazamiento + sizeof(uint32_t);
 
-    paginacion_chequear_overflow_tripulante(sizeof(char), &frame, &desplazamiento, &pagina, patota);
+    paginacion_chequear_overflow_de_pagina(sizeof(char), &frame, &desplazamiento, &pagina, patota);
     memcpy(esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, &estado, sizeof(char));
     desplazamiento = desplazamiento + sizeof(char);
 
@@ -72,7 +72,7 @@ bool paginacion_memoria_inicializar_tripulante(uint32_t pid, uint32_t tid, u_pos
     uint32_t posicion_tarea_pcb[4] = {pos.x, pos.y, identificador_nueva_tarea, puntero_pcb};
     int i;
     for(i=0; i<4; i++){
-        paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+        paginacion_chequear_overflow_de_pagina(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
         memcpy(esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, &posicion_tarea_pcb[i], sizeof(uint32_t));
         desplazamiento = desplazamiento + sizeof(uint32_t);
     }
@@ -101,26 +101,26 @@ bool paginacion_memoria_actualizar_posicion_tripulante(uint32_t pid, uint32_t ti
     uint32_t tid_comparado;
 
     while(!tid_encontrado){
-        paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota); //cuando cambio de pagina chequear si la pagina esta en memoria
+        paginacion_chequear_overflow_de_pagina(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota); //cuando cambio de pagina chequear si la pagina esta en memoria
         
         memcpy(&tid_comparado, esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
         desplazamiento = desplazamiento + sizeof(uint32_t);
         if(tid_comparado == tid){
             tid_encontrado = true;
 
-            paginacion_chequear_overflow_tripulante(sizeof(char), &frame, &desplazamiento, &pagina, patota);
+            paginacion_chequear_overflow_de_pagina(sizeof(char), &frame, &desplazamiento, &pagina, patota);
             desplazamiento++;
 
-            paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+            paginacion_chequear_overflow_de_pagina(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
             memcpy(esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, &(pos.x), sizeof(uint32_t));
             desplazamiento = desplazamiento + sizeof(uint32_t);
 
-            paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+            paginacion_chequear_overflow_de_pagina(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
             memcpy(esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, &(pos.y), sizeof(uint32_t));
             
         }else{ 
             for(i=0; i<17; i++){
-                paginacion_chequear_overflow_tripulante(1, &frame, &desplazamiento, &pagina, patota);
+                paginacion_chequear_overflow_de_pagina(1, &frame, &desplazamiento, &pagina, patota);
                 desplazamiento++;
             }
         }
@@ -141,19 +141,19 @@ bool paginacion_memoria_actualizar_estado_tripulante(uint32_t pid, uint32_t tid,
     uint32_t tid_comparado;
 
     while(!tid_encontrado){
-        paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota); //cuando cambio de pagina chequear si la pagina esta en memoria
+        paginacion_chequear_overflow_de_pagina(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota); //cuando cambio de pagina chequear si la pagina esta en memoria
         
         memcpy(&tid_comparado, esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
         desplazamiento = desplazamiento + sizeof(uint32_t);
         if(tid_comparado == tid){
             tid_encontrado = true;
 
-            paginacion_chequear_overflow_tripulante(1, &frame, &desplazamiento, &pagina, patota);
+            paginacion_chequear_overflow_de_pagina(1, &frame, &desplazamiento, &pagina, patota);
             memcpy(esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, &estado, sizeof(char));
             
         }else{ 
             for(i=0; i<17; i++){
-                paginacion_chequear_overflow_tripulante(1, &frame, &desplazamiento, &pagina, patota);
+                paginacion_chequear_overflow_de_pagina(1, &frame, &desplazamiento, &pagina, patota);
                 desplazamiento++;
             }
         }
@@ -282,7 +282,7 @@ private bool paginacion_agregar_patota_en_memoria(uint32_t pid, uint32_t cant_tr
     int j;
 
     for(i=0; i<2; i++){
-        paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota); //cuando cambio de pagina chequear si la pagina esta en memoria
+        paginacion_chequear_overflow_de_pagina(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota); //cuando cambio de pagina chequear si la pagina esta en memoria
         
         memcpy(esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, &pid_y_direccion_tareas[i], sizeof(uint32_t));
         desplazamiento = desplazamiento + sizeof(uint32_t);
@@ -291,14 +291,14 @@ private bool paginacion_agregar_patota_en_memoria(uint32_t pid, uint32_t cant_tr
 
     for(i=0; i<cant_tripulantes; i++){
         for(j=0; j<21; j++){
-            paginacion_chequear_overflow_tripulante(1, &frame, &desplazamiento, &pagina, patota);
+            paginacion_chequear_overflow_de_pagina(1, &frame, &desplazamiento, &pagina, patota);
             desplazamiento++;
         }
     }
     U_LOG_TRACE("PID: %d, reservada en memoria espacio para tripulantes", pid);
 
     for(i=0; i<strlen(tareas)+1; i++){
-        paginacion_chequear_overflow_tripulante(1, &frame, &desplazamiento, &pagina, patota);
+        paginacion_chequear_overflow_de_pagina(1, &frame, &desplazamiento, &pagina, patota);
         memcpy(esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, &tareas[i], sizeof(char));
         desplazamiento++;
     }
@@ -349,7 +349,7 @@ private p_patota_y_tabla_t* buscar_patota_por_pid(uint32_t pid){
     return patota_buscada; 
 }
 
-private void paginacion_chequear_overflow_tripulante(int tamanio_dato, int *frame, int *desplazamiento, int *pagina, p_patota_y_tabla_t* patota){
+private void paginacion_chequear_overflow_de_pagina(int tamanio_dato, int *frame, int *desplazamiento, int *pagina, p_patota_y_tabla_t* patota){
     if((*desplazamiento)+tamanio_dato>tamanio_pagina){
         *frame = paginacion_frame_correspondiente_a_pagina((*pagina)+1, patota);
         *desplazamiento = 0;
@@ -378,20 +378,20 @@ private tripulantes_t* paginacion_obtener_tripulante_de_patota(p_patota_y_tabla_
     int desplazamiento = base % tamanio_pagina;
     tripulante->pid = patota->pid;
     
-    paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+    paginacion_chequear_overflow_de_pagina(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
         
     memcpy(&(tripulante->tid), esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t)); //ojo aca
     desplazamiento = desplazamiento + sizeof(uint32_t);
 
-    paginacion_chequear_overflow_tripulante(sizeof(char), &frame, &desplazamiento, &pagina, patota);
+    paginacion_chequear_overflow_de_pagina(sizeof(char), &frame, &desplazamiento, &pagina, patota);
     memcpy(&(tripulante->estado), esquema_memoria_mfisica+ frame * tamanio_pagina + desplazamiento, sizeof(char));
     desplazamiento++;
             
-    paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+    paginacion_chequear_overflow_de_pagina(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
     memcpy(&(tripulante->pos.x), esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
     desplazamiento = desplazamiento + sizeof(uint32_t);
 
-    paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+    paginacion_chequear_overflow_de_pagina(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
     memcpy(&(tripulante->pos.y), esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
     desplazamiento = desplazamiento + sizeof(uint32_t);
             
@@ -413,7 +413,7 @@ private char* paginacion_obtener_tareas_de_pid(uint32_t pid){
     char* tareas = u_malloc(tamanio_tareas);
     
     //Busco la direccion de las tareas en memoria
-    paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+    paginacion_chequear_overflow_de_pagina(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
     memcpy(&direccion_tareas, esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
 
     U_LOG_TRACE("direccion tareas levantada correctamente");
@@ -425,7 +425,7 @@ private char* paginacion_obtener_tareas_de_pid(uint32_t pid){
     //Recorro la memoria y copio caracter a caracter las tareas
     int i;
     for(i=0; i<tamanio_tareas; i++){
-        paginacion_chequear_overflow_tripulante(sizeof(char), &frame, &desplazamiento, &pagina, patota);
+        paginacion_chequear_overflow_de_pagina(sizeof(char), &frame, &desplazamiento, &pagina, patota);
         memcpy(tareas + i, esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(char));
         desplazamiento++;
     }
@@ -446,7 +446,7 @@ private tripulantes_t* paginacion_obtener_tcb(uint32_t pid, uint32_t tid){
     uint32_t tid_comparado;
 
     while(!tid_encontrado){
-        paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+        paginacion_chequear_overflow_de_pagina(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
         
         memcpy(&tid_comparado, esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
         desplazamiento = desplazamiento + sizeof(uint32_t);
@@ -455,25 +455,25 @@ private tripulantes_t* paginacion_obtener_tcb(uint32_t pid, uint32_t tid){
             tripulante->tid = tid_comparado;
             tripulante->pid = pid;
 
-            paginacion_chequear_overflow_tripulante(sizeof(char), &frame, &desplazamiento, &pagina, patota);
+            paginacion_chequear_overflow_de_pagina(sizeof(char), &frame, &desplazamiento, &pagina, patota);
             memcpy(&(tripulante->estado), esquema_memoria_mfisica+ frame * tamanio_pagina + desplazamiento, sizeof(char));
             desplazamiento++;
             
-            paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+            paginacion_chequear_overflow_de_pagina(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
             memcpy(&(tripulante->pos.x), esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
             desplazamiento = desplazamiento + sizeof(uint32_t);
 
-            paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+            paginacion_chequear_overflow_de_pagina(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
             memcpy(&(tripulante->pos.y), esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
             desplazamiento = desplazamiento + sizeof(uint32_t);
             
-            paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+            paginacion_chequear_overflow_de_pagina(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
             memcpy(&(tripulante->proxima_tarea), esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
             desplazamiento = desplazamiento + sizeof(uint32_t);
 
         }else{
             for(i=0; i<17; i++){
-                paginacion_chequear_overflow_tripulante(1, &frame, &desplazamiento, &pagina, patota);
+                paginacion_chequear_overflow_de_pagina(1, &frame, &desplazamiento, &pagina, patota);
                 desplazamiento++;
             }
         }
@@ -494,23 +494,23 @@ private void paginacion_modificar_proxima_tarea_tripulante(uint32_t pid, uint32_
     uint32_t proxima_tarea;
 
     while(!tid_encontrado){
-        paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota); //cuando cambio de pagina chequear si la pagina esta en memoria
+        paginacion_chequear_overflow_de_pagina(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota); //cuando cambio de pagina chequear si la pagina esta en memoria
         
         memcpy(&tid_comparado, esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
         desplazamiento = desplazamiento + sizeof(uint32_t);
         if(tid_comparado == tid){
             tid_encontrado = true;
 
-            paginacion_chequear_overflow_tripulante(sizeof(char), &frame, &desplazamiento, &pagina, patota);
+            paginacion_chequear_overflow_de_pagina(sizeof(char), &frame, &desplazamiento, &pagina, patota);
             desplazamiento++;
 
-            paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+            paginacion_chequear_overflow_de_pagina(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
             desplazamiento = desplazamiento + sizeof(uint32_t);
 
-            paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+            paginacion_chequear_overflow_de_pagina(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
             desplazamiento = desplazamiento + sizeof(uint32_t);
 
-            paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);            
+            paginacion_chequear_overflow_de_pagina(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);            
             memcpy(&proxima_tarea, esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
             proxima_tarea++;
 
@@ -518,7 +518,7 @@ private void paginacion_modificar_proxima_tarea_tripulante(uint32_t pid, uint32_
             
         }else{ 
             for(i=0; i<17; i++){
-                paginacion_chequear_overflow_tripulante(1, &frame, &desplazamiento, &pagina, patota);
+                paginacion_chequear_overflow_de_pagina(1, &frame, &desplazamiento, &pagina, patota);
                 desplazamiento++;
             }
         }
