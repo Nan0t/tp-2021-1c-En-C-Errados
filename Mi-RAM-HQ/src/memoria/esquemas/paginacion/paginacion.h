@@ -2,6 +2,7 @@
 #define ESQUEMA_PAGINACION_H
 
 #include "memoria/esquemas/esquema_memoria.h"
+#include <stdlib.h>
 
 typedef struct
 {
