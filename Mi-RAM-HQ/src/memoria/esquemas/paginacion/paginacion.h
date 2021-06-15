@@ -12,11 +12,12 @@ typedef struct
     //uint32_t pid;
 }p_frame_t;
 
+
 typedef struct
 {
     uint32_t pid;
     t_list* tabla;
-    uint32_t direccion_tareas;
+    uint32_t tamanio_tareas;
     uint32_t tripulantes_escritos;
 }p_patota_y_tabla_t; 
 

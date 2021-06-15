@@ -5,7 +5,7 @@ private void paginacion_mostrar_frames(int);
 private bool paginacion_tiene_frames_libres(int frames, t_list* lista_frames);
 private int paginacion_frames_necesarios(int tamanio_data);
 private bool paginacion_frame_esta_libre(p_frame_t* frame);
-private p_patota_y_tabla_t* paginacion_agregar_patota_a_listado(uint32_t, uint32_t, int);
+private p_patota_y_tabla_t* paginacion_agregar_patota_a_listado(uint32_t, uint32_t, int, int);
 private bool paginacion_agregar_patota_en_memoria(uint32_t, uint32_t, const char*, int, p_patota_y_tabla_t*);
 private p_frame_t* paginacion_cambiar_frame(p_frame_t*);
 private int minimo(int, int);
@@ -16,6 +16,8 @@ private p_patota_y_tabla_t* buscar_patota_por_pid(uint32_t pid);
 private void paginacion_chequear_overflow_tripulante(int tamanio_dato, int *frame, int *desplazamiento, int *pagina, p_patota_y_tabla_t*);
 private int paginacion_frame_correspondiente_a_pagina(int pagina, p_patota_y_tabla_t* patota);
 private tripulantes_t* paginacion_obtener_tripulante_de_patota(p_patota_y_tabla_t* patota, int numero_de_tripulante);
+private char* paginacion_obtener_tareas_de_pid(uint32_t pid);
+private tripulantes_t* paginacion_obtener_tcb(uint32_t pid, uint32_t tid);
 
 void paginacion_memoria_init(void)
 {
@@ -42,7 +44,7 @@ bool paginacion_memoria_inicializar_patota(uint32_t pid, uint32_t cant_tripulant
         return false;
     }
     U_LOG_TRACE("Hay frames necesarios"); //Chequear 
-    p_patota_y_tabla_t* patota = paginacion_agregar_patota_a_listado(pid, cant_tripulantes, frames_necesarios);
+    p_patota_y_tabla_t* patota = paginacion_agregar_patota_a_listado(pid, cant_tripulantes, frames_necesarios, strlen(tareas)+1);
     return paginacion_agregar_patota_en_memoria(pid, cant_tripulantes, tareas, tamanio_data, patota);
 
 }
@@ -163,54 +165,25 @@ bool paginacion_memoria_actualizar_estado_tripulante(uint32_t pid, uint32_t tid,
 
 char* paginacion_memoria_obtener_proxima_tarea(uint32_t pid, uint32_t tid)
 {
+    char* todas_las_tareas = paginacion_obtener_tareas_de_pid(pid);
+    U_LOG_TRACE("TAREAS RECUPERADAS: %s", todas_las_tareas);
+    
+    tripulantes_t* tripulante = paginacion_obtener_tcb(pid, tid);
+    uint32_t numero_de_tarea = tripulante->proxima_tarea;
+    free(tripulante);
 
+    char** tareas_separadas = string_split(todas_las_tareas, "\n"); 
+    free(todas_las_tareas);
+    
+    U_LOG_INFO("PROXIMA TAREA DE TRIPULANTE: %d, %s", tid, tareas_separadas[numero_de_tarea]);
+    
+    return tareas_separadas[numero_de_tarea];
 }
 
 tripulantes_t* paginacion_memoria_obtener_info_tripulante(uint32_t pid, uint32_t tid)
 {
    
-    tripulantes_t* tripulante = u_malloc(sizeof(tripulantes_t));
-
-    p_patota_y_tabla_t* patota = buscar_patota_por_pid(pid);
-    int base = 8; //correspondientes a la estructura del pcb y el inicio de los tripulantes escritos en memoria;  
-    int pagina = base / tamanio_pagina;
-    int frame = paginacion_frame_correspondiente_a_pagina(pagina, patota);
-    int desplazamiento = base % tamanio_pagina;
-    bool tid_encontrado = false; 
-    int i;
-    uint32_t tid_comparado;
-
-    while(!tid_encontrado){
-        paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
-        
-        memcpy(&tid_comparado, esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
-        desplazamiento = desplazamiento + sizeof(uint32_t);
-        if(tid_comparado == tid){
-            tid_encontrado = true;
-            tripulante->tid = tid_comparado;
-            tripulante->pid = pid;
-
-            paginacion_chequear_overflow_tripulante(sizeof(char), &frame, &desplazamiento, &pagina, patota);
-            memcpy(&(tripulante->estado), esquema_memoria_mfisica+ frame * tamanio_pagina + desplazamiento, sizeof(char));
-            desplazamiento++;
-            
-            paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
-            memcpy(&(tripulante->pos.x), esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
-            desplazamiento = desplazamiento + sizeof(uint32_t);
-
-            paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
-            memcpy(&(tripulante->pos.y), esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
-            desplazamiento = desplazamiento + sizeof(uint32_t);
-            
-
-        }else{
-            for(i=0; i<17; i++){
-                paginacion_chequear_overflow_tripulante(1, &frame, &desplazamiento, &pagina, patota);
-                desplazamiento++;
-            }
-        }
-    }
-
+    tripulantes_t* tripulante = paginacion_obtener_tcb(pid, tid);
 
     return tripulante;
 }
@@ -274,17 +247,17 @@ private bool paginacion_frame_esta_libre(p_frame_t* frame){
     bool respuesta=(frame->ocupado)==0? true : false;
 }
 
-private p_patota_y_tabla_t* paginacion_agregar_patota_a_listado(uint32_t pid, uint32_t cant_tripulantes, int paginas){//ver si pasar las tareas
+private p_patota_y_tabla_t* paginacion_agregar_patota_a_listado(uint32_t pid, uint32_t cant_tripulantes, int paginas, int tamanio_tareas){//ver si pasar las tareas
     int i;
     p_patota_y_tabla_t* patota = u_malloc(sizeof(p_patota_y_tabla_t));
     patota->pid = pid;
-    patota->direccion_tareas = sizeof(uint32_t) + 21 * cant_tripulantes;
+    patota->tamanio_tareas = tamanio_tareas;
     patota->tripulantes_escritos = 0;
     patota->tabla = list_create();
     for(i=0; i<paginas; i++){
         p_fila_tabla_de_paginas_t* fila = u_malloc(sizeof(p_fila_tabla_de_paginas_t));
-        fila->num_pagina = i;
-        list_add(patota->tabla, fila);
+        fila->num_pagina = i;  //En realidad le tengo q asignar el frame aca? revisar. 
+        list_add(patota->tabla, fila); 
     }
     list_add(listado_patotas, patota);   //mutex listado de patotas 
     U_LOG_INFO("Se agrego patota con pid: %d, al listado de patotas", pid);
@@ -453,6 +426,89 @@ private tripulantes_t* paginacion_obtener_tripulante_de_patota(p_patota_y_tabla_
     memcpy(&(tripulante->pos.y), esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
     desplazamiento = desplazamiento + sizeof(uint32_t);
             
+
+    return tripulante;
+}
+
+private char* paginacion_obtener_tareas_de_pid(uint32_t pid){
+    
+    p_patota_y_tabla_t* patota = buscar_patota_por_pid(pid);
+    
+    int base = 4 ; //correspondientes a la estructura del pcb  
+    int pagina = base / tamanio_pagina;
+    int frame = paginacion_frame_correspondiente_a_pagina(pagina, patota);
+    int desplazamiento = base % tamanio_pagina; 
+     
+    int direccion_tareas;
+    int tamanio_tareas = patota->tamanio_tareas;
+    char* tareas = u_malloc(tamanio_tareas);
+    
+    //Busco la direccion de las tareas en memoria
+    paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+    memcpy(&direccion_tareas, esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
+
+    U_LOG_TRACE("direccion tareas levantada correctamente");
+    base = direccion_tareas;
+    pagina = base / tamanio_pagina;
+    frame = paginacion_frame_correspondiente_a_pagina(pagina, patota);
+    desplazamiento = base % tamanio_pagina;
+
+    //Recorro la memoria y copio caracter a caracter las tareas
+    int i;
+    for(i=0; i<tamanio_tareas; i++){
+        paginacion_chequear_overflow_tripulante(sizeof(char), &frame, &desplazamiento, &pagina, patota);
+        memcpy(tareas + i, esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(char));
+        desplazamiento++;
+    }
+
+    return tareas;
+}
+
+private tripulantes_t* paginacion_obtener_tcb(uint32_t pid, uint32_t tid){
+    tripulantes_t* tripulante = u_malloc(sizeof(tripulantes_t));
+
+    p_patota_y_tabla_t* patota = buscar_patota_por_pid(pid);
+    int base = 8; //correspondientes a la estructura del pcb y el inicio de los tripulantes escritos en memoria;  
+    int pagina = base / tamanio_pagina;
+    int frame = paginacion_frame_correspondiente_a_pagina(pagina, patota);
+    int desplazamiento = base % tamanio_pagina;
+    bool tid_encontrado = false; 
+    int i;
+    uint32_t tid_comparado;
+
+    while(!tid_encontrado){
+        paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+        
+        memcpy(&tid_comparado, esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
+        desplazamiento = desplazamiento + sizeof(uint32_t);
+        if(tid_comparado == tid){
+            tid_encontrado = true;
+            tripulante->tid = tid_comparado;
+            tripulante->pid = pid;
+
+            paginacion_chequear_overflow_tripulante(sizeof(char), &frame, &desplazamiento, &pagina, patota);
+            memcpy(&(tripulante->estado), esquema_memoria_mfisica+ frame * tamanio_pagina + desplazamiento, sizeof(char));
+            desplazamiento++;
+            
+            paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+            memcpy(&(tripulante->pos.x), esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
+            desplazamiento = desplazamiento + sizeof(uint32_t);
+
+            paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+            memcpy(&(tripulante->pos.y), esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
+            desplazamiento = desplazamiento + sizeof(uint32_t);
+            
+            paginacion_chequear_overflow_tripulante(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota);
+            memcpy(&(tripulante->proxima_tarea), esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
+            desplazamiento = desplazamiento + sizeof(uint32_t);
+
+        }else{
+            for(i=0; i<17; i++){
+                paginacion_chequear_overflow_tripulante(1, &frame, &desplazamiento, &pagina, patota);
+                desplazamiento++;
+            }
+        }
+    }
 
     return tripulante;
 }
