@@ -355,8 +355,6 @@ private void paginacion_modificar_frame(uint32_t numero_de_frame, p_tipo_escritu
             U_LOG_TRACE("escribiendo en frame %d", numero_de_frame);
             break;
         case MODIFICACION:;
-            frame->tiempo_en_memoria = contador_memoria;
-            contador_memoria++;
             frame->uso = 1;
             U_LOG_TRACE("modificando/leyendo datos en frame %d", numero_de_frame);
             break;
