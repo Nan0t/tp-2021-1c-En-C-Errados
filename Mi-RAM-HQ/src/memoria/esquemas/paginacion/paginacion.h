@@ -10,7 +10,7 @@ typedef struct
     uint32_t ocupado;
     uint32_t tiempo_en_memoria;
     uint32_t uso;
-    t_queue* ocupantes_frame; //agregado para expulsar tripulante
+    int ocupantes_frame; //agregado para expulsar tripulante
     //uint32_t pid;    
 }p_frame_t;
 
