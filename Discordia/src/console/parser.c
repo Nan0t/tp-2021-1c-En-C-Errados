@@ -9,8 +9,9 @@
 #define DS_INICIAR_PATOTA__RUTA_TAREA_INDEX       2
 #define DS_INICIAR_PATOTA__POSICIONES_INDEX       3
 
-#define DS_EXPULSAR_TRIPULANTE__CANT_ARGS 2
-#define DS_EXPULSAR_TRIPULANTE__TID_INDEX 1
+#define DS_EXPULSAR_TRIPULANTE__CANT_ARGS 3
+#define DS_EXPULSAR_TRIPULANTE__PID_INDEX 1
+#define DS_EXPULSAR_TRIPULANTE__TID_INDEX 2
 
 #define DS_OBTENER_BITACORA__CANT_ARGS 2
 #define DS_OBTENER_BITACORA__TID_INDEX 1
@@ -26,6 +27,7 @@ private void ds_command_desplazar_tripulante_delete(ds_command_desplazamiento_tr
 private void ds_command_iniciar_tarea_delete(ds_command_iniciar_tarea_t* command);
 private void ds_command_finalizar_tarea_delete(ds_command_finalizar_tarea_t* command);
 private void ds_command_mover_tripulante_delete(ds_command_mover_tripulante_t* command);
+private void ds_command_expulsar_tripulante_delete(ds_command_expulsar_tripulante_t* command);
 private void ds_command_tripulante_nuevo_estado(ds_command_tripulante_nuevo_estado_t* command);
 private void ds_command_proxima_tarea(ds_command_proxima_tarea_t* command);
 #endif
@@ -129,6 +131,9 @@ void ds_parser_result_free(ds_parser_result_t* result)
         break;
 
     case DS_EXPULSAR_TRIPULANTE:
+        ds_command_expulsar_tripulante_delete((ds_command_expulsar_tripulante_t*)result->data);
+        break;
+        
     case DS_OBTENER_BITACORA:
     case DS_INVALID_COMMAND:
         u_free(result->data);
@@ -269,6 +274,11 @@ private void ds_command_mover_tripulante_delete(ds_command_mover_tripulante_t* c
     u_free(command);
 }
 
+private void ds_command_expulsar_tripulante_delete(ds_command_expulsar_tripulante_t* command)
+{
+    u_free(command);
+}
+
 private void ds_command_tripulante_nuevo_estado(ds_command_tripulante_nuevo_estado_t* command)
 {
     u_free(command);
@@ -379,20 +389,28 @@ private void ds_parser_expulsar_tripulante(uint32_t argc, char** argv, ds_parser
 {
     if(argc < DS_EXPULSAR_TRIPULANTE__CANT_ARGS)
     {
-        ds_parser_not_enough_args_error(result, "EXPULSAR_TRIPULANTE [TID]");
+        ds_parser_not_enough_args_error(result, "EXPULSAR_TRIPULANTE [PID] [TID]");
         return;
     }
     
+    if(!ds_is_valid_number(argv[DS_EXPULSAR_TRIPULANTE__PID_INDEX]))
+    {
+        ds_parser_tid_error(result, argv[DS_EXPULSAR_TRIPULANTE__TID_INDEX]);
+        return;
+    }
+
     if(!ds_is_valid_number(argv[DS_EXPULSAR_TRIPULANTE__TID_INDEX]))
     {
         ds_parser_tid_error(result, argv[DS_EXPULSAR_TRIPULANTE__TID_INDEX]);
         return;
     }
 
-    uint32_t* data = u_malloc(sizeof(uint32_t));
-    *data = atoi(argv[DS_EXPULSAR_TRIPULANTE__TID_INDEX]);
+    ds_command_expulsar_tripulante_t* command = u_malloc(sizeof(ds_command_expulsar_tripulante_t));
 
-    result->data = data;
+    command->pid = atoi(argv[DS_EXPULSAR_TRIPULANTE__PID_INDEX]);
+    command->tid = atoi(argv[DS_EXPULSAR_TRIPULANTE__TID_INDEX]);
+
+    result->data = command;
 }
 
 private void ds_parser_obtener_bitacora(uint32_t argc, char** argv, ds_parser_result_t* result)

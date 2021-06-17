@@ -39,6 +39,12 @@ typedef struct
     t_list*      trip_positions;
 } ds_command_iniciar_patota_t;
 
+typedef struct
+{
+    uint32_t pid;
+    uint32_t tid;
+} ds_command_expulsar_tripulante_t;
+
 #ifndef NDEBUG
 typedef struct
 {

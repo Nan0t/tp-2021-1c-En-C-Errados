@@ -170,7 +170,10 @@ private bool ds_lista_tripulantes(const ds_parser_result_t* result)
 
 private bool ds_expulsar_tripulante(const ds_parser_result_t* result)
 {
-    discordia_expulsar_tripulante(*((uint32_t*)result->data));
+    ds_command_expulsar_tripulante_t* command =
+        (ds_command_expulsar_tripulante_t*)result->data;
+
+    discordia_eliminar_tripulante(command->pid, command->tid);
     return false;
 }
 
