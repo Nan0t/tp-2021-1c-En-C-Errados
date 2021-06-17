@@ -26,7 +26,7 @@ typedef struct
 typedef struct
 {
     uint32_t num_pagina;
-    uint32_t frame_memoria;
+    int frame_memoria; //en caso de -1 no esta en memoria 
     uint32_t frame_swap;
 }p_fila_tabla_de_paginas_t;
 
