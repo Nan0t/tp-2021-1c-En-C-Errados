@@ -2,6 +2,7 @@
 #define ESQUEMA_PAGINACION_H
 
 #include "memoria/esquemas/esquema_memoria.h"
+#include <stdlib.h>
 
 typedef struct
 {
@@ -9,21 +10,23 @@ typedef struct
     uint32_t ocupado;
     uint32_t tiempo_en_memoria;
     uint32_t uso;
-    //uint32_t pid;
+    int ocupantes_frame; //agregado para expulsar tripulante
+    //uint32_t pid;    
 }p_frame_t;
+
 
 typedef struct
 {
     uint32_t pid;
     t_list* tabla;
-    uint32_t direccion_tareas;
+    uint32_t tamanio_tareas;
     uint32_t tripulantes_escritos;
 }p_patota_y_tabla_t; 
 
 typedef struct
 {
     uint32_t num_pagina;
-    uint32_t frame_memoria;
+    int frame_memoria; //en caso de -1 no esta en memoria 
     uint32_t frame_swap;
 }p_fila_tabla_de_paginas_t;
 

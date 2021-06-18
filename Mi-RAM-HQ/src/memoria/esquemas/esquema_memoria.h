@@ -9,6 +9,7 @@ typedef struct
     uint32_t tid;
     u_pos_t  pos;
     char     estado;
+    uint32_t proxima_tarea;
 } tripulantes_t;
 
 int esquema_memoria_tamanio;

@@ -6,7 +6,7 @@
 typedef struct
 {
     uint32_t inicio_segmento;
-    uint32_t fin_segmento;
+    uint32_t tamanio_segmento;
     uint32_t tipo_segmento;
     uint32_t id_propietario;
 }s_segmento_t;
@@ -34,6 +34,7 @@ typedef struct
 }s_segmento_tripulante_t;
 
 t_list* listado_segmentos;
+int espacio_libre;
 
 void segmentacion_memoria_init(void);
 
@@ -49,7 +50,7 @@ t_list*        segmentacion_memoria_obtener_todos_los_tripulantes(void);
 
 bool           segmentacion_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid);
 
-//-----------------------
+
 
 
 #endif
