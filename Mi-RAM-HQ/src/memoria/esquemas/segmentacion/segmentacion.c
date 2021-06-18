@@ -202,6 +202,7 @@ private void segmentacion_compactar(void){
 private int segmentacion_buscar_segmento(int tamanio_lista,int tamanio_segmento){
 	char* criterio = u_config_get_string_value("CRITERIO_SELECCION");
 	int inicio_segmento;
+	int indice_segmento_encontrado;
 	int tamanio_segmento_aux;
 	s_segmento_t *aux;
 
@@ -212,7 +213,8 @@ private int segmentacion_buscar_segmento(int tamanio_lista,int tamanio_segmento)
 	   for(i=0; i<tamanio_lista; i++){
          aux = list_get(listado_segmentos, i);
 		 if(aux->id_propietario==-1){
-			  if((aux->tamanio_segmento>=tamanio_segmento)& (aux->inicio_segmento<inicio_actual)){
+			  if((aux->tamanio_segmento>=tamanio_segmento)&& (aux->inicio_segmento<inicio_actual)){
+				  indice_segmento_encontrado=i;
 				  inicio_segmento=aux->inicio_segmento;
 				  inicio_actual=aux->inicio_segmento;
 				  tamanio_segmento_aux=aux->tamanio_segmento;
@@ -228,7 +230,8 @@ private int segmentacion_buscar_segmento(int tamanio_lista,int tamanio_segmento)
 		for(i=0; i<tamanio_lista; i++){
 	        aux = list_get(listado_segmentos, i);
 			if(aux->id_propietario==-1){
-				if((aux->tamanio_segmento>=tamanio_segmento)& (aux->tamanio_segmento<tamanio_actual)){
+				if((aux->tamanio_segmento>=tamanio_segmento)&& (aux->tamanio_segmento<tamanio_actual)){
+					indice_segmento_encontrado=i;
 					inicio_segmento=aux->inicio_segmento;
 					tamanio_actual=aux->tamanio_segmento;
 					tamanio_segmento_aux=aux->tamanio_segmento;
@@ -237,7 +240,7 @@ private int segmentacion_buscar_segmento(int tamanio_lista,int tamanio_segmento)
 		}
 	}
 	/* Actualiza Lista de segmentos  */
-	aux = list_get(listado_segmentos, inicio_segmento);
+	aux = list_get(listado_segmentos, indice_segmento_encontrado);
 	if(!(aux->tamanio_segmento==tamanio_segmento)){
 	      aux->tamanio_segmento=tamanio_segmento;
 	      s_segmento_t* segmento = u_malloc(sizeof(s_segmento_t));
