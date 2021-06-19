@@ -40,4 +40,28 @@ void ds_planificador_iniciar(void);
  */
 void ds_planificador_pausar(void);
 
+/**
+ * @NAME: ds_planificador_notificar_sabotaje
+ * @DESC: notifica al planificador sobre un sabotaje.
+ * @PARAMS:
+ *  [in] const u_pos_t* pos - posicion del sabotaje.
+ */
+void ds_planificador_notificar_sabotaje(const u_pos_t* pos);
+
+/**
+ * @NAME: ds_planificador_esta_en_sabotaje
+ * @DESC: permite saber si el planificador esta en sabotaje o no
+ * 
+ * @RETURNS: true si el planificador esta en sabotaje. De lo contrario, false.
+ */
+bool ds_planificador_esta_en_sabotaje(void);
+
+/**
+ * @NAME: ds_planificador_get_pos_sabotaje
+ * @DESC: obtiene la posicion del sabotaje actual.
+ * @PARAMS:
+ *  [out] u_pos_t* pos - estructura donde se guardara la posicion del sabotaje
+ */
+void ds_planificador_get_pos_sabotaje(u_pos_t* pos);
+
 #endif

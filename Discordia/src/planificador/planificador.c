@@ -15,19 +15,28 @@ typedef void(*ds_algo_sched_func)(void);
 
 typedef struct
 {
-    uint32_t cant_cpu;
-    uint32_t quantum;
-    uint32_t duracion_sabotaje;
-    uint32_t ciclos_counter;
+    uint32_t            cant_cpu;
+    uint32_t            quantum;
+    uint32_t            duracion_sabotaje;
+    uint32_t            ciclos_counter;
 
-    pthread_mutex_t pause_mx;
-    pthread_cond_t  pause_cond;
-    bool            pause;
+    pthread_mutex_t     sabotaje_pos_mx;
+    u_pos_t             sabotaje_pos;
 
-    pthread_mutex_t expulsar_trip_request_queue_mx;
-    t_queue*        expulsar_trip_request_queue;
+    pthread_mutex_t     pause_mx;
+    pthread_cond_t      pause_cond;
+    bool                pause;
 
-    ds_algo_sched_func algorithm;
+    pthread_mutex_t     esta_en_sabotaje_mx;
+    bool                esta_en_sabotaje;
+
+    pthread_mutex_t     inicializar_rutina_sabotaje_mx;
+    bool                inicializar_rutina_sabotaje;
+
+    pthread_mutex_t     expulsar_trip_request_queue_mx;
+    t_queue*            expulsar_trip_request_queue;
+
+    ds_algo_sched_func  algorithm;
 } planificador_t;
 
 private planificador_t* p_planificador = NULL;
@@ -37,10 +46,13 @@ private void ds_algorithm_rr(void);
 
 private ds_algo_sched_func ds_planificador_select_algorithm(void);
 
-private void ds_planificador_init_queues();
-private void ds_planificador_init_devices();
+private void ds_planificador_init_queues(void);
+private void ds_planificador_init_devices(void);
+private void ds_planificador_init_rutina_sabotaje(const u_pos_t* pos);
 
 private void ds_planificador_loop(void);
+private void ds_planificador_check_pausa(void);
+private bool ds_planificador_should_init_sabotaje_routine(void);
 
 private void ds_planificador_admit_from_new_to_ready(void);
 private void ds_planificador_admit_from_ready_to_exec(void);
@@ -64,13 +76,21 @@ void ds_planificador_init(void)
     p_planificador->quantum                     = u_config_get_int_value("QUANTUM");
     p_planificador->duracion_sabotaje           = u_config_get_int_value("DURACION_SABOTAJE");
     p_planificador->ciclos_counter              = 0;
+    p_planificador->sabotaje_pos.x              = 0;
+    p_planificador->sabotaje_pos.y              = 0;
     p_planificador->pause                       = true;
+    p_planificador->esta_en_sabotaje            = false;
+    p_planificador->inicializar_rutina_sabotaje = false;
     p_planificador->expulsar_trip_request_queue = queue_create();
     p_planificador->algorithm                   = ds_planificador_select_algorithm();
 
+    pthread_mutex_init(&p_planificador->sabotaje_pos_mx, NULL);
+    
     pthread_mutex_init(&p_planificador->pause_mx, NULL);
     pthread_cond_init(&p_planificador->pause_cond, NULL);
 
+    pthread_mutex_init(&p_planificador->esta_en_sabotaje_mx, NULL);
+    pthread_mutex_init(&p_planificador->inicializar_rutina_sabotaje_mx, NULL);
     pthread_mutex_init(&p_planificador->expulsar_trip_request_queue_mx, NULL);
 
     ds_planificador_init_queues();
@@ -96,7 +116,6 @@ void ds_planificador_iniciar_tripulante(uint32_t pid, uint32_t tid, const u_pos_
     tripulante_t* trip = tripulante_create(pid, tid, pos, p_planificador->quantum);
     tripulante_init(trip);
 
-    // ds_new_queue_push(trip);
     ds_queue_mt_t* new_queue = ds_queue_manager_hold(DS_QUEUE_NEW);
     ds_queue_mt_push(new_queue, trip);
     ds_queue_manager_release(DS_QUEUE_NEW);
@@ -134,6 +153,37 @@ void ds_planificador_pausar(void)
     pthread_mutex_unlock(&p_planificador->pause_mx);
 }
 
+void ds_planificador_notificar_sabotaje(const u_pos_t* pos)
+{
+    p_planificador->sabotaje_pos.x = pos->x;
+    p_planificador->sabotaje_pos.y = pos->y;
+
+    pthread_mutex_lock(&p_planificador->inicializar_rutina_sabotaje_mx);
+    p_planificador->inicializar_rutina_sabotaje = true;
+    pthread_mutex_unlock(&p_planificador->inicializar_rutina_sabotaje_mx);
+
+    pthread_mutex_lock(&p_planificador->esta_en_sabotaje_mx);
+    p_planificador->esta_en_sabotaje = true;
+    pthread_mutex_lock(&p_planificador->esta_en_sabotaje_mx);
+}
+
+bool ds_planificador_esta_en_sabotaje(void)
+{
+    pthread_mutex_lock(&p_planificador->esta_en_sabotaje_mx);
+    bool esta_en_sabotaje = p_planificador->esta_en_sabotaje;
+    pthread_mutex_unlock(&p_planificador->esta_en_sabotaje_mx);
+
+    return esta_en_sabotaje;
+}
+
+void ds_planificador_get_pos_sabotaje(u_pos_t* pos)
+{
+    pthread_mutex_lock(&p_planificador->sabotaje_pos_mx);
+    pos->x = p_planificador->sabotaje_pos.x;
+    pos->y = p_planificador->sabotaje_pos.y;
+    pthread_mutex_unlock(&p_planificador->sabotaje_pos_mx);
+}
+
 private void ds_algorithm_fifo(void)
 {
     ds_queue_mt_t* exec_queue = ds_queue_manager_hold(DS_QUEUE_EXEC);
@@ -145,12 +195,26 @@ private void ds_algorithm_fifo(void)
         if(trip->bloquear)
         {
             ds_queue_mt_iterator_remove(it);
+            trip->bloquear = false;
             
-            tripulante_change_state(trip, TRIP_STATE_BLOCK_IO);
-            // U_LOG_INFO("Tripulante %d pasa de EXEC a BLOCK por Tarea", trip->tid);
-            ds_queue_mt_t* block_queue = ds_queue_manager_hold(DS_QUEUE_BLOCK);
-            ds_queue_mt_push(block_queue, trip);
-            ds_queue_manager_release(DS_QUEUE_BLOCK);
+            if(!p_planificador->esta_en_sabotaje)
+            {
+                tripulante_change_state(trip, TRIP_STATE_BLOCK_IO);
+
+                ds_queue_mt_t* block_queue = ds_queue_manager_hold(DS_QUEUE_BLOCK);
+                ds_queue_mt_push(block_queue, trip);
+                ds_queue_manager_release(DS_QUEUE_BLOCK);
+            }
+            else
+            {
+                tripulante_change_state(trip, TRIP_STATE_BLOCK_SABOTAGE);
+
+                ds_queue_mt_t* block_queue_sabotaje = ds_queue_manager_hold(DS_QUEUE_SABOTAGE);
+                ds_queue_mt_push(block_queue_sabotaje, trip);
+                ds_queue_manager_release(DS_QUEUE_SABOTAGE);
+
+                // TODO: Inicializar rutina de desbloquea y reanudacion de planificacion.
+            }
         }
         
     DS_QUEUE_MT_END_FOREACH
@@ -174,11 +238,24 @@ private void ds_algorithm_rr(void)
             trip->bloquear = false;
             trip->quatum   = p_planificador->quantum;
 
-            tripulante_change_state(trip, TRIP_STATE_BLOCK_IO);
+            if(!p_planificador->esta_en_sabotaje)
+            {
+                tripulante_change_state(trip, TRIP_STATE_BLOCK_IO);
 
-            ds_queue_mt_t* block_queue = ds_queue_manager_hold(DS_QUEUE_BLOCK);
-            ds_queue_mt_push(block_queue, trip);
-            ds_queue_manager_release(DS_QUEUE_BLOCK);
+                ds_queue_mt_t* block_queue = ds_queue_manager_hold(DS_QUEUE_BLOCK);
+                ds_queue_mt_push(block_queue, trip);
+                ds_queue_manager_release(DS_QUEUE_BLOCK);
+            }
+            else
+            {
+                tripulante_change_state(trip, TRIP_STATE_BLOCK_SABOTAGE);
+
+                ds_queue_mt_t* block_queue_sabotaje = ds_queue_manager_hold(DS_QUEUE_SABOTAGE);
+                ds_queue_mt_push(block_queue_sabotaje, trip);
+                ds_queue_manager_release(DS_QUEUE_SABOTAGE);
+
+                // TODO: Inicializar rutina de desbloquea y reanudacion de planificacion.
+            }
         }
         else if(trip->quatum == 0)
         {
@@ -206,12 +283,12 @@ private ds_algo_sched_func ds_planificador_select_algorithm(void)
     return ds_algorithm_fifo;
 }
 
-private void ds_planificador_init_queues()
+private void ds_planificador_init_queues(void)
 {
     ds_queue_manager_init();
 }
 
-private void ds_planificador_init_devices()
+private void ds_planificador_init_devices(void)
 {
     ds_synchronizer_init(p_planificador->cant_cpu + 1);
 
@@ -235,14 +312,20 @@ private void ds_planificador_loop(void)
 {
     while(1)
     {
-        pthread_mutex_lock(&p_planificador->pause_mx);
-        if(p_planificador->pause)
-            pthread_cond_wait(&p_planificador->pause_cond, &p_planificador->pause_mx);
-        pthread_mutex_unlock(&p_planificador->pause_mx);
+
+        ds_planificador_check_pausa();
 
         U_LOG_INFO("***Comienzo del ciclo: %d***", p_planificador->ciclos_counter);
 
-        ds_planificador_admit_from_new_to_ready();
+        if(!ds_planificador_esta_en_sabotaje())
+            ds_planificador_admit_from_new_to_ready();
+        else if(ds_planificador_should_init_sabotaje_routine())
+        {
+            pthread_mutex_lock(&p_planificador->sabotaje_pos_mx);
+            ds_planificador_init_rutina_sabotaje(&p_planificador->sabotaje_pos);
+            pthread_mutex_unlock(&p_planificador->sabotaje_pos_mx);
+        }
+
         ds_planificador_admit_from_ready_to_exec();
 
         ds_synchronizer_execute_next_cicle();
@@ -251,6 +334,23 @@ private void ds_planificador_loop(void)
 
         U_LOG_INFO("***Fin del ciclo: %d***\n", p_planificador->ciclos_counter ++);
     }
+}
+
+private void ds_planificador_check_pausa(void)
+{
+    pthread_mutex_lock(&p_planificador->pause_mx);
+    if(p_planificador->pause)
+        pthread_cond_wait(&p_planificador->pause_cond, &p_planificador->pause_mx);
+    pthread_mutex_unlock(&p_planificador->pause_mx);
+}
+
+private bool ds_planificador_should_init_sabotaje_routine(void)
+{
+    pthread_mutex_lock(&p_planificador->inicializar_rutina_sabotaje_mx);
+    bool should_init = p_planificador->inicializar_rutina_sabotaje;
+    pthread_mutex_unlock(&p_planificador->inicializar_rutina_sabotaje_mx);
+
+    return should_init;
 }
 
 private void ds_planificador_admit_from_new_to_ready(void)
@@ -421,4 +521,12 @@ private void ds_planificador_find_and_terminate_from_block_sabotage(uint32_t tid
 
     if(keep_looking)
         io_find_and_terminate_from_block(tid);
+}
+
+// =======================
+// ***Rutina Sabotaje***
+// =======================
+private void ds_planificador_init_rutina_sabotaje(const u_pos_t* pos)
+{
+
 }
