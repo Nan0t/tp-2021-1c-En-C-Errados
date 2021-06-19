@@ -63,7 +63,8 @@ u_msg_nueva_tarea_t* u_msg_nueva_tarea_deserializar(const u_buffer_t* buffer)
 
 void u_msg_nueva_tarea_eliminar(u_msg_nueva_tarea_t* this)
 {
-    u_free(this->tarea);
+    if(this->tarea != NULL)
+        u_free(this->tarea);
     u_free(this);
 }
 
