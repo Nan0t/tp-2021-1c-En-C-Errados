@@ -528,5 +528,7 @@ private void ds_planificador_find_and_terminate_from_block_sabotage(uint32_t tid
 // =======================
 private void ds_planificador_init_rutina_sabotaje(const u_pos_t* pos)
 {
-
+    pthread_mutex_lock(&p_planificador->inicializar_rutina_sabotaje_mx);
+    p_planificador->inicializar_rutina_sabotaje = false;
+    pthread_mutex_unlock(&p_planificador->inicializar_rutina_sabotaje_mx);
 }
