@@ -35,30 +35,30 @@ typedef enum
  */
 typedef struct
 {
-    uint32_t pid;
-    uint32_t tid;
-    tarea_t* tarea_actual;
-    u_pos_t  pos;
+    uint32_t        pid;
+    uint32_t        tid;
+    tarea_t*        tarea_actual;
+    u_pos_t         pos;
 
-    uint32_t quatum;
+    uint32_t        quatum;
 
-    trip_state_e curr_state;
+    trip_state_e    curr_state;
 
-    bool terminate;
-    bool bloquear; //avisa al CPU si debe bloquearse
+    bool            terminate;
+    bool            bloquear;
 
-    sem_t sem_sync; // espera a que un CPU lo ejecute
-    sem_t sem_end_exec;  // notifica al CPU que terminó de ejecutar y este pueda sincronizar con otros cpus
+    sem_t           sem_sync;
+    sem_t           sem_end_exec;
 } tripulante_t;
 
 /**
  * @NAME: tripulante_create
  * @DESC: crea una estructura tripulante_t
  * @PARAMS:
- *  [in] uint32_t pid       - id de patota del tripulante.
- *  [in] uint32_t tid       - id del tripulante.
- *  [in] const u_pos_t* pos - posicion del tripulante.
- *  [in] uint32_t quantum   - quantum iniciali del tripulante (solo para RR).
+ *  [in] uint32_t       pid       - id de patota del tripulante.
+ *  [in] uint32_t       tid       - id del tripulante.
+ *  [in] const u_pos_t* pos       - posicion del tripulante.
+ *  [in] uint32_t       quantum   - quantum iniciali del tripulante (solo para RR).
  */
 tripulante_t* tripulante_create(uint32_t pid, uint32_t tid, const u_pos_t* pos, uint32_t quantum);
 

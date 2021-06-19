@@ -1,9 +1,10 @@
 #include "discordia/discordia.h"
+#include "planificador/planificador.h"
 #include "tripulante.h"
 #include <pthread.h>
 #include <errno.h>
 
-#define CMP_POS(pos1, pos2) (pos1.x == pos2.x && pos1.y == pos2.y)
+#define CMP_POS(pos1, pos2) ((pos1).x == (pos2).x && (pos1).y == (pos2).y)
 
 private const char STATES_CHAR[] =
 {
@@ -25,9 +26,10 @@ private const char* STATES_STR[] =
 };
 
 private void tripulante_loop(tripulante_t* this);
-private void tripulante_mover(tripulante_t* this);
+private void tripulante_mover(tripulante_t* this, const u_pos_t* pos);
 private bool tripulante_check_tarea_actual(tripulante_t* this);
 private void tripulante_free(tripulante_t* this);
+private void tripulante_ejecutar_rutina_sabotaje(tripulante_t* this);
 
 tripulante_t* tripulante_create(uint32_t pid, uint32_t tid, const u_pos_t* pos, uint32_t quantum)
 {
@@ -113,8 +115,13 @@ private void tripulante_loop(tripulante_t* this)
         if(this->terminate)
             continue;
 
-        if(tripulante_check_tarea_actual(this))
-            tripulante_mover(this);
+        if(ds_planificador_esta_en_sabotaje())
+            tripulante_ejecutar_rutina_sabotaje(this);
+        else
+        {
+            if(tripulante_check_tarea_actual(this))
+                tripulante_mover(this, &this->tarea_actual->pos);
+        }
 
         sem_post(&this->sem_end_exec);
     }
@@ -122,20 +129,20 @@ private void tripulante_loop(tripulante_t* this)
     tripulante_free(this);
 }
 
-private void tripulante_mover(tripulante_t* this)
+private void tripulante_mover(tripulante_t* this, const u_pos_t* pos)
 {
     u_pos_t prev_pos = { .x = this->pos.x, .y = this->pos.y };
 
-	if (this->pos.x != this->tarea_actual->pos.x) 
+	if (this->pos.x != pos->x) 
     {
-		if(this->pos.x < this->tarea_actual->pos.x)
+		if(this->pos.x < pos->x)
 			this->pos.x ++;
         else
 			this->pos.x --;
 	}
-    else if (this->pos.y != this->tarea_actual->pos.y)
+    else if (this->pos.y != pos->y)
     {
-		if(this->pos.y < this->tarea_actual->pos.y)
+		if(this->pos.y < pos->y)
 			this->pos.y ++;
         else
 			this->pos.y --;
@@ -184,4 +191,18 @@ private void tripulante_free(tripulante_t* this)
     sem_destroy(&this->sem_sync);
     sem_destroy(&this->sem_end_exec);
     u_free(this);
+}
+
+private void tripulante_ejecutar_rutina_sabotaje(tripulante_t* this)
+{
+    u_pos_t pos = { 0 };
+    ds_planificador_get_pos_sabotaje(&pos);
+
+    if(CMP_POS(pos, this->pos))
+    {
+        discordia_tripulante_atiende_sabotaje(this->tid);
+        this->bloquear = true;
+    }
+    else
+        tripulante_mover(this, &pos);
 }
