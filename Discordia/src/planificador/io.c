@@ -1,6 +1,7 @@
 #include "io.h"
 #include "synchronizer.h"
 #include "queues/queue_manager.h"
+#include "planificador.h"
 
 #include <pthread.h>
 
@@ -80,11 +81,22 @@ private void mover_tripulante_terminado(tripulante_t* tripulante)
         
         if(tripulante_obtener_proxima_tarea(tripulante))
         {
-            tripulante_change_state(tripulante, TRIP_STATE_READY);
+            if(!ds_planificador_esta_en_sabotaje())
+            {
+                tripulante_change_state(tripulante, TRIP_STATE_READY);
 
-            ds_queue_mt_t* ready_queue = ds_queue_manager_hold(DS_QUEUE_READY);
-            ds_queue_mt_push(ready_queue, tripulante);
-            ds_queue_manager_release(DS_QUEUE_READY);
+                ds_queue_mt_t* ready_queue = ds_queue_manager_hold(DS_QUEUE_READY);
+                ds_queue_mt_push(ready_queue, tripulante);
+                ds_queue_manager_release(DS_QUEUE_READY);
+            }
+            else
+            {
+                tripulante_change_state(tripulante, TRIP_STATE_BLOCK_SABOTAGE);
+
+                ds_queue_mt_t* queue_sabotaje = ds_queue_manager_hold(DS_QUEUE_SABOTAGE);
+                ds_queue_mt_push(queue_sabotaje, tripulante);
+                ds_queue_manager_release(DS_QUEUE_SABOTAGE);
+            }
         }
         else
             tripulante_terminate(tripulante);
