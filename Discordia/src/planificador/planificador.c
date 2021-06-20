@@ -528,7 +528,47 @@ private void ds_planificador_find_and_terminate_from_block_sabotage(uint32_t tid
 // =======================
 private void ds_planificador_init_rutina_sabotaje(const u_pos_t* pos)
 {
+    uint32_t tid;
+    uint32_t pos_unificado_sabotaje = pos->x + pos->y;
+    uint32_t pos_minima;
+    
     pthread_mutex_lock(&p_planificador->inicializar_rutina_sabotaje_mx);
     p_planificador->inicializar_rutina_sabotaje = false;
     pthread_mutex_unlock(&p_planificador->inicializar_rutina_sabotaje_mx);
+
+    ds_queue_mt_t* ready = ds_queue_manager_hold(DS_QUEUE_READY);
+
+    while(ds_queue_mt_get_size(ready) != 0)
+    {
+        tripulante_t* trip = ds_queue_mt_pop(ready);
+
+        ds_queue_mt_t* bloqueo_sabotaje = ds_queue_manager_hold(DS_QUEUE_SABOTAGE);
+        ds_queue_mt_push(bloqueo_sabotaje, trip);
+        ds_queue_manager_release(DS_QUEUE_SABOTAGE);
+    }
+
+    ds_queue_manager_release(DS_QUEUE_READY);
+
+    ds_queue_mt_t* bloqueo_sabotaje = ds_queue_manager_hold(DS_QUEUE_SABOTAGE);
+    DS_QUEUE_MT_FOREACH(bloqueo_sabotaje)
+    {
+
+        tripulante_t* trip = ds_queue_mt_iterator_next(it);
+        uint32_t distancia_trip = pos_unificado_sabotaje - (trip->pos.x + trip->pos.y);
+
+        if(pos_minima > distancia_trip) {
+            pos_minima = distancia_trip;
+            tid = trip->tid;
+        }
+    }
+    DS_QUEUE_MT_END_FOREACH
+
+    tripulante_t* trip_encontrado = ds_queue_mt_pop_by_tid(bloqueo_sabotaje, tid);
+    ds_queue_manager_release(DS_QUEUE_SABOTAGE);
+
+    tripulante_change_state(trip_encontrado, TRIP_STATE_READY); //NO SE SI TENDRÍA QUE TENER OTRO ESTADO POR PASAR A READY PERO POR SABOTAJE
+        
+    ds_queue_mt_t* ready_queue = ds_queue_manager_hold(DS_QUEUE_READY);
+    ds_queue_mt_push(ready_queue, trip_encontrado);
+    ds_queue_manager_release(DS_QUEUE_READY);
 }
