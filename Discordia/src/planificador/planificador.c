@@ -65,6 +65,10 @@ private void ds_planificador_find_and_terminate_from_ready(uint32_t tid);
 private void ds_planificador_find_and_terminate_from_exec(uint32_t tid);
 private void ds_planificador_find_and_terminate_from_block_sabotage(uint32_t tid);
 
+private void ds_planificador_move_from_ready_to_blocked_by_sabotage(void);
+private tripulante_t* ds_planificador_find_tripulante_closer_to_sabotage(const uint32_t pos_unificado_sabotaje);
+private void ds_planificador_move_choosen_tripulante_to_ready(tripulante_t* tripulante);
+
 void ds_planificador_init(void)
 {
     if(p_planificador)
@@ -528,14 +532,21 @@ private void ds_planificador_find_and_terminate_from_block_sabotage(uint32_t tid
 // =======================
 private void ds_planificador_init_rutina_sabotaje(const u_pos_t* pos)
 {
-    uint32_t tid;
     uint32_t pos_unificado_sabotaje = pos->x + pos->y;
-    uint32_t pos_minima;
-    
+
     pthread_mutex_lock(&p_planificador->inicializar_rutina_sabotaje_mx);
     p_planificador->inicializar_rutina_sabotaje = false;
     pthread_mutex_unlock(&p_planificador->inicializar_rutina_sabotaje_mx);
 
+    ds_planificador_move_from_ready_to_blocked_by_sabotage();
+
+    tripulante_t* tripulante_elegido = ds_planificador_find_tripulante_closer_to_sabotage(pos_unificado_sabotaje);
+
+    ds_planificador_move_choosen_tripulante_to_ready(tripulante_elegido);
+}
+
+private void ds_planificador_move_from_ready_to_blocked_by_sabotage()
+{
     ds_queue_mt_t* ready = ds_queue_manager_hold(DS_QUEUE_READY);
 
     while(ds_queue_mt_get_size(ready) != 0)
@@ -548,6 +559,12 @@ private void ds_planificador_init_rutina_sabotaje(const u_pos_t* pos)
     }
 
     ds_queue_manager_release(DS_QUEUE_READY);
+}
+
+private tripulante_t* ds_planificador_find_tripulante_closer_to_sabotage(const uint32_t pos_unificado_sabotaje) 
+{
+    uint32_t pos_minima;
+    uint32_t tid;
 
     ds_queue_mt_t* bloqueo_sabotaje = ds_queue_manager_hold(DS_QUEUE_SABOTAGE);
     DS_QUEUE_MT_FOREACH(bloqueo_sabotaje)
@@ -564,11 +581,18 @@ private void ds_planificador_init_rutina_sabotaje(const u_pos_t* pos)
     DS_QUEUE_MT_END_FOREACH
 
     tripulante_t* trip_encontrado = ds_queue_mt_pop_by_tid(bloqueo_sabotaje, tid);
+
+    return trip_encontrado;
+}
+
+private void ds_planificador_move_choosen_tripulante_to_ready(tripulante_t* tripulante)
+{
     ds_queue_manager_release(DS_QUEUE_SABOTAGE);
 
-    tripulante_change_state(trip_encontrado, TRIP_STATE_READY); //NO SE SI TENDRÍA QUE TENER OTRO ESTADO POR PASAR A READY PERO POR SABOTAJE
-        
+    tripulante_change_state(tripulante, TRIP_STATE_READY); //NO SE SI TENDRÍA QUE TENER OTRO ESTADO POR PASAR A READY PERO POR SABOTAJE
     ds_queue_mt_t* ready_queue = ds_queue_manager_hold(DS_QUEUE_READY);
-    ds_queue_mt_push(ready_queue, trip_encontrado);
+
+    ds_queue_mt_push(ready_queue, tripulante);
+
     ds_queue_manager_release(DS_QUEUE_READY);
 }
