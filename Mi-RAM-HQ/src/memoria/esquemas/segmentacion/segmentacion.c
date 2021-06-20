@@ -81,16 +81,78 @@ bool segmentacion_memoria_inicializar_tripulante(uint32_t pid, uint32_t tid, u_p
         desplazamiento = desplazamiento + sizeof(uint32_t);
     }
     U_LOG_TRACE("Tripulante con tid %d guardado correctamente", tid);
+    return true;
 }
 
 bool segmentacion_memoria_actualizar_posicion_tripulante(uint32_t pid, uint32_t tid, u_pos_t pos)
 {
-
+	int tamanio_lista_patotas=list_size(listado_patotas);
+	int j;
+	int indice=-1;
+	s_patota_y_tabla_t *aux;
+	for(j=0; j<tamanio_lista_patotas; j++){
+        aux = list_get(listado_patotas, j);
+		if(aux->pid==pid){
+				indice=j;
+	    }
+	}
+	aux = list_get(listado_patotas, indice);
+	t_list* tabla;
+	tabla = list_create();
+	tabla = aux->tabla_segmentos;
+	s_segmento_patota_t *aux2;
+	aux2 = list_get(tabla, 0);
+	t_list* tabla_tripulantes = list_create();
+	tabla_tripulantes = aux2->listado_tripulantes;
+	int tamanio_lista_tripulantes=list_size(tabla_tripulantes);
+	int indice_tripulante=-1;
+	int i;
+	s_segmento_tripulante_t *aux3;
+	for(i=0; i<tamanio_lista_tripulantes; i++){
+	         aux3 = list_get(tabla_tripulantes, i);
+			 if(aux3->tid==tid){
+				  indice_tripulante=i;
+			 }
+	}
+	aux3 = list_get(tabla_tripulantes, indice_tripulante);
+	memcpy(esquema_memoria_mfisica + aux3->inicio_segmento_tcb + sizeof(uint32_t)+ sizeof(char), &(pos.x), sizeof(uint32_t));
+	memcpy(esquema_memoria_mfisica + aux3->inicio_segmento_tcb + 2*sizeof(uint32_t)+ sizeof(char), &(pos.y), sizeof(uint32_t));
+	return true;
 }
 
 bool segmentacion_memoria_actualizar_estado_tripulante(uint32_t pid, uint32_t tid, char estado)
 {
-
+	int tamanio_lista_patotas=list_size(listado_patotas);
+	int j;
+	int indice=-1;
+	s_patota_y_tabla_t *aux;
+	for(j=0; j<tamanio_lista_patotas; j++){
+        aux = list_get(listado_patotas, j);
+		if(aux->pid==pid){
+				indice=j;
+	    }
+	}
+	aux = list_get(listado_patotas, indice);
+	t_list* tabla;
+	tabla = list_create();
+	tabla = aux->tabla_segmentos;
+	s_segmento_patota_t *aux2;
+	aux2 = list_get(tabla, 0);
+	t_list* tabla_tripulantes = list_create();
+	tabla_tripulantes = aux2->listado_tripulantes;
+	int tamanio_lista_tripulantes=list_size(tabla_tripulantes);
+	int indice_tripulante=-1;
+	int i;
+	s_segmento_tripulante_t *aux3;
+	for(i=0; i<tamanio_lista_tripulantes; i++){
+	         aux3 = list_get(tabla_tripulantes, i);
+			 if(aux3->tid==tid){
+				  indice_tripulante=i;
+			 }
+	}
+	aux3 = list_get(tabla_tripulantes, indice_tripulante);
+	memcpy(esquema_memoria_mfisica + aux3->inicio_segmento_tcb + sizeof(uint32_t), &estado, sizeof(char));
+	return true;
 }
 
 
@@ -250,6 +312,7 @@ private int segmentacion_buscar_segmento(int tamanio_lista,int tamanio_segmento)
 	      segmento->id_propietario=-1;
 	      list_add(listado_segmentos, segmento);
 	}
+	return inicio_segmento;
 }
 
 private bool segmentacion_agregar_patota_en_memoria(uint32_t pid,const char* tareas){
