@@ -66,6 +66,7 @@ private void ds_planificador_find_and_terminate_from_exec(uint32_t tid);
 private void ds_planificador_find_and_terminate_from_block_sabotage(uint32_t tid);
 
 private void ds_planificador_move_from_ready_to_blocked_by_sabotage(void);
+private void ds_planificador_move_from_exec_to_blocked_by_sabotage(void);
 private tripulante_t* ds_planificador_find_tripulante_closer_to_sabotage(const uint32_t pos_unificado_sabotaje);
 private void ds_planificador_move_choosen_tripulante_to_ready(tripulante_t* tripulante);
 
@@ -538,6 +539,7 @@ private void ds_planificador_init_rutina_sabotaje(const u_pos_t* pos)
     p_planificador->inicializar_rutina_sabotaje = false;
     pthread_mutex_unlock(&p_planificador->inicializar_rutina_sabotaje_mx);
 
+    ds_planificador_move_from_exec_to_blocked_by_sabotage();
     ds_planificador_move_from_ready_to_blocked_by_sabotage();
 
     tripulante_t* tripulante_elegido = ds_planificador_find_tripulante_closer_to_sabotage(pos_unificado_sabotaje);
@@ -548,6 +550,7 @@ private void ds_planificador_init_rutina_sabotaje(const u_pos_t* pos)
 private void ds_planificador_move_from_ready_to_blocked_by_sabotage()
 {
     ds_queue_mt_t* ready = ds_queue_manager_hold(DS_QUEUE_READY);
+    ds_queue_mt_sort_by_lowest_tid(ready);
 
     while(ds_queue_mt_get_size(ready) != 0)
     {
@@ -559,6 +562,23 @@ private void ds_planificador_move_from_ready_to_blocked_by_sabotage()
     }
 
     ds_queue_manager_release(DS_QUEUE_READY);
+}
+
+private void ds_planificador_move_from_exec_to_blocked_by_sabotage()
+{
+    ds_queue_mt_t* exec = ds_queue_manager_hold(DS_QUEUE_EXEC);
+    ds_queue_mt_sort_by_lowest_tid(exec);
+
+    while(ds_queue_mt_get_size(exec) != 0)
+    {
+        tripulante_t* trip = ds_queue_mt_pop(exec);
+
+        ds_queue_mt_t* bloqueo_sabotaje = ds_queue_manager_hold(DS_QUEUE_SABOTAGE);
+        ds_queue_mt_push(bloqueo_sabotaje, trip);
+        ds_queue_manager_release(DS_QUEUE_SABOTAGE);
+    }
+
+    ds_queue_manager_release(DS_QUEUE_EXEC);
 }
 
 private tripulante_t* ds_planificador_find_tripulante_closer_to_sabotage(const uint32_t pos_unificado_sabotaje) 
