@@ -139,6 +139,14 @@ void ds_queue_mt_iterator_remove(ds_queue_mt_iterator_t* it);
 void ds_queue_mt_iterator_delete(ds_queue_mt_iterator_t* it);
 
 /**
+ * @NAME: ds_queue_mt_sort_by_lowest_tid
+ * @DESC: ordena la cola por el tid de menor a mayor
+ * @PARAMS:
+ *  [in] ds_queue_mt_t* queue - cola que se quiere ordenar.
+ */
+void ds_queue_mt_sort_by_lowest_tid(ds_queue_mt_t* queue);
+
+/**
  * Los siguientes macros son helpers para poder iterar de mejor manera la cola.
  * Se puede usar de la siguiente manera:
  *  

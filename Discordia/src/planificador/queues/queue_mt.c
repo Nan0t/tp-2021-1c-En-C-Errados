@@ -129,3 +129,13 @@ void ds_queue_mt_iterator_delete(ds_queue_mt_iterator_t* it)
     list_iterator_destroy(it->it);
     u_free(it);
 }
+
+void ds_queue_mt_sort_by_lowest_tid(ds_queue_mt_t* queue)
+{
+    bool _tiene_id_menor(tripulante_t* tripulante_uno, tripulante_t* tripulante_dos)
+    {
+        return tripulante_uno->tid > tripulante_dos->tid;
+    }
+
+    list_sort(queue->data->elements, (void*)_tiene_id_menor);
+}
