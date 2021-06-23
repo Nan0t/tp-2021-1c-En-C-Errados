@@ -21,30 +21,31 @@ void io_init(void)
     while(1)
     {
         ds_synchronizer_wait_for_next_cicle(io_id);
+        if(!ds_planificador_esta_en_sabotaje()){
+            if(p_curr_trip == NULL)
+            {
+                ds_queue_mt_t* block_queue = ds_queue_manager_hold(DS_QUEUE_BLOCK);
 
-        if(p_curr_trip == NULL)
-        {
-            ds_queue_mt_t* block_queue = ds_queue_manager_hold(DS_QUEUE_BLOCK);
+                pthread_mutex_lock(&p_curr_trip_mx);
+                p_curr_trip = ds_queue_mt_pop(block_queue);
+                pthread_mutex_unlock(&p_curr_trip_mx);
+                
+                ds_queue_manager_release(DS_QUEUE_BLOCK);
+            }
 
             pthread_mutex_lock(&p_curr_trip_mx);
-            p_curr_trip = ds_queue_mt_pop(block_queue);
-            pthread_mutex_unlock(&p_curr_trip_mx);
-            
-            ds_queue_manager_release(DS_QUEUE_BLOCK);
-        }
-
-        pthread_mutex_lock(&p_curr_trip_mx);
-        if(p_curr_trip)
-        {
-            manejo_de_bloqueado_por_io(p_curr_trip);
-
-            if(puede_desbloquearse(p_curr_trip))
+            if(p_curr_trip)
             {
-                mover_tripulante_terminado(p_curr_trip);
-                p_curr_trip = NULL;
+                manejo_de_bloqueado_por_io(p_curr_trip);
+
+                if(puede_desbloquearse(p_curr_trip))
+                {
+                    mover_tripulante_terminado(p_curr_trip);
+                    p_curr_trip = NULL;
+                }
             }
+            pthread_mutex_unlock(&p_curr_trip_mx);
         }
-        pthread_mutex_unlock(&p_curr_trip_mx);
 
         ds_synchronizer_notify_end_of_cicle();
     }
@@ -81,22 +82,11 @@ private void mover_tripulante_terminado(tripulante_t* tripulante)
         
         if(tripulante_obtener_proxima_tarea(tripulante))
         {
-            if(!ds_planificador_esta_en_sabotaje())
-            {
-                tripulante_change_state(tripulante, TRIP_STATE_READY);
-
-                ds_queue_mt_t* ready_queue = ds_queue_manager_hold(DS_QUEUE_READY);
-                ds_queue_mt_push(ready_queue, tripulante);
-                ds_queue_manager_release(DS_QUEUE_READY);
-            }
-            else
-            {
-                tripulante_change_state(tripulante, TRIP_STATE_BLOCK_SABOTAGE);
-
-                ds_queue_mt_t* queue_sabotaje = ds_queue_manager_hold(DS_QUEUE_SABOTAGE);
-                ds_queue_mt_push(queue_sabotaje, tripulante);
-                ds_queue_manager_release(DS_QUEUE_SABOTAGE);
-            }
+            tripulante_change_state(tripulante, TRIP_STATE_READY);
+            
+            ds_queue_mt_t* ready_queue = ds_queue_manager_hold(DS_QUEUE_READY);
+            ds_queue_mt_push(ready_queue, tripulante);
+            ds_queue_manager_release(DS_QUEUE_READY);
         }
         else
             tripulante_terminate(tripulante);
