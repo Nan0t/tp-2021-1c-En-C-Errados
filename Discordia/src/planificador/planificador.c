@@ -169,7 +169,7 @@ void ds_planificador_notificar_sabotaje(const u_pos_t* pos)
 
     pthread_mutex_lock(&p_planificador->esta_en_sabotaje_mx);
     p_planificador->esta_en_sabotaje = true;
-    pthread_mutex_lock(&p_planificador->esta_en_sabotaje_mx);
+    pthread_mutex_unlock(&p_planificador->esta_en_sabotaje_mx);
 }
 
 bool ds_planificador_esta_en_sabotaje(void)
