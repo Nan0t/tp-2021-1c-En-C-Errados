@@ -380,6 +380,7 @@ void  discordia_pausar_planificacion(void)
 void  discordia_notificar_sabotaje(const u_pos_t* pos)
 {
     U_LOG_INFO("Nuevo Sabotaje: { X: %d | Y:%d }", pos->x, pos->y);
+    ds_planificador_notificar_sabotaje(pos);
 }
 
 void  discordia_finaliza_fsck(void)
