@@ -5,7 +5,8 @@ typedef enum
     NUEVA_ESCRITURA,
     MODIFICACION,
     ELIMINACION,
-    DE_SWAP_A_REAL
+    DE_SWAP_A_REAL,
+    DE_REAL_A_SWAP
 }p_tipo_escritura_e;
 
 typedef enum
@@ -57,8 +58,14 @@ private bool paginacion_inicializacion_chequear_overflow_de_pagina_byte_a_byte(i
 private void paginacion_inicializacion_escribir_char(char a_escribir, int *direccion_fisica, int * desplazamiento, int *direccion_logica, p_patota_y_tabla_t* patota, p_tipo_escritura_e tipo_escritura, p_tipo_memoria_e* tipo_de_memoria);
 private void paginacion_inicializacion_escribir_uint32(uint32_t a_escribir, int* desplazamiento, int* direccion_fisica, int* direccion_logica, p_patota_y_tabla_t* patota, p_tipo_memoria_e* tipo_memoria, p_tipo_escritura_e tipo_escritura);
 private p_fila_tabla_de_paginas_t* buscar_fila_en_tabla_de_paginas_segun_frame_memoria_real(p_patota_y_tabla_t* patota, int numero_de_frame);
+private void paginacion_marcar_como_liberado(int numero_de_frame, t_list* lista_frames);
+private void paginacion_copiar_frame_de_memoria_a_swap(p_fila_tabla_de_paginas_t* fila_de_tabla);
+private bool paginacion_pagina_esta_en_memoria_real(p_fila_tabla_de_paginas_t* fila);
+private p_fila_tabla_de_paginas_t* paginacion_seleccionar_pagina_por_LRU();
+private p_fila_tabla_de_paginas_t* paginacion_seleccionar_pagina_por_CLOCK();
 
 void* memoria_swap_fisica;
+char* algoritmo_reemplazo;
 
 void paginacion_memoria_init(void)
 {
@@ -69,6 +76,7 @@ void paginacion_memoria_init(void)
     lista_frames_swap = list_create();
     tamanio_pagina = u_config_get_int_value("TAMANIO_PAGINA");
     tamanio_swap = u_config_get_int_value("TAMANIO_SWAP");
+    algoritmo_reemplazo = u_config_get_string_value("ALGORITMO_REEMPLAZO");
     memoria_swap_fisica = u_malloc(tamanio_swap);
     contador_memoria = 0;
     //inicializo frames memoria
@@ -380,9 +388,13 @@ private p_patota_y_tabla_t* paginacion_agregar_patota_a_listado(uint32_t pid, in
         if(tipo_memoria == MEMORIA_FISICA){
             fila->frame_swap = -1;
             fila->frame_memoria = frame_a_escribir->num_frame;
+            fila->uso = 1;
+            fila->ingreso_en_memoria = contador_memoria;
         }else{
             fila->frame_swap = frame_a_escribir->num_frame;
             fila->frame_memoria = -1;
+            fila->uso = -1;
+            fila->ingreso_en_memoria = -1;
         }
 
         list_add(patota->tabla, fila); 
@@ -431,12 +443,6 @@ private bool paginacion_agregar_patota_en_memoria_swap(uint32_t pid, uint32_t ca
 
 
     for(i=0; i<strlen(tareas)+1; i++){
-        /*
-        paginacion_chequear_overflow_de_pagina_byte_a_byte(&direccion_fisica, &desplazamiento, &direccion_logica, patota, tipo_escritura, tipo_de_memoria);
-        memcpy(memoria_swap_fisica + direccion_fisica, &tareas[i], sizeof(char));
-        desplazamiento++;
-        direccion_fisica++;
-        direccion_logica++;*/
         paginacion_inicializacion_escribir_char(tareas[i], &direccion_fisica, &desplazamiento, &direccion_logica, patota, tipo_escritura, &tipo_de_memoria);
     }
     U_LOG_TRACE("PID: %d, copiadas tareas con exito", pid);
@@ -451,20 +457,20 @@ private void paginacion_modificar_frame(int32_t numero_de_frame, p_tipo_escritur
     switch(escritura){
         case NUEVA_ESCRITURA:;
             frame->ocupantes_frame = (frame->ocupantes_frame) + 1;  //modificar a tabla de paginas 
-            fila_tabla->tiempo_en_memoria = contador_memoria;
+            fila_tabla->ingreso_en_memoria = contador_memoria;
             contador_memoria++;  
             fila_tabla->uso = 1;
 
             U_LOG_INFO("escribiendo en frame %d", numero_de_frame);
             break;
         case MODIFICACION:;
-            fila_tabla->tiempo_en_memoria = contador_memoria;
+            fila_tabla->ingreso_en_memoria = contador_memoria;
             contador_memoria++;  
             fila_tabla->uso = 1;
             U_LOG_TRACE("modificando/leyendo datos en frame %d", numero_de_frame);
             break;
         case ELIMINACION:;
-            frame->ocupantes_frame = (frame->ocupantes_frame) - 1; 
+            frame->ocupantes_frame = (frame->ocupantes_frame) - 1;   //modificar a tabla de paginas
             U_LOG_INFO("eliminando datos en frame %d", numero_de_frame);
             if((frame->ocupantes_frame) == 0){  
                 frame->ocupado = 0;
@@ -483,6 +489,9 @@ private void paginacion_modificar_frame(int32_t numero_de_frame, p_tipo_escritur
             frame->uso = 1;
             p_fila_tabla_de_paginas_t* fila_de_tabla = buscar_fila_por_frame(patota->tabla, (int)numero_de_frame); 
             fila_de_tabla->frame_memoria = numero_de_frame;*/
+            break;
+        case DE_REAL_A_SWAP:;
+
             break;
     }
     
@@ -516,6 +525,10 @@ private void paginacion_modificar_frame_de_swap(int numero_de_frame, p_tipo_escr
                 fila_de_tabla->frame_swap = -1;
             }
             break; 
+        case DE_REAL_A_SWAP:;
+            U_LOG_INFO("Frame de memoria real movido a frame swap %d", numero_de_frame);
+            frame->ocupado = 0;
+            break;
     }
     
 }
@@ -539,8 +552,8 @@ private void mostrar_tabla_de_paginas(uint32_t pid){
     int i;
     for(i=0; i<(list_size(a_mostrar->tabla)); i++){
         p_fila_tabla_de_paginas_t* fila = list_get(a_mostrar->tabla, i);
-        U_LOG_TRACE("Mostrando tabla de pid: %d, pagina: %d, frame memoria: %d, frame swap: %d", 
-        a_mostrar->pid, fila->num_pagina, fila->frame_memoria, fila->frame_swap);
+        U_LOG_TRACE("Mostrando tabla de pid: %d, pagina: %d, frame memoria: %d, frame swap: %d, bit de uso: %d, ingreso a memoria: %d", 
+        a_mostrar->pid, fila->num_pagina, fila->frame_memoria, fila->frame_swap, fila->uso, fila->ingreso_en_memoria);
     }
 }
 
@@ -806,9 +819,6 @@ private int paginacion_buscar_direccion_en_tabla_de_paginas_swap(int direccion_l
     return frame * tamanio_pagina + desplazamiento; 
 }
 
-private int paginacion_liberar_un_frame(int pagina, p_patota_y_tabla_t* patota){
-
-}
 
 private void paginacion_modificar_frame_y_tabla_de_paginas(int numero_de_frame, p_patota_y_tabla_t* patota, int pagina){
     p_frame_t* frame = list_get(lista_frames_memoria, numero_de_frame);
@@ -818,7 +828,7 @@ private void paginacion_modificar_frame_y_tabla_de_paginas(int numero_de_frame, 
     p_fila_tabla_de_paginas_t* fila_de_tabla = list_get(patota->tabla, pagina); 
     fila_de_tabla->frame_memoria = numero_de_frame;
     fila_de_tabla->uso = 1;
-    fila_de_tabla->tiempo_en_memoria = contador_memoria;
+    fila_de_tabla->ingreso_en_memoria = contador_memoria;
     contador_memoria++;
 }
 
@@ -1118,7 +1128,7 @@ private void paginacion_inicializacion_escribir_char(char a_escribir, int *direc
     }
 
     memcpy(memoria + *direccion_fisica, &a_escribir, sizeof(char)); 
-    U_LOG_TRACE("ESCRITO %c en frame %d, direccion logica %d, direccion fisica %d", a_escribir, *direccion_fisica/tamanio_pagina, *direccion_logica, *direccion_fisica);
+   // U_LOG_TRACE("ESCRITO %c en frame %d, direccion logica %d, direccion fisica %d", a_escribir, *direccion_fisica/tamanio_pagina, *direccion_logica, *direccion_fisica);
     *desplazamiento = *desplazamiento + sizeof(char);
     *direccion_fisica = *direccion_fisica + sizeof(char);
     *direccion_logica = *direccion_logica + sizeof(char);
@@ -1164,4 +1174,112 @@ private p_fila_tabla_de_paginas_t* buscar_fila_en_tabla_de_paginas_segun_frame_m
     };
     p_fila_tabla_de_paginas_t* fila_encontrada = list_find(patota->tabla, pagina_encontrada);
     return fila_encontrada;
+}
+
+private int paginacion_liberar_un_frame(int pagina, p_patota_y_tabla_t* patota){
+    p_fila_tabla_de_paginas_t* pagina_a_sacar;
+    
+    if(string_equals_ignore_case(algoritmo_reemplazo, "LRU")){
+        pagina_a_sacar = paginacion_seleccionar_pagina_por_LRU();
+    }else{
+        pagina_a_sacar = paginacion_seleccionar_pagina_por_CLOCK();
+    }
+
+    if(!paginacion_tiene_frames_libres(1, lista_frames_swap)){
+        //el camino enquilombado; 
+    }
+    paginacion_copiar_frame_de_memoria_a_swap(pagina_a_sacar);
+    return paginacion_copiar_frame_de_swap_a_memoria(pagina, patota);
+    
+}
+
+private p_fila_tabla_de_paginas_t* paginacion_seleccionar_pagina_por_LRU(){
+
+    t_list_iterator* iterador_de_patotas = list_iterator_create(listado_patotas);
+    int ingreso_en_memoria_menor = contador_memoria;
+    p_fila_tabla_de_paginas_t* pagina_elegida; 
+    
+    while(list_iterator_has_next(iterador_de_patotas)){
+        p_patota_y_tabla_t* patota = list_iterator_next(iterador_de_patotas);
+
+        t_list* tabla_de_paginas_filtrada = list_filter(patota->tabla, paginacion_pagina_esta_en_memoria_real);
+        t_list_iterator* iterador_de_tabla = list_iterator_create(tabla_de_paginas_filtrada);
+
+        while(list_iterator_has_next(iterador_de_tabla)){
+            p_fila_tabla_de_paginas_t* fila_de_tabla = list_iterator_next(iterador_de_tabla);
+            if(fila_de_tabla->ingreso_en_memoria <= ingreso_en_memoria_menor){
+                ingreso_en_memoria_menor = fila_de_tabla->ingreso_en_memoria;
+                pagina_elegida = fila_de_tabla;
+            }
+        }
+        list_iterator_destroy(iterador_de_tabla);
+    }
+    list_iterator_destroy(iterador_de_patotas);
+    return pagina_elegida;
+}
+
+private bool paginacion_pagina_esta_en_memoria_real(p_fila_tabla_de_paginas_t* fila){
+    if(fila->frame_memoria == -1){
+        return false;
+    }
+    return true;
+}
+
+private p_fila_tabla_de_paginas_t* paginacion_seleccionar_pagina_por_CLOCK(){
+
+    t_list_iterator* iterador_de_patotas = list_iterator_create(listado_patotas);
+    bool pagina_encontrada = false;
+    p_fila_tabla_de_paginas_t* pagina_elegida; 
+    
+    while(!pagina_encontrada){ //si la memoria esta llena al menos una patota hay 
+        p_patota_y_tabla_t* patota = list_iterator_next(iterador_de_patotas);
+
+        t_list* tabla_de_paginas_filtrada = list_filter(patota->tabla, paginacion_pagina_esta_en_memoria_real);
+        t_list_iterator* iterador_de_tabla = list_iterator_create(tabla_de_paginas_filtrada);
+
+        while(list_iterator_has_next(iterador_de_tabla) || !pagina_encontrada){
+            p_fila_tabla_de_paginas_t* fila_de_tabla = list_iterator_next(iterador_de_tabla);
+            if(fila_de_tabla->uso == 0){
+                pagina_elegida = fila_de_tabla;
+                pagina_encontrada = true;
+            }else{
+                fila_de_tabla->uso = 0;
+            }
+        }
+        list_iterator_destroy(iterador_de_tabla);
+    }
+    list_iterator_destroy(iterador_de_patotas);
+    return pagina_elegida;
+}
+
+private void paginacion_copiar_frame_de_memoria_a_swap(p_fila_tabla_de_paginas_t* fila_de_tabla){
+    int frame_memoria = fila_de_tabla->frame_memoria;
+
+    p_frame_t* frame_donde_escribo = list_find(lista_frames_swap, (void*)paginacion_frame_esta_libre); //
+    uint32_t frame_swap = frame_donde_escribo->num_frame;
+
+    memcpy(memoria_swap_fisica + frame_swap * tamanio_pagina, esquema_memoria_mfisica + frame_memoria * tamanio_pagina, tamanio_pagina);
+
+    U_LOG_INFO("Copiado frame de memoria real %d a frame de swap %d", frame_memoria, frame_swap);
+
+    fila_de_tabla->frame_memoria = -1;
+    fila_de_tabla->frame_swap = frame_swap;
+    frame_donde_escribo->ocupado = 1;
+    paginacion_marcar_como_liberado(frame_memoria, lista_frames_memoria);
+    
+    //agregado prueba 
+   
+    /*
+    uint32_t prueba;
+    memcpy(&prueba, memoria_swap_fisica + frame_swap * tamanio_pagina + 8, sizeof(uint32_t));
+    U_LOG_INFO("TID: %d", prueba);
+    memcpy(&prueba, esquema_memoria_mfisica + frame_memoria * tamanio_pagina + 8, sizeof(uint32_t));
+    U_LOG_INFO("TID: %d", prueba);*/
+
+    //HASTA ACA
+}
+
+private void paginacion_marcar_como_liberado(int numero_de_frame, t_list* lista_frames){
+    p_frame_t* frame_a_liberar = list_get(lista_frames, numero_de_frame);
+    frame_a_liberar->ocupado = 0;
 }
