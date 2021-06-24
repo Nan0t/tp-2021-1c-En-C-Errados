@@ -780,6 +780,7 @@ private int paginacion_copiar_frame_de_swap_a_memoria(int pagina, p_patota_y_tab
 
     U_LOG_INFO("Copiado frame de swap %d a frame de memoria %d", frame_swap, frame_memoria);
     paginacion_modificar_frame_y_tabla_de_paginas(frame_memoria, patota, pagina);
+    paginacion_marcar_como_liberado(frame_swap, lista_frames_swap);
 
     return paginacion_buscar_direccion_en_tabla_de_paginas(pagina * tamanio_pagina, patota);
 
@@ -1235,15 +1236,20 @@ private p_fila_tabla_de_paginas_t* paginacion_seleccionar_pagina_por_CLOCK(){
         p_patota_y_tabla_t* patota = list_iterator_next(iterador_de_patotas);
 
         t_list* tabla_de_paginas_filtrada = list_filter(patota->tabla, paginacion_pagina_esta_en_memoria_real);
-        t_list_iterator* iterador_de_tabla = list_iterator_create(tabla_de_paginas_filtrada);
+        t_list_iterator* iterador_de_tabla;
+        iterador_de_tabla = list_iterator_create(tabla_de_paginas_filtrada);
 
-        while(list_iterator_has_next(iterador_de_tabla) || !pagina_encontrada){
+        while(!pagina_encontrada){ //si llegue hasta aca al menos uno esta en memoria
             p_fila_tabla_de_paginas_t* fila_de_tabla = list_iterator_next(iterador_de_tabla);
             if(fila_de_tabla->uso == 0){
                 pagina_elegida = fila_de_tabla;
                 pagina_encontrada = true;
             }else{
                 fila_de_tabla->uso = 0;
+            }
+            if(!list_iterator_has_next(iterador_de_tabla)){
+                list_iterator_destroy(iterador_de_tabla);
+                iterador_de_tabla = list_iterator_create(tabla_de_paginas_filtrada);
             }
         }
         list_iterator_destroy(iterador_de_tabla);
@@ -1267,16 +1273,6 @@ private void paginacion_copiar_frame_de_memoria_a_swap(p_fila_tabla_de_paginas_t
     frame_donde_escribo->ocupado = 1;
     paginacion_marcar_como_liberado(frame_memoria, lista_frames_memoria);
     
-    //agregado prueba 
-   
-    /*
-    uint32_t prueba;
-    memcpy(&prueba, memoria_swap_fisica + frame_swap * tamanio_pagina + 8, sizeof(uint32_t));
-    U_LOG_INFO("TID: %d", prueba);
-    memcpy(&prueba, esquema_memoria_mfisica + frame_memoria * tamanio_pagina + 8, sizeof(uint32_t));
-    U_LOG_INFO("TID: %d", prueba);*/
-
-    //HASTA ACA
 }
 
 private void paginacion_marcar_como_liberado(int numero_de_frame, t_list* lista_frames){
