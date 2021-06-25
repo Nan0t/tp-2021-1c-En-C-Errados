@@ -7,8 +7,8 @@ typedef struct
 {
     uint32_t inicio_segmento;
     uint32_t tamanio_segmento;
-    uint32_t tipo_segmento;
-    uint32_t id_propietario;
+    uint32_t tipo_segmento;  // 0 patota, 1 tareas, 2 tripulante, -1 vacio
+    uint32_t id_propietario; // patota o tarea: pid, tripulante: tid, vacio: -1
 }s_segmento_t;
 
 typedef struct

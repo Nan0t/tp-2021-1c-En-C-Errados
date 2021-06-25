@@ -8,9 +8,10 @@ typedef struct
 {
     uint32_t num_frame;
     uint32_t ocupado;
-    uint32_t tiempo_en_memoria;
-    uint32_t uso;
-    int ocupantes_frame; //agregado para expulsar tripulante
+    //uint32_t tiempo_en_memoria;
+    //uint32_t uso;
+    int32_t ocupantes_frame;
+    //uint32_t bit_modificado; //agregado para expulsar tripulante
     //uint32_t pid;    
 }p_frame_t;
 
@@ -21,14 +22,24 @@ typedef struct
     t_list* tabla;
     uint32_t tamanio_tareas;
     uint32_t tripulantes_escritos;
+    t_list* direcciones_logicas;
 }p_patota_y_tabla_t; 
+
 
 typedef struct
 {
     uint32_t num_pagina;
-    int frame_memoria; //en caso de -1 no esta en memoria 
-    uint32_t frame_swap;
+    int32_t frame_memoria; //en caso de -1 no esta en memoria 
+    int32_t frame_swap; 
+    int32_t ingreso_en_memoria;
+    int32_t uso;
 }p_fila_tabla_de_paginas_t;
+
+typedef struct
+{   
+    uint32_t tid;
+    uint32_t direccion_logica; 
+}p_direcciones_logicas_t;
 
 t_list* lista_frames_memoria;
 t_list* lista_frames_swap;

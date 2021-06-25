@@ -10,6 +10,7 @@ typedef struct
     u_pos_t  pos;
     char     estado;
     uint32_t proxima_tarea;
+    uint32_t direccion_pcb;
 } tripulantes_t;
 
 int esquema_memoria_tamanio;
