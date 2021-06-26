@@ -33,6 +33,9 @@ typedef struct
     pthread_mutex_t     inicializar_rutina_sabotaje_mx;
     bool                inicializar_rutina_sabotaje;
 
+    uint32_t            tiempo_restante_block_sabo;
+    bool                manejar_cola_sabotaje;
+
     pthread_mutex_t     expulsar_trip_request_queue_mx;
     t_queue*            expulsar_trip_request_queue;
 
@@ -69,6 +72,9 @@ private void ds_planificador_move_from_ready_to_blocked_by_sabotage(void);
 private void ds_planificador_move_from_exec_to_blocked_by_sabotage(void);
 private tripulante_t* ds_planificador_find_tripulante_closer_to_sabotage(const uint32_t pos_unificado_sabotaje);
 private void ds_planificador_move_choosen_tripulante_to_ready(tripulante_t* tripulante);
+private void rutina_bloqueados_sabotaje(void);
+private void ds_planificador_iniciar_manejo_cola_bloqueado_por_sabotaje(void);
+
 
 void ds_planificador_init(void)
 {
@@ -86,6 +92,8 @@ void ds_planificador_init(void)
     p_planificador->pause                       = true;
     p_planificador->esta_en_sabotaje            = false;
     p_planificador->inicializar_rutina_sabotaje = false;
+    p_planificador->tiempo_restante_block_sabo  = 0;
+    p_planificador->manejar_cola_sabotaje       = false;
     p_planificador->expulsar_trip_request_queue = queue_create();
     p_planificador->algorithm                   = ds_planificador_select_algorithm();
 
@@ -218,7 +226,8 @@ private void ds_algorithm_fifo(void)
                 ds_queue_mt_push(block_queue_sabotaje, trip);
                 ds_queue_manager_release(DS_QUEUE_SABOTAGE);
 
-                // TODO: Inicializar rutina de desbloquea y reanudacion de planificacion.
+                p_planificador->manejar_cola_sabotaje = true;
+                p_planificador->tiempo_restante_block_sabo = p_planificador->duracion_sabotaje;
             }
         }
         
@@ -259,7 +268,8 @@ private void ds_algorithm_rr(void)
                 ds_queue_mt_push(block_queue_sabotaje, trip);
                 ds_queue_manager_release(DS_QUEUE_SABOTAGE);
 
-                // TODO: Inicializar rutina de desbloquea y reanudacion de planificacion.
+                p_planificador->manejar_cola_sabotaje = true;
+                p_planificador->tiempo_restante_block_sabo = p_planificador->duracion_sabotaje;
             }
         }
         else if(trip->quatum == 0)
@@ -401,7 +411,10 @@ private void ds_planificador_admit_from_ready_to_exec(void)
 
 private void ds_planificador_check_exec_queue(void)
 {
-    p_planificador->algorithm();
+    if(!p_planificador->manejar_cola_sabotaje)
+        p_planificador->algorithm();
+    else
+        rutina_bloqueados_sabotaje();
 }
 
 private void ds_planificador_check_exp_trip_requests(void)
@@ -528,9 +541,7 @@ private void ds_planificador_find_and_terminate_from_block_sabotage(uint32_t tid
         io_find_and_terminate_from_block(tid);
 }
 
-// =======================
-// ***Rutina Sabotaje***
-// =======================
+
 private void ds_planificador_init_rutina_sabotaje(const u_pos_t* pos)
 {
     uint32_t pos_unificado_sabotaje = pos->x + pos->y;
@@ -615,4 +626,35 @@ private void ds_planificador_move_choosen_tripulante_to_ready(tripulante_t* trip
     ds_queue_mt_push(ready_queue, tripulante);
 
     ds_queue_manager_release(DS_QUEUE_READY);
+}
+
+private void rutina_bloqueados_sabotaje(void)
+{
+    if(!p_planificador->tiempo_restante_block_sabo == 0)
+        p_planificador->tiempo_restante_block_sabo --;
+    else
+    {
+        ds_planificador_iniciar_manejo_cola_bloqueado_por_sabotaje();
+        p_planificador->manejar_cola_sabotaje = false;
+
+        pthread_mutex_lock(&p_planificador->esta_en_sabotaje_mx);
+        p_planificador->esta_en_sabotaje = false;
+        pthread_mutex_unlock(&p_planificador->esta_en_sabotaje_mx);
+            
+    }
+}
+
+private void ds_planificador_iniciar_manejo_cola_bloqueado_por_sabotaje(void)
+{
+    ds_queue_mt_t* ready = ds_queue_manager_hold(DS_QUEUE_READY);
+    ds_queue_mt_t* bloqueado_sabotaje = ds_queue_manager_hold(DS_QUEUE_SABOTAGE);
+    while(ds_queue_mt_get_size(bloqueado_sabotaje) != 0)
+    {
+        tripulante_t* trip = ds_queue_mt_pop(bloqueado_sabotaje);
+        ds_queue_mt_push(ready, trip);
+    }
+
+    ds_queue_manager_release(DS_QUEUE_SABOTAGE);
+    ds_queue_manager_release(DS_QUEUE_READY);
+
 }
