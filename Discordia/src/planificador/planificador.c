@@ -567,6 +567,8 @@ private void ds_planificador_move_from_ready_to_blocked_by_sabotage()
     {
         tripulante_t* trip = ds_queue_mt_pop(ready);
 
+        tripulante_change_state(trip, TRIP_STATE_BLOCK_SABOTAGE);
+
         ds_queue_mt_t* bloqueo_sabotaje = ds_queue_manager_hold(DS_QUEUE_SABOTAGE);
         ds_queue_mt_push(bloqueo_sabotaje, trip);
         ds_queue_manager_release(DS_QUEUE_SABOTAGE);
@@ -583,6 +585,8 @@ private void ds_planificador_move_from_exec_to_blocked_by_sabotage()
     while(ds_queue_mt_get_size(exec) != 0)
     {
         tripulante_t* trip = ds_queue_mt_pop(exec);
+
+        tripulante_change_state(trip, TRIP_STATE_BLOCK_SABOTAGE);
 
         ds_queue_mt_t* bloqueo_sabotaje = ds_queue_manager_hold(DS_QUEUE_SABOTAGE);
         ds_queue_mt_push(bloqueo_sabotaje, trip);
@@ -620,7 +624,7 @@ private void ds_planificador_move_choosen_tripulante_to_ready(tripulante_t* trip
 {
     ds_queue_manager_release(DS_QUEUE_SABOTAGE);
 
-    tripulante_change_state(tripulante, TRIP_STATE_READY); //NO SE SI TENDRÍA QUE TENER OTRO ESTADO POR PASAR A READY PERO POR SABOTAJE
+    tripulante_change_state(tripulante, TRIP_STATE_READY);
     ds_queue_mt_t* ready_queue = ds_queue_manager_hold(DS_QUEUE_READY);
 
     ds_queue_mt_push(ready_queue, tripulante);
@@ -651,6 +655,8 @@ private void ds_planificador_iniciar_manejo_cola_bloqueado_por_sabotaje(void)
     while(ds_queue_mt_get_size(bloqueado_sabotaje) != 0)
     {
         tripulante_t* trip = ds_queue_mt_pop(bloqueado_sabotaje);
+        tripulante_change_state(trip, TRIP_STATE_READY);
+        
         ds_queue_mt_push(ready, trip);
     }
 
