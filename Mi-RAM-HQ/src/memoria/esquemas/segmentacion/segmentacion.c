@@ -72,9 +72,8 @@ bool segmentacion_memoria_inicializar_tripulante(uint32_t pid, uint32_t tid, u_p
 
 	// actualizo en segmentos de la memoria
 	int tamanio_listado_segentos=list_size(listado_segmentos);
-	int s;
 	s_segmento_t *aux4;
-    for(s=0; tamanio_listado_segentos; s++){
+    for(int s = 0; s < tamanio_listado_segentos; s++) {
     	aux4 = list_get(listado_segmentos, s);
 		if(aux4->inicio_segmento==aux3->inicio_segmento_tcb){
 			aux4->id_propietario=aux3->tid;
@@ -394,7 +393,6 @@ private int segmentacion_buscar_segmento(int tamanio_lista,int tamanio_segmento,
 	}
 	/* Actualiza Lista de segmentos  */
 	aux = list_get(listado_segmentos, indice_segmento_encontrado);
-	aux->tamanio_segmento=tamanio_segmento;
 	aux->tipo_segmento=tipo_segmento;
 	if((tipo_segmento==0)||(tipo_segmento==1)){
 		  aux->id_propietario=pid;
@@ -407,6 +405,7 @@ private int segmentacion_buscar_segmento(int tamanio_lista,int tamanio_segmento,
 	      segmento->id_propietario=-1;
 	      list_add(listado_segmentos, segmento);
 	}
+	aux->tamanio_segmento=tamanio_segmento;
 	return inicio_segmento;
 }
 
@@ -507,9 +506,12 @@ private uint32_t segmentacion_obtener_y_actualizar_proxima_tarea_tripulante(uint
 	uint32_t inicio_segmento_tcb= aux3->inicio_segmento_tcb;
 	uint32_t proxima_tarea;
     //recupera proxima tarea
-	memcpy(proxima_tarea, esquema_memoria_mfisica + inicio_segmento_tcb + 3*sizeof(uint32_t)+sizeof(char), sizeof(uint32_t));
+	memcpy(&proxima_tarea, esquema_memoria_mfisica + inicio_segmento_tcb + 3*sizeof(uint32_t)+sizeof(char), sizeof(uint32_t));
     //incrementa proxima tarea
-	memcpy(esquema_memoria_mfisica + inicio_segmento_tcb + 3*sizeof(uint32_t)+sizeof(char),proxima_tarea + 1,sizeof(uint32_t));
+	proxima_tarea ++;
+	memcpy(esquema_memoria_mfisica + inicio_segmento_tcb + 3*sizeof(uint32_t)+sizeof(char),&proxima_tarea,sizeof(uint32_t));
+	proxima_tarea --;
+	
 	return proxima_tarea;
 }
 
