@@ -47,6 +47,7 @@ void  file_system_desplazamiento_tripulante(uint32_t tid, const u_pos_t* from, c
         tid, from->x, from->y, to->x, to->y);
 
     file_system_update_bitacora(tid, desplazamiento);
+    u_free(desplazamiento);
 }
 
 void  file_system_inicio_tarea(uint32_t tid, const char* tarea)
@@ -56,6 +57,8 @@ void  file_system_inicio_tarea(uint32_t tid, const char* tarea)
 
     file_system_update_bitacora(tid, inicio_tarea);
     file_system_execute_task(tarea);
+
+    u_free(inicio_tarea);
 }
 
 void  file_system_finalizacion_tarea(uint32_t tid, const char* tarea)
@@ -65,6 +68,8 @@ void  file_system_finalizacion_tarea(uint32_t tid, const char* tarea)
         tid, tarea);
 
     file_system_update_bitacora(tid, finaliza_tarea);
+
+    u_free(finaliza_tarea);
 }
 
 void  file_system_atiende_sabotaje(uint32_t tid)
@@ -73,6 +78,8 @@ void  file_system_atiende_sabotaje(uint32_t tid)
         string_from_format("Tripulante %d atiende sabotaje", tid);
 
     file_system_update_bitacora(tid, atiende_sabotaje);
+
+    u_free(atiende_sabotaje);
 }
 
 void  file_system_resuelve_sabotaje(uint32_t tid)
@@ -82,6 +89,8 @@ void  file_system_resuelve_sabotaje(uint32_t tid)
         tid);
 
     file_system_update_bitacora(tid, resuelve_sabotaje);
+
+    u_free(resuelve_sabotaje);
 }
 
 char* file_system_obtener_bitacora(uint32_t tid)
@@ -98,9 +107,10 @@ private void  file_system_update_bitacora(uint32_t tid, const char* content)
     fs_bitacora_t* bitacora = fs_bitacoras_manager_hold_bitacora(tid);
 
     if(bitacora == NULL)
+    {
         fs_bitacoras_manager_create_bitacora(tid);
-
-    bitacora = fs_bitacoras_manager_hold_bitacora(tid);
+        bitacora = fs_bitacoras_manager_hold_bitacora(tid);
+    }
 
     fs_bitacora_add_content(bitacora, content);
     fs_bitacoras_manager_release_bitacora(tid);
