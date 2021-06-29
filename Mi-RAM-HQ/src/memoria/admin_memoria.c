@@ -1,5 +1,6 @@
 #include "admin_memoria.h"
 #include "esquemas/esquema_memoria.h"
+#include "map/map.h"
 
 void admin_memoria_init(void)
 {
@@ -13,6 +14,7 @@ bool admin_memoria_iniciar_patota(uint32_t pid, uint32_t cant_tripulantes, const
 
 bool admin_memoria_iniciar_tripulante(uint32_t pid, uint32_t tid, u_pos_t pos)
 {
+    map_add_trip(tid, &pos);
     return esquema_memoria_inicializar_tripulante(pid, tid, pos);
 }
 
