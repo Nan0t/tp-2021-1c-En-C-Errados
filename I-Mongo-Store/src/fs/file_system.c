@@ -28,8 +28,8 @@ private const fs_task_exec_func TASK_EXEC_FUNCS[] =
     file_system_rm_file,
 };
 
-void file_system_init(const file_system_attr_t* attr)
-{
+void file_system_init(const file_system_attr_t* attr){
+	//TODO agregar condiciones de inicialización
     U_LOG_INFO("I-Mongo-Store File System");
     U_LOG_INFO("Punto de Montaje: %s", attr->mount_point);
     U_LOG_INFO("Tiempo de Sincronizacion: %d", attr->sync_time);

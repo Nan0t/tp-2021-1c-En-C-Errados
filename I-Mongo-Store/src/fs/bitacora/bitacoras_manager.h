@@ -3,6 +3,22 @@
 
 #include "bitacora.h"
 
+typedef struct
+{
+    pthread_mutex_t ref_counter_mx;
+    uint32_t        ref_counter;
+    pthread_cond_t  can_be_deleted;
+
+    fs_bitacora_t* bitacora;
+} fs_bitacora_ref_t;
+
+typedef struct
+{
+    char*           mount_point;
+    pthread_mutex_t bitacoras_mx;
+    t_dictionary*   bitacoras;
+} fs_bitacoras_manager_t;
+
 /**
  * @NAME: fs_bitacoras_manager_init
  * @DESC: inicializa el administrador de bitacoras.
