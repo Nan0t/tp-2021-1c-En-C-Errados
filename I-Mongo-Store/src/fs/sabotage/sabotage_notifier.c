@@ -19,6 +19,7 @@ void fs_sabotage_notifier_init(t_queue* sabotage_positions)
 private void fs_sabotaje_notifier_sig_handler(int sig)
 {
     U_LOG_TRACE("Sig Usr 1");
+    
     int32_t conn = fs_sabotage_notifier_connect_to_discordia();
     (void)sig;
 
@@ -61,6 +62,8 @@ private int32_t fs_sabotage_notifier_connect_to_discordia(void)
 
     if(conn == -1)
         U_LOG_ERROR("No se pudo conectar al Discordia: %s", u_sock_err_get_description(err));
+
+    u_sock_err_delete(err);
     
     return conn;
 }
