@@ -9,6 +9,10 @@ private bool segmentacion_agregar_patota_en_memoria(uint32_t pid,const char* tar
 private char* segmentacion_obtener_tareas_de_patota(uint32_t pid);
 private uint32_t segmentacion_obtener_y_actualizar_proxima_tarea_tripulante(uint32_t pid,uint32_t tid);
 private tripulantes_t* segmentacion_obtener_tcb(uint32_t pid,uint32_t tid);
+private bool segmentacion_esta_compactado(void);
+private void segmentacion_reasignar_segmento(void);
+private void segmentacion_actualizar_estructura_y_memoria(uint32_t inicio_segmento_libre,uint32_t tamanio_segmento_libre,uint32_t tipo_segmento_ocupado,
+		uint32_t id_segmento_ocupado,uint32_t inicio_segmento_ocupado,uint32_t tamanio_segmento_ocupado);
 
 void segmentacion_memoria_init(void)
 {
@@ -178,7 +182,16 @@ char* segmentacion_memoria_obtener_proxima_tarea(uint32_t pid, uint32_t tid)
     char** tareas_separadas = string_split(todas_las_tareas, "\n");
     free(todas_las_tareas);
     U_LOG_INFO("PROXIMA TAREA DE TRIPULANTE: %d, %s", tid, tareas_separadas[numero_de_tarea]);
-    return tareas_separadas[numero_de_tarea];
+	int tamanio_vector=sizeof(tareas_separadas);
+	int tamanio_elemento=sizeof(tareas_separadas[0]);
+	if (tamanio_elemento == 0){
+		return NULL;
+	}
+	int cantidad_de_elementos=tamanio_vector/tamanio_elemento;
+    if (numero_de_tarea<cantidad_de_elementos){
+    	return tareas_separadas[numero_de_tarea];
+    }
+    return NULL;
 }
 
 tripulantes_t* segmentacion_memoria_obtener_info_tripulante(uint32_t pid, uint32_t tid)
@@ -348,6 +361,13 @@ private bool segmentacion_hay_segmento_libre(int tamanio_lista,int tamanio_segme
 }
 
 private void segmentacion_compactar(void){
+	int compacto = 0;
+	while(compacto == 0){
+		if (segmentacion_esta_compactado){
+			compacto = 1;
+		}
+        segmentacion_reasignar_segmento();
+	}
 
 }
 
@@ -558,4 +578,142 @@ private tripulantes_t* segmentacion_obtener_tcb(uint32_t pid,uint32_t tid){
 	return tripulante;
 }
 
+private bool segmentacion_esta_compactado(void){
+	 int memoria_tamanio = u_config_get_int_value("TAMANIO_MEMORIA");
+	 int tamanio_listado_segentos=list_size(listado_segmentos);
+	 int cantidad_segmentos_libres;
+	 int es_ultimo=0;
+	 s_segmento_t *segmento_memoria;
+	 for(int s = 0; s < tamanio_listado_segentos; s++) {
+		 segmento_memoria = list_get(listado_segmentos, s);
+		 if((segmento_memoria->inicio_segmento + segmento_memoria->tamanio_segmento==memoria_tamanio)&&(segmento_memoria->tipo_segmento==-1)){
+			es_ultimo=1;
+		 }
+		 if(segmento_memoria->tipo_segmento==-1){
+			 cantidad_segmentos_libres++;
+		 }
+	 }
+     if((cantidad_segmentos_libres==1)&&(es_ultimo==1)){
+         return true;
+     }
+     return false;
+}
+
+private void segmentacion_reasignar_segmento(void){
+	int memoria_tamanio = u_config_get_int_value("TAMANIO_MEMORIA");
+	int tamanio_listado_segentos=list_size(listado_segmentos);
+	s_segmento_t *segmento_memoria;
+	s_segmento_t *segmento_memoria_siguiente;
+	int inicio_primer_segmento_libre=memoria_tamanio;
+	int indice;
+	for(int s = 0; s < tamanio_listado_segentos; s++){
+		 segmento_memoria = list_get(listado_segmentos, s);
+		 if((segmento_memoria->tipo_segmento==-1)&&(segmento_memoria->inicio_segmento<inicio_primer_segmento_libre)){
+			 inicio_primer_segmento_libre=segmento_memoria->inicio_segmento;
+			 indice=s;
+		 }
+	}
+	segmento_memoria = list_get(listado_segmentos, indice);
+	segmento_memoria_siguiente = list_get(listado_segmentos, indice + 1);
+
+	if(segmento_memoria_siguiente->tipo_segmento==-1){
+		// Si el segmento que sigue esta libre
+		segmento_memoria->tamanio_segmento=segmento_memoria->tamanio_segmento+segmento_memoria_siguiente->tamanio_segmento;
+		segmento_memoria_siguiente = list_remove(listado_segmentos,indice + 1);
+		free(segmento_memoria_siguiente->inicio_segmento);
+		free(segmento_memoria_siguiente->tamanio_segmento);
+		free(segmento_memoria_siguiente->tipo_segmento);
+		free(segmento_memoria_siguiente->id_propietario);
+		free(segmento_memoria_siguiente);
+	}
+	else{
+		// Si el segmento que sigue esta ocupado
+
+		// Se reacomoda la estructura y la memoria
+		uint32_t inicio_segmento_libre=segmento_memoria->inicio_segmento;
+		uint32_t tamanio_segmento_libre=segmento_memoria->tamanio_segmento;
+		uint32_t tipo_segmento_ocupado=segmento_memoria_siguiente->tipo_segmento;
+		uint32_t id_segmento_ocupado=segmento_memoria_siguiente->id_propietario;
+		uint32_t inicio_segmento_ocupado=segmento_memoria_siguiente->inicio_segmento;
+		uint32_t tamanio_segmento_ocupado=segmento_memoria_siguiente->tamanio_segmento;
+
+	    segmentacion_actualizar_estructura_y_memoria(inicio_segmento_libre,tamanio_segmento_libre,tipo_segmento_ocupado,
+	    		id_segmento_ocupado,inicio_segmento_ocupado,tamanio_segmento_ocupado);
+
+	    // Se invierte la info de los segmentos de memoria
+	    uint32_t inicio_segundo_segmento = segmento_memoria->inicio_segmento + segmento_memoria_siguiente->tamanio_segmento;
+	    uint32_t tamanio_primer_segmento = segmento_memoria_siguiente->tamanio_segmento;
+	    uint32_t tamanio_segundo_segmento = segmento_memoria->tamanio_segmento;
+	    uint32_t tipo_primer_segmento = segmento_memoria_siguiente->tipo_segmento;
+	    uint32_t id_primer_segmento = segmento_memoria_siguiente->id_propietario;
+
+	    segmento_memoria->tamanio_segmento=tamanio_primer_segmento;
+	    segmento_memoria->tipo_segmento=tipo_primer_segmento;
+	    segmento_memoria->id_propietario=id_primer_segmento;
+	    segmento_memoria_siguiente->inicio_segmento=inicio_segundo_segmento;
+	    segmento_memoria_siguiente->tamanio_segmento=tamanio_segundo_segmento;
+	    segmento_memoria_siguiente->tipo_segmento=-1;
+		segmento_memoria_siguiente->id_propietario=-1;
+	}
+}
+
+private void segmentacion_actualizar_estructura_y_memoria(uint32_t inicio_segmento_libre,uint32_t tamanio_segmento_libre,uint32_t tipo_segmento_ocupado,
+		uint32_t id_segmento_ocupado,uint32_t inicio_segmento_ocupado,uint32_t tamanio_segmento_ocupado){
+
+	if((tipo_segmento_ocupado==0)||(tipo_segmento_ocupado==1)){
+		int tamanio_lista_patotas=list_size(listado_patotas);
+		int j;
+		int indice=-1;
+		s_patota_y_tabla_t *patota;
+		for(j=0; j<tamanio_lista_patotas; j++){
+			patota = list_get(listado_patotas, j);
+			if(patota->pid==id_segmento_ocupado){
+					indice=j;
+		    }
+		}
+		patota = list_get(listado_patotas, indice);
+		t_list* tabla;
+		tabla = patota->tabla_segmentos;
+		s_segmento_patota_t *segmento_patota;
+		segmento_patota = list_get(tabla, 0);
+
+		if(tipo_segmento_ocupado==0){
+		   memcpy(esquema_memoria_mfisica + inicio_segmento_libre,esquema_memoria_mfisica + segmento_patota->inicio_segmento_pcb,segmento_patota->tamanio_segmento_pcb);
+		   segmento_patota->inicio_segmento_pcb=inicio_segmento_libre;
+		}
+		else{
+		   memcpy(esquema_memoria_mfisica + inicio_segmento_libre,esquema_memoria_mfisica + segmento_patota->inicio_segmento_tareas,segmento_patota->tamanio_segmento_tareas);
+		   segmento_patota->inicio_segmento_tareas=inicio_segmento_libre;
+		}
+
+	}
+
+	if(tipo_segmento_ocupado==2){
+		int tamanio_lista_patotas=list_size(listado_patotas);
+		int j;
+		int i;
+		s_patota_y_tabla_t *patota;
+		t_list* tabla;
+		s_segmento_patota_t *segmento_patota;
+		t_list* lista_tripulantes;
+		s_segmento_tripulante_t *segmento_tripulante;
+		int tamanio_lista_tripulantes;
+		for(j=0; j<tamanio_lista_patotas; j++){
+			patota = list_get(listado_patotas, j);
+			tabla = patota->tabla_segmentos;
+			segmento_patota = list_get(tabla, 0);
+			lista_tripulantes=segmento_patota->listado_tripulantes;
+			tamanio_lista_tripulantes=list_size(lista_tripulantes);
+			for(i=0; i<tamanio_lista_tripulantes; i++){
+				segmento_tripulante = list_get(lista_tripulantes, i);
+				if(segmento_tripulante->tid==id_segmento_ocupado){
+					memcpy(esquema_memoria_mfisica + inicio_segmento_libre,esquema_memoria_mfisica + segmento_tripulante->inicio_segmento_tcb,segmento_tripulante->tamanio_segmento_tcb);
+					segmento_tripulante->inicio_segmento_tcb=inicio_segmento_libre;
+				}
+			}
+
+		}
+	}
+
+}
 
