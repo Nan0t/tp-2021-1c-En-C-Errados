@@ -5,16 +5,13 @@
 #include <pthread.h>
 
 struct fs_file_t{
-    uint32_t    SIZE;
-    t_queue*    BLOCKS;
-    uint32_t	BLOCK_COUNT;
-    char		CARACTER_LLENADO;
-    char* 		MD5_ARCHIVO;
+	char*		NOMBRE_ARCHIVO;
     t_config* 	CONFIG;
 };
 
 
 fs_file_t* fs_file_create(const char* mount_point, const char* file_name, char fill_char){
+
 	char * path = u_malloc(sizeof(char*));
 	path = string_from_format("%s/Files/%s",mount_point,file_name);
 
@@ -44,44 +41,46 @@ fs_file_t* fs_file_create(const char* mount_point, const char* file_name, char f
     return this;
 }
 
+//Elimina la estructura de la bitacora y libera los bloques que tenga asignados.
 void fs_file_delete(fs_file_t* this){
 
-	for(int i=0; i<this->BLOCKS->elements->elements_count ; i++){
-		fs_blocks_manager_release_block(this->BLOCKS[i]);
+	char** block_list = config_get_array_value(this->CONFIG, "BLOCKS");
+	for(int i=0; i<config_get_int_value(this->CONFIG, "BLOCKS_COUNT") ; i++){
+		fs_blocks_manager_release_block(block_list[i]);
 	}
 
+    u_free(block_list);
     u_free(this);
+
 }
 
 void fs_file_add_fill_char(fs_file_t* this, uint32_t amount){
+
     //TODO: Agregar la cantidad especificada por "amount" de caracteres de llenado en el file.
     // En caso de no poder escribirse todo el contenido, pedir un nuevo bloque y escribir
     // la cantidad de caracteres restantes. En caso de que tampoco se pueda escribir
     // todo el contenido en el nuevo bloque, seguir pidiendo bloqueas hasta terminar de escribir
     // la cantidad total de caracteres.
 
-	//obtengo la cant de bloques del file
-	uint32_t block_id = this->BLOCKS->elements->elements_count;
+	int amount_values = config_get_int_value(this->CONFIG, "BLOCK_COUNT");
+	char** values = config_get_array_value(this->CONFIG, "BLOCKS");
 
-	//obtengo el disk offset del ultimo bloque de la lista
-	int offset = u_malloc(sizeof(int));
-	offset = fs_block_get_disk_offset(block_id);
+	uint32_t block_id =  atoi(values[amount_values-1]);
 
-	//creo el contenido
-	char * fill = u_malloc(sizeof(char*));
+	char* fill_char = config_get_string_value(this->CONFIG, "CARACTER_LLENADO");
 
-	for(int i=0; i<amount ; i++){
-		strcat(fill,this->CARACTER_LLENADO);
-	}
+	char* fill = string_repeat(*fill_char, amount);
 
-	//intento escribir el amount en el bloque
+	//obtengo el offset del ultimo bloque de la lista TODO
+	int offset = 0;
+
 	int escritos = u_malloc(sizeof(int));
 	escritos = fs_block_write(block_id, fill, sizeof(fill), offset);
 
 	if(escritos!=sizeof(fill)){
 
 		//pido un nuevo bloque
-		list_add(this->BLOCKS,fs_blocks_manager_request_block());
+		list_add(this->CONFIG,fs_blocks_manager_request_block());
 		block_id++;
 
 		escritos = fs_block_write(block_id, fill, sizeof(fill), 0);
@@ -90,8 +89,6 @@ void fs_file_add_fill_char(fs_file_t* this, uint32_t amount){
 			escritos += fs_block_write(block_id, fill, sizeof(fill)-escritos, offset); //aca deberia solo tomar el content menos el ya guardado
 		}
 	}
-	u_free(block_id);
-	u_free(offset);
 	u_free(fill);
 	u_free(escritos);
 }
@@ -116,22 +113,21 @@ bool fs_file_check_integrity(fs_file_t* this){
 }
 
 const char* fs_file_get_name(const fs_file_t* this){
-    //TODO: Devolver el nombre del archivo.
-    return NULL;
+    return this->NOMBRE_ARCHIVO;
 }
 
 const char* fs_file_get_md5(const fs_file_t* this){
-    return this->MD5_ARCHIVO;
+    return config_get_string_value(this, "MD5_ARCHIVO");
 }
 
 uint32_t fs_file_get_size(const fs_file_t* this){
-    return this->SIZE;
+    return config_get_int_value(this, "SIZE");
 }
 
 char fs_file_get_fill_char(const fs_file_t* this){
-	return this->CARACTER_LLENADO;
+	return config_get_string_value(this, "CARACTER_LLENADO");
 }
 
 uint32_t fs_file_get_blocks_count(const fs_file_t* this){
-    return this->BLOCK_COUNT;
+    return config_get_int_value(this, "BLOCK_COUNT");
 }
