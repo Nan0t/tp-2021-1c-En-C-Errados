@@ -1,14 +1,18 @@
 #include "file.h"
-#include "block.h"
 #include "fs/blocks/blocks_manager.h"
+#include "commons/config.h"
 
 #include <pthread.h>
+#include <openssl/md5.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 struct fs_file_t{
 	char*		NOMBRE_ARCHIVO;
     t_config* 	CONFIG;
 };
-
+private t_list* lista_id_bloques_archivo(char** lista_bloques);
+private char* generate_md5(char* hash_archivo, char** lista_bloques, uint32_t tamanio_a_leer, uint32_t tamanio_bloques);
 
 fs_file_t* fs_file_create(const char* mount_point, const char* file_name, char fill_char){
 
@@ -105,10 +109,19 @@ void fs_file_remove_fill_char(fs_file_t* this, uint32_t amount){
 }
 
 bool fs_file_check_integrity(fs_file_t* this){
-	//con sabotajes (MD5)
-    //TODO: Se debe devolver true o false dependiendo si el archivo fue corrompido o no.
-    // El criterio que se va a seguir para saber si un file fue corrompido o no, se
-    // especifica en el enunciado del TP.
+
+	char* hash_archivo       =  config_get_string_value(this->CONFIG, "MD5_ARCHIVO");
+	char** lista_bloques     =  config_get_array_value(this->CONFIG, "BLOCKS");
+	uint32_t tamanio_archivo =  config_get_int_value(this->CONFIG, "SIZE");
+	uint32_t tamanio_bloques =  fs_blocks_manager_get_blocks_size();
+
+	char* md5_bloques_archivo = generate_md5(hash_archivo, lista_bloques, tamanio_archivo, tamanio_bloques);
+	if(!strcmp(md5_bloques_archivo, hash_archivo))
+	{
+		t_list* lista_id_bloques = lista_id_bloques_archivo(lista_bloques);
+	}
+
+
     return false;
 }
 
@@ -130,4 +143,42 @@ char fs_file_get_fill_char(const fs_file_t* this){
 
 uint32_t fs_file_get_blocks_count(const fs_file_t* this){
     return config_get_int_value(this, "BLOCK_COUNT");
+}
+
+
+private char* generate_md5(char* hash_archivo, char** lista_bloques, uint32_t tamanio_a_leer, uint32_t tamanio_bloques)
+{
+	MD5_CTX contexto;
+	char* hash = malloc(MD5_DIGEST_LENGTH);
+	void* data_bloques = malloc(tamanio_bloques);
+	t_list* id_bloques = lista_id_bloques_archivo(lista_bloques);
+
+	MD5_Init(&contexto);
+	void _actualizarMd5(uint32_t* id_bloque)
+	{
+		uint64_t cant_bytes_leidos = fs_block_read(*id_bloque, data_bloques ,tamanio_a_leer, 0);
+		MD5_Update(&contexto, data_bloques, cant_bytes_leidos);
+		tamanio_a_leer -= cant_bytes_leidos;
+	}
+	list_iterate(id_bloques, (void*)_actualizarMd5);
+	MD5_Final(hash, &contexto);
+	free(data_bloques);
+	list_destroy_and_destroy_elements(id_bloques, free);
+
+	return hash;
+}
+
+private t_list* lista_id_bloques_archivo(char** lista_bloques)
+{
+	t_list* bloques_archivo = list_create();
+	for(char** bloques = lista_bloques; *bloques != NULL;  bloques ++)
+    {
+        uint32_t* bloque = u_malloc(sizeof(uint32_t));
+        bloque = atoi(*bloques);
+        list_add(bloques_archivo, bloque);
+        free(*bloques);
+    }
+	free(lista_bloques);
+
+	return bloques_archivo;
 }
