@@ -34,16 +34,6 @@ void fs_bitacora_delete(fs_bitacora_t* bitacora);
 void fs_bitacora_add_content(fs_bitacora_t* bitacora, const char* content);
 
 /**
- * @NAME: fs_bitacora_check_integrity
- * @DESC: permite chequear la integridad de una bitacora ante un sabotaje.
- * @PARAMS:
- *  [in] const fs_bitacora_t* bitacora - bitacora del cual se quiere chequear su integridad.
- * 
- * @RETURNS: true en caso de que la bitacora no este corrompido. En caso contrario, false.
- */
-bool fs_bitacora_check_integrity(fs_bitacora_t* bitacora);
-
-/**
  * @NAME: fs_bitacora_get_tid
  * @DESC: devuelve el numero de tripulante al que pertenece la bitacora.
  * @PARAMS:
