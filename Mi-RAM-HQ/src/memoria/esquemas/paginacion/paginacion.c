@@ -63,6 +63,7 @@ private void paginacion_copiar_frame_de_memoria_a_swap(p_fila_tabla_de_paginas_t
 private bool paginacion_pagina_esta_en_memoria_real(p_fila_tabla_de_paginas_t* fila);
 private p_fila_tabla_de_paginas_t* paginacion_seleccionar_pagina_por_LRU();
 private p_fila_tabla_de_paginas_t* paginacion_seleccionar_pagina_por_CLOCK();
+private int paginacion_copiar_paginas(int pagina, p_fila_tabla_de_paginas_t* fila_de_tabla, p_patota_y_tabla_t* patota);
 
 void* memoria_swap_fisica;
 char* algoritmo_reemplazo;
@@ -823,7 +824,7 @@ private int paginacion_buscar_direccion_en_tabla_de_paginas_swap(int direccion_l
 
 private void paginacion_modificar_frame_y_tabla_de_paginas(int numero_de_frame, p_patota_y_tabla_t* patota, int pagina){
     p_frame_t* frame = list_get(lista_frames_memoria, numero_de_frame);
-    U_LOG_INFO("Se copio frame de swap en frame %d de memoria real", numero_de_frame);
+    //U_LOG_INFO("Se copio frame de swap en frame %d de memoria real", numero_de_frame);
     frame->ocupado = 1;
     //frame->uso = 1;
     p_fila_tabla_de_paginas_t* fila_de_tabla = list_get(patota->tabla, pagina); 
@@ -1188,6 +1189,7 @@ private int paginacion_liberar_un_frame(int pagina, p_patota_y_tabla_t* patota){
 
     if(!paginacion_tiene_frames_libres(1, lista_frames_swap)){
         //el camino enquilombado; 
+        return paginacion_copiar_paginas(pagina, pagina_a_sacar, patota);
     }
     paginacion_copiar_frame_de_memoria_a_swap(pagina_a_sacar);
     return paginacion_copiar_frame_de_swap_a_memoria(pagina, patota);
@@ -1278,4 +1280,48 @@ private void paginacion_copiar_frame_de_memoria_a_swap(p_fila_tabla_de_paginas_t
 private void paginacion_marcar_como_liberado(int numero_de_frame, t_list* lista_frames){
     p_frame_t* frame_a_liberar = list_get(lista_frames, numero_de_frame);
     frame_a_liberar->ocupado = 0;
+}
+
+private int paginacion_copiar_paginas(int pagina, p_fila_tabla_de_paginas_t* fila_de_tabla, p_patota_y_tabla_t* patota){
+    
+    void* buffer_temporal = u_malloc(tamanio_pagina);
+    int frame_memoria = fila_de_tabla->frame_memoria;
+
+    memcpy(buffer_temporal, esquema_memoria_mfisica + frame_memoria * tamanio_pagina, tamanio_pagina);
+    U_LOG_TRACE("Copiado frame de memoria %d a buffer temporal", frame_memoria);
+
+    p_frame_t* frame_memoria_liberado = list_get(lista_frames_memoria, fila_de_tabla->frame_memoria);
+    frame_memoria_liberado->ocupado = 0;
+    fila_de_tabla->frame_memoria = -1; // PASE LA PAGINA SELECCIONADA DE MEMORIA REAL AL BUFFER TEMPORAL, y libere el frame que ocupaba en memoria real
+    //AHORA TENGO QUE PASAR EL DE SWAP A MEMORIA REAL.
+    //------------------------------------------------------------------------------------------------------------
+
+    int frame_swap = paginacion_frame_correspondiente_a_pagina(pagina, patota, MEMORIA_SWAP);
+
+    p_frame_t* frame_a_escribir = list_find(lista_frames_memoria, (void*)paginacion_frame_esta_libre);
+    uint32_t frame_memoria_a_escribir = frame_a_escribir->num_frame;
+
+    memcpy(esquema_memoria_mfisica + frame_memoria_a_escribir * tamanio_pagina, memoria_swap_fisica + frame_swap * tamanio_pagina, tamanio_pagina);
+
+    U_LOG_INFO("Copiado frame de swap %d a frame de memoria %d", frame_swap, frame_memoria_a_escribir);
+    paginacion_modificar_frame_y_tabla_de_paginas(frame_memoria_a_escribir, patota, pagina);
+    //ACA PASE EL CONTENIDO DEL FRAME DE SWAP A MEMORIAL REAL, TENGO QUE LIBERAR EL FRAME DE SWAP
+    paginacion_marcar_como_liberado(frame_swap, lista_frames_swap);
+    //ME FALTA PASAR COPIAR EL CONTENIDO DEL BUFFER A SWAP
+    //--------------------------------------------------------------------------------------------------------------------------
+
+    p_frame_t* frame_donde_escribo_swap = list_find(lista_frames_swap, (void*)paginacion_frame_esta_libre); //
+    uint32_t frame_swap_donde_escribo = frame_donde_escribo_swap->num_frame;
+
+    memcpy(memoria_swap_fisica + frame_swap_donde_escribo * tamanio_pagina, buffer_temporal, tamanio_pagina);
+
+    U_LOG_INFO("Copiado buffer temporal a frame de swap %d", frame_swap);
+    //Tengo que poner el frame de swap como ocupado y modificar la tabla de paginas
+
+    fila_de_tabla->frame_swap = frame_swap_donde_escribo;
+    frame_donde_escribo_swap->ocupado = 1;
+    
+    //--------------------------------------------------------------------------------------------------------------------------
+
+    return paginacion_buscar_direccion_en_tabla_de_paginas(pagina * tamanio_pagina, patota);
 }
