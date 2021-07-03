@@ -1,6 +1,8 @@
 #include "bitacora.h"
 #include "fs/blocks/blocks_manager.h"
 #include <commons/config.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 struct fs_bitacora_t{
     uint32_t	TID;
@@ -81,14 +83,6 @@ void fs_bitacora_add_content(fs_bitacora_t* this, const char* content){
 
 }
 
-bool fs_bitacora_check_integrity(fs_bitacora_t* this){
-    //TODO: Se debe devolver true o false dependiendo si la bitacora esta corrompida o no.
-    // El criterio que se va a seguir para saber si una bitacora esta corrompida o no, se
-    // especifica en el enunciado del TP. (MD5)
-
-
-    return false;
-}
 
 uint32_t fs_bitacora_get_tid(const fs_bitacora_t* this){
     //TODO: Devolver el TID del tripulante.
