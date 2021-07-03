@@ -65,7 +65,7 @@ void fs_blocks_manager_init(const char* mount_point)
 
     u_free(super_block_file_path);
 
-    fs_blocks_mangager_get_metadata(super_block_file);
+    fs_blocks_manager_get_metadata(super_block_file);
     fs_blocks_manager_init_disk();
     fs_blocks_manager_init_blocks();
 }
