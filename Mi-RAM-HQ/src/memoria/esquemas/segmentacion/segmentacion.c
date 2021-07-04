@@ -363,10 +363,12 @@ private bool segmentacion_hay_segmento_libre(int tamanio_lista,int tamanio_segme
 private void segmentacion_compactar(void){
 	int compacto = 0;
 	while(compacto == 0){
-		if (segmentacion_esta_compactado){
+		if (segmentacion_esta_compactado()){
 			compacto = 1;
 		}
+		else{
         segmentacion_reasignar_segmento();
+		}
 	}
 
 }
@@ -620,10 +622,6 @@ private void segmentacion_reasignar_segmento(void){
 		// Si el segmento que sigue esta libre
 		segmento_memoria->tamanio_segmento=segmento_memoria->tamanio_segmento+segmento_memoria_siguiente->tamanio_segmento;
 		segmento_memoria_siguiente = list_remove(listado_segmentos,indice + 1);
-		free(segmento_memoria_siguiente->inicio_segmento);
-		free(segmento_memoria_siguiente->tamanio_segmento);
-		free(segmento_memoria_siguiente->tipo_segmento);
-		free(segmento_memoria_siguiente->id_propietario);
 		free(segmento_memoria_siguiente);
 	}
 	else{
