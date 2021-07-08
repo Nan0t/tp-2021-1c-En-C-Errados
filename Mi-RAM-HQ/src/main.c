@@ -23,7 +23,7 @@ int entry_point(int argc, char** argv)
     U_LOG_INFO("Modulo Mi-RAM-HQ iniciado");
     
     esquema_memoria_init();
-    map_init();
+    //map_init();
 
     return servidor_init(u_config_get_string_value("PUERTO"));
 }

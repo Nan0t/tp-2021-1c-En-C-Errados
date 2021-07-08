@@ -22,7 +22,8 @@ typedef struct
     t_list* tabla;
     uint32_t tamanio_tareas;
     uint32_t tripulantes_escritos;
-    t_list* direcciones_logicas;
+    t_list* direcciones_logicas; //perteneciente a los tcb
+    t_list* direcciones_tareas; 
 }p_patota_y_tabla_t; 
 
 
@@ -40,6 +41,12 @@ typedef struct
     uint32_t tid;
     uint32_t direccion_logica; 
 }p_direcciones_logicas_t;
+
+typedef struct
+{
+    uint32_t numero_tarea;
+    uint32_t offset_en_seccion_tareas;
+}p_direcciones_tareas_t;
 
 t_list* lista_frames_memoria;
 t_list* lista_frames_swap;

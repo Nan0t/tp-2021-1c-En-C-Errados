@@ -64,6 +64,11 @@ private bool paginacion_pagina_esta_en_memoria_real(p_fila_tabla_de_paginas_t* f
 private p_fila_tabla_de_paginas_t* paginacion_seleccionar_pagina_por_LRU();
 private p_fila_tabla_de_paginas_t* paginacion_seleccionar_pagina_por_CLOCK();
 private int paginacion_copiar_paginas(int pagina, p_fila_tabla_de_paginas_t* fila_de_tabla, p_patota_y_tabla_t* patota);
+private void paginacion_guardar_direcciones_de_tareas(p_patota_y_tabla_t* patota, const char* tareas);
+uint32_t paginacion_obtener_direccion_inicio_tareas(uint32_t pid);
+char* paginacion_traer_tarea_buscada(uint32_t numero_de_tarea, uint32_t direccion_inicio_tareas, uint32_t pid);
+
+private char* paginacion_obtener_TODAS_LAS_TAREAS_PARA_PRUEBA(uint32_t pid); //SOLO PARA PROBAR
 
 void* memoria_swap_fisica;
 char* algoritmo_reemplazo;
@@ -167,9 +172,8 @@ bool paginacion_memoria_actualizar_posicion_tripulante(uint32_t pid, uint32_t ti
     p_patota_y_tabla_t* patota = buscar_patota_por_pid(pid);
 
     int direccion_logica = paginacion_buscar_tid_en_tabla_de_paginas(tid, patota);
-    U_LOG_INFO("Direccion Fisica Tripulante: %d", direccion_logica);
+    U_LOG_INFO("Direccion logica Tripulante: %d", direccion_logica);
 
-    int pagina = direccion_logica / tamanio_pagina;
     int desplazamiento = direccion_logica % tamanio_pagina;
     int direccion_fisica = paginacion_buscar_direccion_en_tabla_de_paginas(direccion_logica, patota);
     
@@ -178,13 +182,17 @@ bool paginacion_memoria_actualizar_posicion_tripulante(uint32_t pid, uint32_t ti
     paginacion_modificar_frame(direccion_fisica/tamanio_pagina, tipo_escritura, patota);
 
     int i;
-    for(i=0; i<sizeof(uint32_t)+sizeof(char); i++){
+    for(i=0; i<sizeof(uint32_t)+sizeof(char); i++){/*
         if(!paginacion_chequear_overflow_de_pagina_byte_a_byte(&direccion_fisica, &desplazamiento, &direccion_logica, patota, tipo_escritura, MEMORIA_FISICA)){
             //falta modificar frame?
             direccion_fisica++;
             direccion_logica++;
             desplazamiento++;
-        } 
+        } */
+        paginacion_chequear_overflow_de_pagina_byte_a_byte(&direccion_fisica, &desplazamiento, &direccion_logica, patota, tipo_escritura, MEMORIA_FISICA);
+        direccion_fisica++;
+        direccion_logica++;
+        desplazamiento++;
     }
 
     paginacion_escribir_uint32(pos.x, &desplazamiento, &direccion_fisica, &direccion_logica, patota, tipo_memoria, tipo_escritura);
@@ -212,13 +220,19 @@ bool paginacion_memoria_actualizar_estado_tripulante(uint32_t pid, uint32_t tid,
     paginacion_modificar_frame(direccion_fisica/tamanio_pagina, tipo_escritura, patota);
 
     int i;
-    for(i=0; i<sizeof(uint32_t); i++){
+    for(i=0; i<sizeof(uint32_t); i++){/*
         if(!paginacion_chequear_overflow_de_pagina_byte_a_byte(&direccion_fisica, &desplazamiento, &direccion_logica, patota, tipo_escritura, MEMORIA_FISICA)){
             //falta modificar frame?
             direccion_fisica++;
             direccion_logica++;
             desplazamiento++;
-        } 
+        } */
+        paginacion_chequear_overflow_de_pagina_byte_a_byte(&direccion_fisica, &desplazamiento, &direccion_logica, patota, tipo_escritura, MEMORIA_FISICA);
+            //falta modificar frame?
+            direccion_fisica++;
+            direccion_logica++;
+            desplazamiento++;
+         
     }
 
     paginacion_chequear_overflow_de_pagina_byte_a_byte(&direccion_fisica, &desplazamiento, &direccion_logica, patota, tipo_escritura, MEMORIA_FISICA);
@@ -236,21 +250,26 @@ bool paginacion_memoria_actualizar_estado_tripulante(uint32_t pid, uint32_t tid,
 
 char* paginacion_memoria_obtener_proxima_tarea(uint32_t pid, uint32_t tid)
 {
-    char* todas_las_tareas = paginacion_obtener_tareas_de_pid(pid);
-    U_LOG_TRACE("TAREAS RECUPERADAS: %s", todas_las_tareas);
+    uint32_t direccion_inicio_tareas = paginacion_obtener_direccion_inicio_tareas(pid);
+    U_LOG_TRACE("TAREAS RECUPERADAS direccion: %d", direccion_inicio_tareas);
     
     tripulantes_t* tripulante = paginacion_obtener_tcb(pid, tid);
     uint32_t numero_de_tarea = tripulante->proxima_tarea;
-    free(tripulante);
+    u_free(tripulante);
 
+    char* tarea = paginacion_traer_tarea_buscada(numero_de_tarea, direccion_inicio_tareas, pid);
+    //char* tareas = paginacion_obtener_TODAS_LAS_TAREAS_PARA_PRUEBA(pid);
     paginacion_modificar_proxima_tarea_tripulante(pid, tid);
 
-    char** tareas_separadas = string_split(todas_las_tareas, "\n"); 
-    free(todas_las_tareas);
+    //har** tareas_separadas = string_split(todas_las_tareas, "\n"); 
+    //free(todas_las_tareas);
 
-    U_LOG_INFO("PROXIMA TAREA DE TRIPULANTE: %d, %s", tid, tareas_separadas[numero_de_tarea]);
+  //  U_LOG_INFO("PROXIMA TAREA DE TRIPULANTE: %d, %s", tid, tareas_separadas[numero_de_tarea]);
     
-    return tareas_separadas[numero_de_tarea];
+   // return tareas_separadas[numero_de_tarea];
+    U_LOG_TRACE("TAREA RECUPERADA %s", tarea);
+    return tarea;
+   //return tareas;
 }
 
 tripulantes_t* paginacion_memoria_obtener_info_tripulante(uint32_t pid, uint32_t tid)
@@ -373,6 +392,7 @@ private p_patota_y_tabla_t* paginacion_agregar_patota_a_listado(uint32_t pid, in
     patota->tripulantes_escritos = 0;
     patota->tabla = list_create();
     patota->direcciones_logicas = list_create();
+    patota->direcciones_tareas = list_create();
 
     for(i=0; i<paginas; i++){
         p_tipo_memoria_e tipo_memoria;
@@ -415,6 +435,8 @@ private bool paginacion_agregar_patota_en_memoria_swap(uint32_t pid, uint32_t ca
     int frame = paginacion_inicializacion_frame_correspondiente_a_pagina(pagina, patota, &tipo_de_memoria); 
     int desplazamiento = direccion_logica % tamanio_pagina;
     int direccion_fisica = frame * tamanio_pagina + desplazamiento;
+
+    paginacion_guardar_direcciones_de_tareas(patota, tareas);
     
     uint32_t i;
     int j;
@@ -688,6 +710,50 @@ private tripulantes_t* paginacion_obtener_tcb(uint32_t pid, uint32_t tid){
 
 private void paginacion_modificar_proxima_tarea_tripulante(uint32_t pid, uint32_t tid){
     p_patota_y_tabla_t* patota = buscar_patota_por_pid(pid);
+
+    int direccion_logica = paginacion_buscar_tid_en_tabla_de_paginas(tid, patota);
+    U_LOG_INFO("Direccion logica Tripulante: %d", direccion_logica);
+
+    int pagina = direccion_logica / tamanio_pagina;
+    int desplazamiento = direccion_logica % tamanio_pagina;
+    int direccion_fisica = paginacion_buscar_direccion_en_tabla_de_paginas(direccion_logica, patota);
+    
+    p_tipo_escritura_e tipo_escritura = MODIFICACION;
+    p_tipo_memoria_e tipo_memoria = MEMORIA_FISICA;
+    paginacion_modificar_frame(direccion_fisica/tamanio_pagina, tipo_escritura, patota);
+
+    int i;
+    for(i=0; i<sizeof(uint32_t)+sizeof(char)+2*sizeof(uint32_t); i++){
+        paginacion_chequear_overflow_de_pagina_byte_a_byte(&direccion_fisica, &desplazamiento, &direccion_logica, patota, tipo_escritura, MEMORIA_FISICA);
+            //falta modificar frame?
+            direccion_fisica++;
+            direccion_logica++;
+            desplazamiento++;
+        
+    }
+
+    uint32_t proxima_tarea;
+
+    //SE GUARDAN LAS POSICIONES ACTUALES PARA ESCRIBIR LA NUEVA TAREA POSTERIORMENTE A RECUPERARLA
+    int desplazamiento_2 = desplazamiento; 
+    int direccion_fisica_2 = direccion_fisica;
+    int direccion_logica_2 = direccion_logica;
+
+    paginacion_obtener_uint32_de_memoria(&proxima_tarea, &desplazamiento, &direccion_fisica, &direccion_logica, patota, tipo_escritura);
+    proxima_tarea++;
+
+    if (proxima_tarea == list_size(patota->direcciones_tareas)){
+        //aca mando la funcion para expulsar? 
+        U_LOG_TRACE("NO HAY MAS TAREAS");
+    }else{
+        paginacion_escribir_uint32(proxima_tarea, &desplazamiento_2, &direccion_fisica_2, &direccion_logica_2, patota, tipo_memoria, tipo_escritura);
+    }
+    
+    
+    //paginacion_mostrar_frames(4, MEMORIA_FISICA);
+
+    /*
+    p_patota_y_tabla_t* patota = buscar_patota_por_pid(pid);
     int base = 8; //correspondientes a la estructura del pcb  
     int pagina = base / tamanio_pagina;
     int frame = paginacion_frame_correspondiente_a_pagina(pagina, patota, MEMORIA_FISICA); //chequear si la pagina esta en memoria. 
@@ -729,8 +795,8 @@ private void paginacion_modificar_proxima_tarea_tripulante(uint32_t pid, uint32_
                 desplazamiento++;
             }
         }
-    }
-    U_LOG_INFO("Actualizado proxima tarea de tid: %d", tid);
+    }*/
+    U_LOG_INFO("Actualizado proxima tarea de tid: %d, numero de tarea %d", tid, proxima_tarea);
 }
 
 private p_fila_tabla_de_paginas_t* buscar_fila_por_frame(t_list* tabla, int numero_de_frame){
@@ -940,7 +1006,7 @@ private bool paginacion_hay_overflow(int desplazamiento){
 
 private bool paginacion_chequear_overflow_de_pagina_byte_a_byte(int *direccion_fisica, int *desplazamiento, int *direccion_logica, p_patota_y_tabla_t* patota, p_tipo_escritura_e tipo_escritura, p_tipo_memoria_e tipo_de_memoria){
     if((*desplazamiento)+1>tamanio_pagina){
-        *direccion_logica = *direccion_logica + 1; 
+       // *direccion_logica = *direccion_logica; //+ 1; 
         if(tipo_de_memoria == MEMORIA_SWAP){
             *direccion_fisica = paginacion_buscar_direccion_en_tabla_de_paginas_swap(*direccion_logica, patota, tipo_escritura);
         }else{
@@ -988,7 +1054,7 @@ private void paginacion_obtener_uint32_de_memoria(uint32_t* donde_escribo, int* 
 
 private void paginacion_obtener_char_de_memoria(char* donde_escribo, int *direccion_fisica, int * desplazamiento, int *direccion_logica, p_patota_y_tabla_t* patota, p_tipo_escritura_e tipo_escritura, p_tipo_memoria_e tipo_de_memoria){
     paginacion_chequear_overflow_de_pagina_byte_a_byte(direccion_fisica, desplazamiento, direccion_logica, patota, tipo_escritura, tipo_de_memoria);
-    memcpy(donde_escribo, esquema_memoria_mfisica + *direccion_fisica, sizeof(char)); //chequear esta linea 
+    memcpy(donde_escribo, esquema_memoria_mfisica + *direccion_fisica, sizeof(char)); 
     U_LOG_TRACE("RECUPERADO %c en frame %d, direccion logica %d, direccion fisica %d", *donde_escribo, *direccion_fisica/tamanio_pagina, *direccion_logica, *direccion_fisica);
     *desplazamiento = *desplazamiento + sizeof(char);
     *direccion_fisica = *direccion_fisica + sizeof(char);
@@ -1029,11 +1095,11 @@ private bool paginacion_tiene_frames_libres_totales(int frames){
 
 private p_frame_t* paginacion_encontrar_frame_libre(p_tipo_memoria_e* tipo_de_memoria){
     p_frame_t* frame_encontrado; 
-    if(list_any_satisfy(lista_frames_memoria, paginacion_frame_esta_libre)){
-        frame_encontrado = list_find(lista_frames_memoria, paginacion_frame_esta_libre);
+    if(list_any_satisfy(lista_frames_memoria, (void*)paginacion_frame_esta_libre)){
+        frame_encontrado = list_find(lista_frames_memoria, (void*)paginacion_frame_esta_libre);
         *tipo_de_memoria = MEMORIA_FISICA;
     }else{
-        frame_encontrado = list_find(lista_frames_swap, paginacion_frame_esta_libre);
+        frame_encontrado = list_find(lista_frames_swap, (void*)paginacion_frame_esta_libre);
         *tipo_de_memoria = MEMORIA_SWAP;
     }
     return frame_encontrado;
@@ -1091,7 +1157,7 @@ private void paginacion_inicializacion_escribir_uint32(uint32_t a_escribir, int*
                     return false;
                 }
             };
-            p_fila_tabla_de_paginas_t* fila_tabla = list_find(patota->tabla, pagina_buscada);
+            p_fila_tabla_de_paginas_t* fila_tabla = list_find(patota->tabla, (void*)pagina_buscada);
             if(fila_tabla->frame_memoria == -1){
                 *tipo_memoria = MEMORIA_SWAP;
                 memoria = memoria_swap_fisica;
@@ -1130,7 +1196,7 @@ private void paginacion_inicializacion_escribir_char(char a_escribir, int *direc
     }
 
     memcpy(memoria + *direccion_fisica, &a_escribir, sizeof(char)); 
-   // U_LOG_TRACE("ESCRITO %c en frame %d, direccion logica %d, direccion fisica %d", a_escribir, *direccion_fisica/tamanio_pagina, *direccion_logica, *direccion_fisica);
+    U_LOG_TRACE("ESCRITO %c en frame %d, direccion logica %d, direccion fisica %d", a_escribir, *direccion_fisica/tamanio_pagina, *direccion_logica, *direccion_fisica);
     *desplazamiento = *desplazamiento + sizeof(char);
     *direccion_fisica = *direccion_fisica + sizeof(char);
     *direccion_logica = *direccion_logica + sizeof(char);
@@ -1138,7 +1204,7 @@ private void paginacion_inicializacion_escribir_char(char a_escribir, int *direc
 
 private bool paginacion_inicializacion_chequear_overflow_de_pagina_byte_a_byte(int *direccion_fisica, int *desplazamiento, int *direccion_logica, p_patota_y_tabla_t* patota, p_tipo_escritura_e tipo_escritura, p_tipo_memoria_e* tipo_de_memoria){
     if((*desplazamiento)+1>tamanio_pagina){
-        *direccion_logica = *direccion_logica + 1; 
+        *direccion_logica = *direccion_logica;// + 1; 
         if(*tipo_de_memoria == MEMORIA_SWAP){
             *direccion_fisica = paginacion_buscar_direccion_en_tabla_de_paginas_swap(*direccion_logica, patota, tipo_escritura);
         }else{
@@ -1149,7 +1215,7 @@ private bool paginacion_inicializacion_chequear_overflow_de_pagina_byte_a_byte(i
                     return false;
                 }
             };
-            p_fila_tabla_de_paginas_t* fila_tabla = list_find(patota->tabla, pagina_buscada);
+            p_fila_tabla_de_paginas_t* fila_tabla = list_find(patota->tabla, (void*)pagina_buscada);
             if(fila_tabla->frame_memoria == -1){
                 *direccion_fisica = paginacion_buscar_direccion_en_tabla_de_paginas_swap(*direccion_logica, patota, tipo_escritura);
                 *tipo_de_memoria = MEMORIA_SWAP;
@@ -1174,7 +1240,7 @@ private p_fila_tabla_de_paginas_t* buscar_fila_en_tabla_de_paginas_segun_frame_m
         }
         return false;
     };
-    p_fila_tabla_de_paginas_t* fila_encontrada = list_find(patota->tabla, pagina_encontrada);
+    p_fila_tabla_de_paginas_t* fila_encontrada = list_find(patota->tabla, (void*)pagina_encontrada);
     return fila_encontrada;
 }
 
@@ -1205,7 +1271,7 @@ private p_fila_tabla_de_paginas_t* paginacion_seleccionar_pagina_por_LRU(){
     while(list_iterator_has_next(iterador_de_patotas)){
         p_patota_y_tabla_t* patota = list_iterator_next(iterador_de_patotas);
 
-        t_list* tabla_de_paginas_filtrada = list_filter(patota->tabla, paginacion_pagina_esta_en_memoria_real);
+        t_list* tabla_de_paginas_filtrada = list_filter(patota->tabla, (void*)paginacion_pagina_esta_en_memoria_real);
         t_list_iterator* iterador_de_tabla = list_iterator_create(tabla_de_paginas_filtrada);
 
         while(list_iterator_has_next(iterador_de_tabla)){
@@ -1237,7 +1303,7 @@ private p_fila_tabla_de_paginas_t* paginacion_seleccionar_pagina_por_CLOCK(){
     while(!pagina_encontrada){ //si la memoria esta llena al menos una patota hay 
         p_patota_y_tabla_t* patota = list_iterator_next(iterador_de_patotas);
 
-        t_list* tabla_de_paginas_filtrada = list_filter(patota->tabla, paginacion_pagina_esta_en_memoria_real);
+        t_list* tabla_de_paginas_filtrada = list_filter(patota->tabla, (void*)paginacion_pagina_esta_en_memoria_real);
         t_list_iterator* iterador_de_tabla;
         iterador_de_tabla = list_iterator_create(tabla_de_paginas_filtrada);
 
@@ -1324,4 +1390,123 @@ private int paginacion_copiar_paginas(int pagina, p_fila_tabla_de_paginas_t* fil
     //--------------------------------------------------------------------------------------------------------------------------
 
     return paginacion_buscar_direccion_en_tabla_de_paginas(pagina * tamanio_pagina, patota);
+}
+
+private void paginacion_guardar_direcciones_de_tareas(p_patota_y_tabla_t* patota, const char* tareas){
+    t_list* listado_tareas = patota->direcciones_tareas;
+    
+    int i=0;
+    list_add(listado_tareas, (void*) i);
+    U_LOG_TRACE("Guardado tarea, direccion %d", i);
+    while(tareas[i]!='\0'){
+        if(tareas[i]=='\n'){
+            list_add(listado_tareas, (void*)(i+1));
+            U_LOG_TRACE("Guardado tarea, direccion %d", i+1);
+        }
+        i++;
+    }
+/*
+    int j = 0;
+
+    for(i=0; i<list_size(listado_tareas); i++){
+        U_LOG_TRACE("INICIO TAREA");
+        for(j=list_get(listado_tareas,i); j<list_get(listado_tareas,i+1); j++){
+            U_LOG_TRACE("%c", tareas[j]);
+        }
+        U_LOG_TRACE("FIN TAREA");
+    }
+    */
+}
+
+uint32_t paginacion_obtener_direccion_inicio_tareas(uint32_t pid){
+    p_patota_y_tabla_t* patota = buscar_patota_por_pid(pid);
+    uint32_t direccion_inicio_tareas;
+    
+
+    int direccion_logica = sizeof(uint32_t); //por que me salteo el pid
+    int desplazamiento = direccion_logica % tamanio_pagina;
+    int direccion_fisica = paginacion_buscar_direccion_en_tabla_de_paginas(direccion_logica, patota);
+
+    
+    p_tipo_escritura_e tipo_escritura = MODIFICACION;
+    paginacion_modificar_frame(direccion_fisica/tamanio_pagina, tipo_escritura, patota);
+
+    paginacion_obtener_uint32_de_memoria(&direccion_inicio_tareas, &desplazamiento, &direccion_fisica, &direccion_logica, patota, tipo_escritura);
+
+    U_LOG_INFO("Recupero direccion inicio tareas: %d", direccion_inicio_tareas);
+
+    return direccion_inicio_tareas;
+}
+
+char* paginacion_traer_tarea_buscada(uint32_t numero_de_tarea, uint32_t direccion_inicio_tareas, uint32_t pid){
+    
+    p_patota_y_tabla_t* patota = buscar_patota_por_pid(pid);
+    t_list* listado_direcciones = patota->direcciones_tareas;
+    
+    int offset_tareas = (int)list_get(listado_direcciones, numero_de_tarea);
+    int final_tarea;
+    if(numero_de_tarea+1==list_size(listado_direcciones)){
+        final_tarea = patota->tamanio_tareas;
+    }else{
+        final_tarea = (int)list_get(listado_direcciones, numero_de_tarea+1);
+    }
+
+    char* tarea = u_malloc(final_tarea - offset_tareas);
+
+    int direccion_logica = direccion_inicio_tareas + offset_tareas;
+    int desplazamiento = direccion_logica % tamanio_pagina;
+    int direccion_fisica = paginacion_buscar_direccion_en_tabla_de_paginas(direccion_logica, patota);
+
+    p_tipo_escritura_e tipo_escritura = MODIFICACION;
+    paginacion_modificar_frame(direccion_fisica/tamanio_pagina, tipo_escritura, patota); //ver si esta modificacion va aca y asi
+
+    int i;
+    for(i=offset_tareas; i<final_tarea; i++){
+        paginacion_obtener_char_de_memoria(&tarea[i], &direccion_fisica, &desplazamiento, &direccion_logica, patota, tipo_escritura, MEMORIA_FISICA);
+    }
+
+    U_LOG_TRACE("Obtenida tarea %s", tarea);
+    return tarea;
+}
+
+private char* paginacion_obtener_TODAS_LAS_TAREAS_PARA_PRUEBA(uint32_t pid){
+    
+    p_patota_y_tabla_t* patota = buscar_patota_por_pid(pid);
+    /*
+    int base = 4 ; //correspondientes a la estructura del pcb  
+    int pagina = base / tamanio_pagina;
+    int frame = paginacion_frame_correspondiente_a_pagina(pagina, patota, MEMORIA_FISICA);
+    int desplazamiento = base % tamanio_pagina; */
+
+    int direccion_logica = 4;
+    int desplazamiento = direccion_logica % tamanio_pagina;
+    int direccion_fisica = paginacion_buscar_direccion_en_tabla_de_paginas(direccion_logica, patota);
+
+     
+    uint_fast32_t direccion_tareas;
+    int tamanio_tareas = patota->tamanio_tareas;
+    char* tareas = u_malloc(tamanio_tareas);
+
+    p_tipo_escritura_e tipo_escritura = MODIFICACION; //agregado
+    paginacion_modificar_frame(direccion_fisica/tamanio_pagina, tipo_escritura, patota);
+    
+    //Busco la direccion de las tareas en memoria
+    paginacion_obtener_uint32_de_memoria(&direccion_tareas, &desplazamiento, &direccion_fisica, &direccion_logica, patota, tipo_escritura);
+
+    U_LOG_TRACE("direccion tareas levantada correctamente");
+    direccion_logica = direccion_tareas;
+    //pagina = direccion_logica / tamanio_pagina;
+    //frame = paginacion_frame_correspondiente_a_pagina(pagina, patota, MEMORIA_FISICA);
+    desplazamiento = direccion_logica % tamanio_pagina;
+    direccion_fisica = paginacion_buscar_direccion_en_tabla_de_paginas(direccion_logica, patota);
+    //Recorro la memoria y copio caracter a caracter las tareas
+    int i;
+    for(i=0; i<tamanio_tareas; i++){/*
+        paginacion_chequear_overflow_de_pagina(sizeof(char), &frame, &desplazamiento, &pagina, patota, tipo_escritura, MEMORIA_FISICA);
+        memcpy(tareas + i, esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(char));
+        desplazamiento++;*/
+        paginacion_obtener_char_de_memoria(tareas+i, &direccion_fisica, &desplazamiento, &direccion_logica, patota, MODIFICACION, MEMORIA_FISICA);
+    }
+
+    return tareas;
 }
