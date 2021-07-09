@@ -1394,14 +1394,17 @@ private int paginacion_copiar_paginas(int pagina, p_fila_tabla_de_paginas_t* fil
 
 private void paginacion_guardar_direcciones_de_tareas(p_patota_y_tabla_t* patota, const char* tareas){
     t_list* listado_tareas = patota->direcciones_tareas;
-    
+    int* num = malloc(sizeof(int));
     int i=0;
-    list_add(listado_tareas, (void*) i);
+    *num = i;
+    list_add(listado_tareas, num);
     U_LOG_TRACE("Guardado tarea, direccion %d", i);
     while(tareas[i]!='\0'){
         if(tareas[i]=='\n'){
-            list_add(listado_tareas, (void*)(i+1));
-            U_LOG_TRACE("Guardado tarea, direccion %d", i+1);
+            num = u_malloc(sizeof(int));
+            *num = i + 1;
+            list_add(listado_tareas, num);
+            U_LOG_TRACE("Guardado tarea, direccion %d", *num);
         }
         i++;
     }
@@ -1443,17 +1446,17 @@ char* paginacion_traer_tarea_buscada(uint32_t numero_de_tarea, uint32_t direccio
     p_patota_y_tabla_t* patota = buscar_patota_por_pid(pid);
     t_list* listado_direcciones = patota->direcciones_tareas;
     
-    int offset_tareas = (int)list_get(listado_direcciones, numero_de_tarea);
-    int final_tarea;
+    int* offset_tareas = (int*)list_get(listado_direcciones, numero_de_tarea);
+    int* final_tarea;
     if(numero_de_tarea+1==list_size(listado_direcciones)){
-        final_tarea = patota->tamanio_tareas;
+        final_tarea = &patota->tamanio_tareas;
     }else{
-        final_tarea = (int)list_get(listado_direcciones, numero_de_tarea+1);
+        final_tarea = (int*)list_get(listado_direcciones, numero_de_tarea+1);
     }
 
-    char* tarea = u_malloc(final_tarea - offset_tareas);
+    char* tarea = u_malloc(*final_tarea - *offset_tareas + 1);
 
-    int direccion_logica = direccion_inicio_tareas + offset_tareas;
+    int direccion_logica = direccion_inicio_tareas + *offset_tareas;
     int desplazamiento = direccion_logica % tamanio_pagina;
     int direccion_fisica = paginacion_buscar_direccion_en_tabla_de_paginas(direccion_logica, patota);
 
@@ -1461,9 +1464,13 @@ char* paginacion_traer_tarea_buscada(uint32_t numero_de_tarea, uint32_t direccio
     paginacion_modificar_frame(direccion_fisica/tamanio_pagina, tipo_escritura, patota); //ver si esta modificacion va aca y asi
 
     int i;
-    for(i=offset_tareas; i<final_tarea; i++){
-        paginacion_obtener_char_de_memoria(&tarea[i], &direccion_fisica, &desplazamiento, &direccion_logica, patota, tipo_escritura, MEMORIA_FISICA);
+    int contador_tareas = 0;
+    for(i=*offset_tareas; i<*final_tarea; i++){
+        paginacion_obtener_char_de_memoria(&tarea[contador_tareas], &direccion_fisica, &desplazamiento, &direccion_logica, patota, tipo_escritura, MEMORIA_FISICA);
+        contador_tareas++;
     }
+
+    tarea[contador_tareas] = '\0';
 
     U_LOG_TRACE("Obtenida tarea %s", tarea);
     return tarea;
