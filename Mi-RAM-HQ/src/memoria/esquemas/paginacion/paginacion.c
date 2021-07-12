@@ -258,18 +258,14 @@ char* paginacion_memoria_obtener_proxima_tarea(uint32_t pid, uint32_t tid)
     u_free(tripulante);
 
     char* tarea = paginacion_traer_tarea_buscada(numero_de_tarea, direccion_inicio_tareas, pid);
-    //char* tareas = paginacion_obtener_TODAS_LAS_TAREAS_PARA_PRUEBA(pid);
+    if(tarea==NULL){
+        return tarea;
+    }
     paginacion_modificar_proxima_tarea_tripulante(pid, tid);
 
-    //har** tareas_separadas = string_split(todas_las_tareas, "\n"); 
-    //free(todas_las_tareas);
-
-  //  U_LOG_INFO("PROXIMA TAREA DE TRIPULANTE: %d, %s", tid, tareas_separadas[numero_de_tarea]);
     
-   // return tareas_separadas[numero_de_tarea];
     U_LOG_TRACE("TAREA RECUPERADA %s", tarea);
     return tarea;
-   //return tareas;
 }
 
 tripulantes_t* paginacion_memoria_obtener_info_tripulante(uint32_t pid, uint32_t tid)
@@ -742,60 +738,13 @@ private void paginacion_modificar_proxima_tarea_tripulante(uint32_t pid, uint32_
     paginacion_obtener_uint32_de_memoria(&proxima_tarea, &desplazamiento, &direccion_fisica, &direccion_logica, patota, tipo_escritura);
     proxima_tarea++;
 
-    if (proxima_tarea == list_size(patota->direcciones_tareas)){
+    //if (proxima_tarea == list_size(patota->direcciones_tareas)){
         //aca mando la funcion para expulsar? 
-        U_LOG_TRACE("NO HAY MAS TAREAS");
-    }else{
+   //     U_LOG_TRACE("NO HAY MAS TAREAS");
+   // }else{
         paginacion_escribir_uint32(proxima_tarea, &desplazamiento_2, &direccion_fisica_2, &direccion_logica_2, patota, tipo_memoria, tipo_escritura);
-    }
+   // }
     
-    
-    //paginacion_mostrar_frames(4, MEMORIA_FISICA);
-
-    /*
-    p_patota_y_tabla_t* patota = buscar_patota_por_pid(pid);
-    int base = 8; //correspondientes a la estructura del pcb  
-    int pagina = base / tamanio_pagina;
-    int frame = paginacion_frame_correspondiente_a_pagina(pagina, patota, MEMORIA_FISICA); //chequear si la pagina esta en memoria. 
-    int desplazamiento = base % tamanio_pagina;
-    bool tid_encontrado = false; 
-    int i;
-    uint32_t tid_comparado;
-    uint32_t proxima_tarea;
-
-    p_tipo_escritura_e tipo_escritura = MODIFICACION; //agregado
-    paginacion_modificar_frame(frame, tipo_escritura, patota);
-
-    while(!tid_encontrado){
-        paginacion_chequear_overflow_de_pagina(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota, tipo_escritura, MEMORIA_FISICA); //cuando cambio de pagina chequear si la pagina esta en memoria
-        
-        memcpy(&tid_comparado, esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
-        desplazamiento = desplazamiento + sizeof(uint32_t);
-        if(tid_comparado == tid){
-            tid_encontrado = true;
-
-            paginacion_chequear_overflow_de_pagina(sizeof(char), &frame, &desplazamiento, &pagina, patota, tipo_escritura, MEMORIA_FISICA);
-            desplazamiento++;
-
-            paginacion_chequear_overflow_de_pagina(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota, tipo_escritura, MEMORIA_FISICA);
-            desplazamiento = desplazamiento + sizeof(uint32_t);
-
-            paginacion_chequear_overflow_de_pagina(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota, tipo_escritura, MEMORIA_FISICA);
-            desplazamiento = desplazamiento + sizeof(uint32_t);
-
-            paginacion_chequear_overflow_de_pagina(sizeof(uint32_t), &frame, &desplazamiento, &pagina, patota, tipo_escritura, MEMORIA_FISICA);            
-            memcpy(&proxima_tarea, esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, sizeof(uint32_t));
-            proxima_tarea++;
-
-            memcpy(esquema_memoria_mfisica + frame * tamanio_pagina + desplazamiento, &proxima_tarea, sizeof(uint32_t));
-            
-        }else{ 
-            for(i=0; i<17; i++){
-                paginacion_chequear_overflow_de_pagina(1, &frame, &desplazamiento, &pagina, patota, tipo_escritura, MEMORIA_FISICA); //mismo tema que arriba, agregar cuarta opcion?
-                desplazamiento++;
-            }
-        }
-    }*/
     U_LOG_INFO("Actualizado proxima tarea de tid: %d, numero de tarea %d", tid, proxima_tarea);
 }
 
@@ -1408,17 +1357,6 @@ private void paginacion_guardar_direcciones_de_tareas(p_patota_y_tabla_t* patota
         }
         i++;
     }
-/*
-    int j = 0;
-
-    for(i=0; i<list_size(listado_tareas); i++){
-        U_LOG_TRACE("INICIO TAREA");
-        for(j=list_get(listado_tareas,i); j<list_get(listado_tareas,i+1); j++){
-            U_LOG_TRACE("%c", tareas[j]);
-        }
-        U_LOG_TRACE("FIN TAREA");
-    }
-    */
 }
 
 uint32_t paginacion_obtener_direccion_inicio_tareas(uint32_t pid){
@@ -1445,9 +1383,14 @@ char* paginacion_traer_tarea_buscada(uint32_t numero_de_tarea, uint32_t direccio
     
     p_patota_y_tabla_t* patota = buscar_patota_por_pid(pid);
     t_list* listado_direcciones = patota->direcciones_tareas;
-    
+    if(numero_de_tarea==list_size(listado_direcciones)){
+        //char* tarea = NULL;
+        return NULL;
+    }
+
     int* offset_tareas = (int*)list_get(listado_direcciones, numero_de_tarea);
     int* final_tarea;
+    
     if(numero_de_tarea+1==list_size(listado_direcciones)){
         final_tarea = &patota->tamanio_tareas;
     }else{
