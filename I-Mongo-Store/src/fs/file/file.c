@@ -6,6 +6,10 @@
 #include <openssl/md5.h>
 #include <stdlib.h>
 #include <stdio.h>
+#define min(a,b) \
+({ __typeof__ (a) _a = (a); \
+	__typeof__ (b) _b = (b); \
+	_a < _b ? _a : _b; })
 
 struct fs_file_t{
 	char*		NOMBRE_ARCHIVO;
@@ -110,15 +114,39 @@ void fs_file_remove_fill_char(fs_file_t* this, uint32_t amount){
 
 bool fs_file_check_integrity(fs_file_t* this){
 
-	char* hash_archivo       =  config_get_string_value(this->CONFIG, "MD5_ARCHIVO");
-	char** lista_bloques     =  config_get_array_value(this->CONFIG, "BLOCKS");
-	uint32_t tamanio_archivo =  config_get_int_value(this->CONFIG, "SIZE");
-	uint32_t tamanio_bloques =  fs_blocks_manager_get_blocks_size();
+	char* hash_archivo        = config_get_string_value(this->CONFIG, "MD5_ARCHIVO");
+	char** lista_bloques      = config_get_array_value(this->CONFIG, "BLOCKS");
+	uint32_t tamanio_archivo  = config_get_int_value(this->CONFIG, "SIZE");
+	uint32_t tamanio_bloques  = fs_blocks_manager_get_blocks_size();
+	uint32_t cantidad_bloques = config_get_int_value(this->CONFIG, "BLOCK_COUNT");
+	char* caracter_llenado    = config_get_string_value(this->CONFIG, "CARACTER_LLENADO");
 
+	t_list* lista_id_bloques = lista_id_bloques_archivo(lista_bloques);
+
+	//verificar si conteo de bloques coincide con la cantidad de bloques.
+	uint32_t cantidad_bloques_segun_lista = list_size(lista_id_bloques);
+	if(cantidad_bloques_segun_lista != cantidad_bloques)
+		config_set_value(this->CONFIG, "BLOCKS", cantidad_bloques_segun_lista);
+
+	//TODO: verificar el size del archivo recorriendo todos los bloques hasta el centinela.
+	
+	// ver si el md5 es igual
 	char* md5_bloques_archivo = generate_md5(hash_archivo, lista_bloques, tamanio_archivo, tamanio_bloques);
 	if(!strcmp(md5_bloques_archivo, hash_archivo))
 	{
-		t_list* lista_id_bloques = lista_id_bloques_archivo(lista_bloques);
+		uint32_t tamanio_aux = tamanio_archivo;
+		uint32_t tamanio_a_insertar = min(tamanio_aux, tamanio_bloques);
+		
+		void _rellenar_bloques(uint32_t* id_bloque)
+		{
+			uint32_t tamanio_a_insertar = min(tamanio_aux, tamanio_bloques);
+			char* caracter_a_rellenar_repetido = string_repeat(*caracter_llenado, tamanio_a_insertar);
+			caracteres_escritos = fs_block_write(*id_bloque, caracter_a_rellenar_repetido, tamanio_a_insertar);
+			tamanio_aux -= caracteres_escritos;
+			free(caracter_a_rellenar_repetido);
+		}
+		list_iterate(lista_id_bloques, (void*)_rellenar_bloques);
+		// acá por ahí podríamos verificar si el md5 está bien ahora
 	}
 
 
@@ -154,13 +182,13 @@ private char* generate_md5(char* hash_archivo, char** lista_bloques, uint32_t ta
 	t_list* id_bloques = lista_id_bloques_archivo(lista_bloques);
 
 	MD5_Init(&contexto);
-	void _actualizarMd5(uint32_t* id_bloque)
+	void _actualizar_md5(uint32_t* id_bloque)
 	{
 		uint64_t cant_bytes_leidos = fs_block_read(*id_bloque, data_bloques ,tamanio_a_leer, 0);
 		MD5_Update(&contexto, data_bloques, cant_bytes_leidos);
 		tamanio_a_leer -= cant_bytes_leidos;
 	}
-	list_iterate(id_bloques, (void*)_actualizarMd5);
+	list_iterate(id_bloques, (void*)_actualizar_md5);
 	MD5_Final(hash, &contexto);
 	free(data_bloques);
 	list_destroy_and_destroy_elements(id_bloques, free);
