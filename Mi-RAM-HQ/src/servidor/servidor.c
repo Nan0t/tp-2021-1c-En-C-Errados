@@ -234,6 +234,7 @@ void client_handler_manage_opcode(int32_t sock_client, u_opcode_e op_code, u_buf
  
             char* msg_str = u_msg_eliminar_tripulante_to_string(eliminar);
             U_LOG_TRACE("%s", msg_str);
+            u_free(msg_str);
             
             admin_memoria_eliminar_tripulante(eliminar->pid, eliminar->tid);
             u_msg_eliminar_tripulante_eliminar(eliminar);
@@ -260,6 +261,7 @@ void client_handler_manage_opcode(int32_t sock_client, u_opcode_e op_code, u_buf
                 U_LOG_TRACE("ENVIADO TRIPULANTE tid: %d, pid: %d, posx: %d, posy: %d, estado: %c", trip->tid, trip->pid, trip->pos.x, trip->pos.y, trip->estado);
                 u_msg_lista_tripulantes_agregar(msg, trip_info);
             }
+            list_iterator_destroy(it);
 
             u_buffer_t*  buffer      = u_msg_lista_tripulantes_serialize(msg);
             u_package_t* package     = u_package_create(LISTA_TRIPULANTES, buffer);
