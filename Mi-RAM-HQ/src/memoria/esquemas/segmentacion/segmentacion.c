@@ -304,7 +304,9 @@ private void segmentacion_obtener_segmentos(uint32_t pid,int tamanio_pcb,int tam
 		s_segmento_tripulante_t* segmento_tripulante = u_malloc(sizeof(s_segmento_tripulante_t));
 		tamanio_lista=list_size(listado_segmentos);
 		if(!segmentacion_hay_segmento_libre(tamanio_lista,21)){
+			U_LOG_TRACE("Para agregar al tripulante numero %d es necesario compactar", i);
 			segmentacion_compactar();
+			U_LOG_TRACE("Se compacto exitosamente");
 		}
 		incio_segmento_tripulante = segmentacion_buscar_segmento(tamanio_lista,21,2,pid);// 2 es tipo tripulante
 		segmento_tripulante->tid=-1;
@@ -315,13 +317,17 @@ private void segmentacion_obtener_segmentos(uint32_t pid,int tamanio_pcb,int tam
 
 	tamanio_lista=list_size(listado_segmentos);
 	if(!segmentacion_hay_segmento_libre(tamanio_lista,tamanio_tareas)){
+		U_LOG_TRACE("Para agregar la lista de tareas es necesario compactar");
 		segmentacion_compactar();
+		U_LOG_TRACE("Se compacto exitosamente");
 	}
 	int incio_segmento_tareas = segmentacion_buscar_segmento(tamanio_lista,tamanio_tareas,1,pid); // 1 es tipo tarea
 
 	tamanio_lista=list_size(listado_segmentos);
 	if(!segmentacion_hay_segmento_libre(tamanio_lista,tamanio_pcb)){
+		U_LOG_TRACE("Para agregar la patota es necesario compactar");
 		segmentacion_compactar();
+		U_LOG_TRACE("Se compacto exitosamente");
 	}
 	int incio_segmento_pcb = segmentacion_buscar_segmento(tamanio_lista,tamanio_pcb,0,pid); // 0 es tipo patota
 
