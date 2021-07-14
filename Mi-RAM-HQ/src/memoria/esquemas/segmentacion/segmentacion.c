@@ -1,5 +1,7 @@
 #include "segmentacion.h"
+#include <signal.h>
 
+private int segmentacion_recibir_signal(int value);
 private void segmentacion_inicializar_listado_segmentos(int tamanio_segmento_inicial);
 private void segmentacion_obtener_segmentos(uint32_t pid,int tamanio_pcb,int tamanio_tareas,uint32_t cant_tripulantes);
 private bool segmentacion_hay_segmento_libre(int tamanio_lista,int tamanio_segmento);
@@ -13,6 +15,7 @@ private bool segmentacion_esta_compactado(void);
 private void segmentacion_reasignar_segmento(void);
 private void segmentacion_actualizar_estructura_y_memoria(uint32_t inicio_segmento_libre,uint32_t tamanio_segmento_libre,uint32_t tipo_segmento_ocupado,
 		uint32_t id_segmento_ocupado,uint32_t inicio_segmento_ocupado,uint32_t tamanio_segmento_ocupado);
+private int segmentacion_memoria_total_tamanio_tareas_separadas(char** tareas_separadas);
 
 void segmentacion_memoria_init(void)
 {
@@ -22,11 +25,14 @@ void segmentacion_memoria_init(void)
 	listado_patotas = list_create();
 	listado_segmentos = list_create();
 	segmentacion_inicializar_listado_segmentos(esquema_memoria_tamanio);
+
+	signal(SIGUSR1, segmentacion_recibir_signal);
 }
 
 bool segmentacion_memoria_inicializar_patota(uint32_t pid, uint32_t cant_tripulantes, const char* tareas)
 {
-	int tamanio_data = 2*(sizeof(uint32_t)) + 21* cant_tripulantes + strlen(tareas)+1;
+	int tam_tareas = strlen(tareas)+1;
+	int tamanio_data = 2*(sizeof(uint32_t)) + 21* cant_tripulantes + tam_tareas;
 	if(tamanio_data > espacio_libre){
 	    return false;
 	}
@@ -181,14 +187,14 @@ char* segmentacion_memoria_obtener_proxima_tarea(uint32_t pid, uint32_t tid)
     uint32_t numero_de_tarea=segmentacion_obtener_y_actualizar_proxima_tarea_tripulante(pid,tid);
     char** tareas_separadas = string_split(todas_las_tareas, "\n");
     free(todas_las_tareas);
-    U_LOG_INFO("PROXIMA TAREA DE TRIPULANTE: %d, %s", tid, tareas_separadas[numero_de_tarea]);
-	int tamanio_vector=sizeof(tareas_separadas);
-	int tamanio_elemento=sizeof(tareas_separadas[0]);
-	if (tamanio_elemento == 0){
-		return NULL;
-	}
-	int cantidad_de_elementos=tamanio_vector/tamanio_elemento;
+	// int tamanio_vector=sizeof(tareas_separadas);
+	// int tamanio_elemento=sizeof(tareas_separadas[0]);
+	// if (tamanio_elemento == 0){
+	// 	return NULL;
+	// }
+	int cantidad_de_elementos=segmentacion_memoria_total_tamanio_tareas_separadas(tareas_separadas);
     if (numero_de_tarea<cantidad_de_elementos){
+		U_LOG_INFO("PROXIMA TAREA DE TRIPULANTE: %d, %s", tid, tareas_separadas[numero_de_tarea]);
     	return tareas_separadas[numero_de_tarea];
     }
     return NULL;
@@ -281,6 +287,12 @@ bool segmentacion_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid)
 
 
 //---------------------------------------------------------------------------------------
+
+private int segmentacion_recibir_signal(int code_signal)
+{
+	segmentacion_compactar();
+	return 0;
+}
 
 private void segmentacion_inicializar_listado_segmentos(int tamanio_segmento_inicial){
 	   s_segmento_t* segmento = u_malloc(sizeof(s_segmento_t));
@@ -589,7 +601,7 @@ private tripulantes_t* segmentacion_obtener_tcb(uint32_t pid,uint32_t tid){
 private bool segmentacion_esta_compactado(void){
 	 int memoria_tamanio = u_config_get_int_value("TAMANIO_MEMORIA");
 	 int tamanio_listado_segentos=list_size(listado_segmentos);
-	 int cantidad_segmentos_libres;
+	 int cantidad_segmentos_libres=0;
 	 int es_ultimo=0;
 	 s_segmento_t *segmento_memoria;
 	 for(int s = 0; s < tamanio_listado_segentos; s++) {
@@ -719,5 +731,14 @@ private void segmentacion_actualizar_estructura_y_memoria(uint32_t inicio_segmen
 		}
 	}
 
+}
+
+private int segmentacion_memoria_total_tamanio_tareas_separadas(char** tareas_separadas)
+{
+	int contador = 0;
+	while(tareas_separadas[contador] != NULL)
+		contador ++;
+
+	return contador;
 }
 
