@@ -393,8 +393,7 @@ private bool paginacion_agregar_patota_en_memoria_swap(uint32_t pid, uint32_t ca
     uint32_t i;
     int j;
 
-    //p_tipo_memoria_e tipo_de_memoria = MEMORIA_SWAP;
-    p_tipo_escritura_e tipo_escritura = NUEVA_ESCRITURA; //agregado
+    p_tipo_escritura_e tipo_escritura = NUEVA_ESCRITURA; 
     if(!paginacion_hay_overflow(desplazamiento + 1)){
         paginacion_inicializacion_modificar_frame(frame, tipo_escritura, patota, tipo_de_memoria);
     }
@@ -416,7 +415,7 @@ private bool paginacion_agregar_patota_en_memoria_swap(uint32_t pid, uint32_t ca
     }
     U_LOG_TRACE("PID: %d, reservada en memoria espacio para tripulantes", pid);
 
-
+    paginacion_inicializacion_modificar_frame(direccion_fisica/tamanio_pagina, tipo_escritura, patota, tipo_de_memoria);
     for(i=0; i<strlen(tareas)+1; i++){
         paginacion_inicializacion_escribir_char(tareas[i], &direccion_fisica, &desplazamiento, &direccion_logica, patota, tipo_escritura, &tipo_de_memoria);
     }
@@ -557,6 +556,7 @@ private tripulantes_t* paginacion_obtener_tripulante_de_patota(p_patota_y_tabla_
     p_tipo_escritura_e tipo_escritura = MODIFICACION; //agregado
     p_tipo_memoria_e tipo_memoria = MEMORIA_FISICA;
 
+    paginacion_modificar_frame(direccion_fisica/tamanio_pagina, tipo_escritura, patota);
     paginacion_obtener_uint32_de_memoria(&(tripulante->tid), &desplazamiento, &direccion_fisica, &direccion_logica, patota, tipo_escritura);
 
     paginacion_obtener_char_de_memoria(&(tripulante->estado), &direccion_fisica, &desplazamiento, &direccion_logica, patota, tipo_escritura, tipo_memoria);
@@ -779,7 +779,7 @@ private void paginacion_escribir_uint32(uint32_t a_escribir, int* desplazamiento
 }
 
 private bool paginacion_hay_overflow(int desplazamiento){
-    if(desplazamiento>=tamanio_pagina){
+    if(desplazamiento>tamanio_pagina){
         return true;
     }
     return false;
@@ -836,7 +836,7 @@ private void paginacion_obtener_uint32_de_memoria(uint32_t* donde_escribo, int* 
 private void paginacion_obtener_char_de_memoria(char* donde_escribo, int *direccion_fisica, int * desplazamiento, int *direccion_logica, p_patota_y_tabla_t* patota, p_tipo_escritura_e tipo_escritura, p_tipo_memoria_e tipo_de_memoria){
     paginacion_chequear_overflow_de_pagina_byte_a_byte(direccion_fisica, desplazamiento, direccion_logica, patota, tipo_escritura, tipo_de_memoria);
     memcpy(donde_escribo, esquema_memoria_mfisica + *direccion_fisica, sizeof(char)); 
-   // U_LOG_TRACE("RECUPERADO %c en frame %d, direccion logica %d, direccion fisica %d", *donde_escribo, *direccion_fisica/tamanio_pagina, *direccion_logica, *direccion_fisica);
+    U_LOG_TRACE("RECUPERADO %c en frame %d, direccion logica %d, direccion fisica %d", *donde_escribo, *direccion_fisica/tamanio_pagina, *direccion_logica, *direccion_fisica);
     *desplazamiento = *desplazamiento + sizeof(char);
     *direccion_fisica = *direccion_fisica + sizeof(char);
     *direccion_logica = *direccion_logica + sizeof(char);
@@ -964,7 +964,7 @@ private void paginacion_inicializacion_escribir_char(char a_escribir, int *direc
     }
 
     memcpy(memoria + *direccion_fisica, &a_escribir, sizeof(char)); 
-    //U_LOG_TRACE("ESCRITO %c en frame %d, direccion logica %d, direccion fisica %d", a_escribir, *direccion_fisica/tamanio_pagina, *direccion_logica, *direccion_fisica);
+    U_LOG_TRACE("ESCRITO %c en frame %d, direccion logica %d, direccion fisica %d", a_escribir, *direccion_fisica/tamanio_pagina, *direccion_logica, *direccion_fisica);
     *desplazamiento = *desplazamiento + sizeof(char);
     *direccion_fisica = *direccion_fisica + sizeof(char);
     *direccion_logica = *direccion_logica + sizeof(char);
@@ -1038,8 +1038,10 @@ private p_fila_tabla_de_paginas_t* paginacion_seleccionar_pagina_por_LRU(){
             }
         }
         list_iterator_destroy(iterador_de_tabla);
+        list_destroy(tabla_de_paginas_filtrada); //agregado 
     }
     list_iterator_destroy(iterador_de_patotas);
+    
     return pagina_elegida;
 }
 
@@ -1077,6 +1079,7 @@ private p_fila_tabla_de_paginas_t* paginacion_seleccionar_pagina_por_CLOCK(){
             }
         }
         list_iterator_destroy(iterador_de_tabla);
+        list_destroy(tabla_de_paginas_filtrada); //agregado
     }
     list_iterator_destroy(iterador_de_patotas);
     return pagina_elegida;
