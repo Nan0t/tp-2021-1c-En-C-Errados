@@ -8,7 +8,6 @@ typedef struct
 {
     uint32_t num_frame;
     uint32_t ocupado;
-    int32_t ocupantes_frame;
 }p_frame_t;
 
 
