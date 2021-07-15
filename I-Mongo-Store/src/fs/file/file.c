@@ -168,66 +168,8 @@ void fs_file_remove_fill_char(fs_file_t* this, uint32_t amount){
 }
 
 bool fs_file_check_integrity(fs_file_t* this){
+	return verificar_size_correcto(this) && verificar_cantidad_bloques_correcto(this) && verificar_md5(this);
 
-	char* hash_archivo        = config_get_string_value(this->CONFIG, "MD5_ARCHIVO");
-	char** lista_bloques      = config_get_array_value(this->CONFIG, "BLOCKS");
-	uint32_t tamanio_archivo  = config_get_int_value(this->CONFIG, "SIZE");
-	uint32_t tamanio_bloques  = fs_blocks_manager_get_blocks_size();
-	uint32_t cantidad_bloques = config_get_int_value(this->CONFIG, "BLOCK_COUNT");
-	char* caracter_llenado    = config_get_string_value(this->CONFIG, "CARACTER_LLENADO");
-
-	t_list* lista_id_bloques = lista_id_bloques_archivo(lista_bloques);
-
-	//verificar si conteo de bloques coincide con la cantidad de bloques.
-	uint32_t cantidad_bloques_segun_lista = list_size(lista_id_bloques);
-	if(cantidad_bloques_segun_lista != cantidad_bloques)
-		config_set_value(this->CONFIG, "BLOCKS", cantidad_bloques_segun_lista);
-
-	//TODO: verificar el size del archivo recorriendo todos los bloques hasta el centinela.
-	uint32_t  cantidad_caracteres_file = 0;
-	void _contar_cantidad_caracteres_bloque(uint32_t* id_bloque)
-	{
-		char* caracter_leido = malloc(sizeof(char*));
-		uint32_t contador = 0;
-		do
-		{
-			fs_block_read(*id_bloque, caracter_leido, sizeof(char*), contador);
-			contador++;
-
-			if(*caracter_leido)
-				cantidad_caracteres_file++;
-		} while (*caracter_leido && contador != tamanio_bloques);
-		free(caracter_leido);
-
-	}
-	list_iterate(lista_id_bloques, (void*)_contar_cantidad_caracteres_bloque);
-	if(cantidad_caracteres_file != tamanio_archivo)
-		config_set_value(this->CONFIG, "SIZE", cantidad_caracteres_file);
-	//fin
-
-	
-	// ver si el md5 es igual
-	char* md5_bloques_archivo = generate_md5(lista_bloques, tamanio_archivo, tamanio_bloques);
-	if(!strcmp(md5_bloques_archivo, hash_archivo))
-	{
-		uint32_t tamanio_aux = tamanio_archivo;
-		uint32_t tamanio_a_insertar = min(tamanio_aux, tamanio_bloques);
-		
-		void _rellenar_bloques(uint32_t* id_bloque)
-		{
-			uint32_t tamanio_a_insertar = min(tamanio_aux, tamanio_bloques);
-			char* caracter_a_rellenar_repetido = string_repeat(*caracter_llenado, tamanio_a_insertar);
-			caracteres_escritos = fs_block_write(*id_bloque, caracter_a_rellenar_repetido, tamanio_a_insertar,0);
-			tamanio_aux -= caracteres_escritos;
-			free(caracter_a_rellenar_repetido);
-		}
-		list_iterate(lista_id_bloques, (void*)_rellenar_bloques);
-		// acá por ahí podríamos verificar si el md5 está bien ahora
-		//luego libero la lista.
-	}
-
-
-    return false;
 }
 
 const char* fs_file_get_name(const fs_file_t* this){
@@ -306,3 +248,78 @@ private char** list_convert_to_string(t_list* list){
 }
 
 
+private bool verificar_size_correcto(fs_file_t* this)
+{
+	// Acá recorro todos los bloques, y aunque encuentre el bloque con el centinela sigo recorriendo si en mi lista de bloques tengo más.
+	uint32_t tamanio_archivo  = config_get_int_value(this->CONFIG, "SIZE");
+	uint32_t  cantidad_caracteres_file = 0;
+	void _contar_cantidad_caracteres_bloque(uint32_t* id_bloque)
+	{
+		char* caracter_leido = malloc(sizeof(char*));
+		uint32_t contador = 0;
+		do
+		{
+			fs_block_read(*id_bloque, caracter_leido, sizeof(char*), contador);
+			contador++;
+
+			if(*caracter_leido)
+				cantidad_caracteres_file++;
+		} while (*caracter_leido && contador != tamanio_bloques);
+		free(caracter_leido);
+	}
+
+	list_iterate(lista_id_bloques, (void*)_contar_cantidad_caracteres_bloque);
+	if(cantidad_caracteres_file != tamanio_archivo)
+	{
+		config_set_value(this->CONFIG, "SIZE", cantidad_caracteres_file);
+		return false;
+	}
+
+	return true;
+}
+
+private bool verificar_cantidad_bloques_correcto(fs_file_t* this)
+{
+	char** lista_bloques = config_get_array_value(this->CONFIG, "BLOCKS");
+	uint32_t cantidad_bloques = config_get_int_value(this->CONFIG, "BLOCK_COUNT");
+	t_list* lista_id_bloques = lista_id_bloques_archivo(lista_bloques);
+	uint32_t cantidad_bloques_segun_lista = list_size(lista_id_bloques);
+
+	if(cantidad_bloques_segun_lista != cantidad_bloques)
+	{
+		config_set_value(this->CONFIG, "BLOCKS", cantidad_bloques_segun_lista);
+		return false;
+	}
+	
+	return true;
+}
+
+private bool verificar_md5(fs_file_t* this)
+{
+	//esta recuperación la llevo sin intentar obtener nuevos bloques dado que en el video dicen que solo cambian de posicion los bloques. (a validar)
+	char* hash_archivo = config_get_string_value(this->CONFIG, "MD5_ARCHIVO");
+	uint32_t tamanio_archivo = config_get_int_value(this->CONFIG, "SIZE");
+	char** lista_bloques = config_get_array_value(this->CONFIG, "BLOCKS");
+	uint32_t tamanio_bloques  = fs_blocks_manager_get_blocks_size();
+	char* md5_bloques_archivo = generate_md5(lista_bloques, tamanio_archivo, tamanio_bloques);
+
+	if(!strcmp(md5_bloques_archivo, hash_archivo))
+	{
+		uint32_t tamanio_aux = tamanio_archivo;
+		uint32_t tamanio_a_insertar = min(tamanio_aux, tamanio_bloques);
+		
+		void _rellenar_bloques(uint32_t* id_bloque)
+		{
+			uint32_t tamanio_a_insertar = min(tamanio_aux, tamanio_bloques);
+			char* caracter_a_rellenar_repetido = string_repeat(*caracter_llenado, tamanio_a_insertar);
+			caracteres_escritos = fs_block_write(*id_bloque, caracter_a_rellenar_repetido, tamanio_a_insertar,0);
+			tamanio_aux -= caracteres_escritos;
+			free(caracter_a_rellenar_repetido);
+		}
+		list_iterate(lista_id_bloques, (void*)_rellenar_bloques);
+		// acá por ahí podríamos verificar si el md5 está bien ahora
+		//luego libero la lista.
+		return false;
+	}
+	return true;
+}
