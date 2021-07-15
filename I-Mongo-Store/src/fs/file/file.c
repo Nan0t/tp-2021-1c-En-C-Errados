@@ -19,6 +19,10 @@ private t_list* lista_id_bloques_archivo(char** lista_bloques);
 private char* generate_md5(char** lista_bloques, uint32_t tamanio_a_leer, uint32_t tamanio_bloques);
 private int get_offset(fs_file_t* this);
 private char** list_convert_to_string(t_list* list);
+private bool verificar_size_correcto(fs_file_t* this);
+private bool verificar_cantidad_bloques_correcto(fs_file_t* this);
+private bool verificar_md5(fs_file_t* this);
+
 
 fs_file_t* fs_file_create(const char* mount_point, const char* file_name, char fill_char){
 
