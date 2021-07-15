@@ -64,9 +64,14 @@ private p_fila_tabla_de_paginas_t* paginacion_buscar_en_tablas_la_pagina_corresp
 private void paginacion_liberar_todas_las_paginas(p_patota_y_tabla_t* patota);
 private void destructor_patota(p_patota_y_tabla_t* patota);
 
+t_list* lista_frames_memoria;
+t_list* lista_frames_swap;
+int tamanio_pagina;
+int tamanio_swap;
 void* memoria_swap_fisica;
 char* algoritmo_reemplazo;
 uint32_t contador_clock;
+int contador_memoria;
 
 void paginacion_memoria_init(void)
 {

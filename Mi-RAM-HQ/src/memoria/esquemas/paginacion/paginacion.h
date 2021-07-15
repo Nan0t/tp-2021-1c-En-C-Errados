@@ -38,16 +38,6 @@ typedef struct
     uint32_t direccion_logica; 
 }p_direcciones_logicas_t;
 
-typedef struct
-{
-    uint32_t numero_tarea;
-    uint32_t offset_en_seccion_tareas;
-}p_direcciones_tareas_t;
-
-t_list* lista_frames_memoria;
-t_list* lista_frames_swap;
-int tamanio_pagina;
-int tamanio_swap;
 
 void paginacion_memoria_init(void);
 

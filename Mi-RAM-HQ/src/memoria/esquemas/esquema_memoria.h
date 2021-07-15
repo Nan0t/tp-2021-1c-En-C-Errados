@@ -16,7 +16,6 @@ typedef struct
 int esquema_memoria_tamanio;
 void* esquema_memoria_mfisica;
 t_list* listado_patotas;
-int contador_memoria;
 
 void esquema_memoria_init(void);
 
