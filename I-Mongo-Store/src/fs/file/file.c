@@ -16,7 +16,7 @@ struct fs_file_t{
     t_config* 	CONFIG;
 };
 private t_list* lista_id_bloques_archivo(char** lista_bloques);
-private char* generate_md5(char* hash_archivo, char** lista_bloques, uint32_t tamanio_a_leer, uint32_t tamanio_bloques);
+private char* generate_md5(char** lista_bloques, uint32_t tamanio_a_leer, uint32_t tamanio_bloques);
 
 fs_file_t* fs_file_create(const char* mount_point, const char* file_name, char fill_char){
 
@@ -107,7 +107,8 @@ void fs_file_add_fill_char(fs_file_t* this, uint32_t amount){
 		config_set_value(this->CONFIG, "BLOCKS", list_convert_to_string(blocks_tlist));
 
 		//actualizo config md5
-		config_set_value(this->CONFIG, "MD5_ARCHIVO", generate_md5(config_get_string_value(this->CONFIG, "MD5_ARCHIVO"), config_get_array_value(this->CONFIG, "BLOCKS"), config_get_int_value(this->CONFIG, "SIZE"), fs_blocks_manager_get_blocks_size()));
+		char* md5_actualizado = generate_md5(blocks, config_get_int_value(this->CONFIG, "SIZE"), fs_blocks_manager_get_blocks_size());
+		config_set_value(this->CONFIG, "MD5_ARCHIVO", md5_actualizado);
 
 	}
 	u_free(fill);
@@ -133,11 +134,12 @@ void fs_file_remove_fill_char(fs_file_t* this, uint32_t amount){
 	//reduzco tamaño del archivo
 	int size_archivo = config_get_int_value(this->CONFIG, "SIZE");
 	config_set_value(this->CONFIG, "SIZE",size_archivo-amount);
+	uint32_t tamanio_bloques = fs_blocks_manager_get_blocks_size();
 
 	//guardo centinela
 	fs_block_write(config_get_int_value(this->CONFIG, "BLOCK_COUNT")-1, 0, sizeof(int), get_offset(this));
 
-	int bloques_usados = config_get_array_value(this->CONFIG, "SIZE") / fs_blocks_manager_get_blocks_size();
+	int bloques_usados = config_get_int_value(this->CONFIG, "SIZE") / tamanio_bloques;
 
 	if(bloques_usados < config_get_int_value(this->CONFIG, "BLOCK_COUNT")){
 		int bloques_a_liberar = bloques_usados - config_get_int_value(this->CONFIG, "BLOCK_COUNT");
@@ -154,7 +156,8 @@ void fs_file_remove_fill_char(fs_file_t* this, uint32_t amount){
 	config_set_value(this->CONFIG, "BLOCKS", list_convert_to_string(blocks_tlist));
 
 	//actualizo config md5
-	config_set_value(this->CONFIG, "MD5_ARCHIVO", generate_md5(config_get_string_value(this->CONFIG, "MD5_ARCHIVO"), config_get_array_value(this->CONFIG, "BLOCKS"), config_get_int_value(this->CONFIG, "SIZE"), fs_blocks_manager_get_blocks_size()));
+	char* md5_actualizado = generate_md5(blocks, size_archivo, tamanio_bloques);
+	config_set_value(this->CONFIG, "MD5_ARCHIVO", md5_actualizado);
 
 	u_free(size_archivo);
 	u_free(blocks);
@@ -182,7 +185,7 @@ bool fs_file_check_integrity(fs_file_t* this){
 	uint32_t  cantidad_caracteres_file = 0;
 	void _contar_cantidad_caracteres_bloque(uint32_t* id_bloque)
 	{
-		char* caracter_leido = malloc(sizeof(char *));
+		char* caracter_leido = malloc(sizeof(char*));
 		uint32_t contador = 0;
 		do
 		{
@@ -202,7 +205,7 @@ bool fs_file_check_integrity(fs_file_t* this){
 
 	
 	// ver si el md5 es igual
-	char* md5_bloques_archivo = generate_md5(hash_archivo, lista_bloques, tamanio_archivo, tamanio_bloques);
+	char* md5_bloques_archivo = generate_md5(lista_bloques, tamanio_archivo, tamanio_bloques);
 	if(!strcmp(md5_bloques_archivo, hash_archivo))
 	{
 		uint32_t tamanio_aux = tamanio_archivo;
@@ -246,7 +249,7 @@ uint32_t fs_file_get_blocks_count(const fs_file_t* this){
 }
 
 
-private char* generate_md5(char* hash_archivo, char** lista_bloques, uint32_t tamanio_a_leer, uint32_t tamanio_bloques)
+private char* generate_md5(char** lista_bloques, uint32_t tamanio_a_leer, uint32_t tamanio_bloques)
 {
 	MD5_CTX contexto;
 	char* hash = malloc(MD5_DIGEST_LENGTH);
@@ -285,7 +288,7 @@ private t_list* lista_id_bloques_archivo(char** lista_bloques)
 }
 
 private int get_offset(fs_file_t* this){
-	return config_get_array_value(this->CONFIG, "SIZE") % fs_blocks_manager_get_blocks_size();
+	return config_get_int_value(this->CONFIG, "SIZE") % fs_blocks_manager_get_blocks_size();
 }
 
 private char** list_convert_to_string(t_list* list){
