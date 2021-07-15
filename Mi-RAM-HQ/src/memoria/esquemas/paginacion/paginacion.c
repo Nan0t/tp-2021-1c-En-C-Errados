@@ -61,7 +61,8 @@ private uint32_t paginacion_obtener_direccion_inicio_tareas(uint32_t pid);
 private char* paginacion_traer_tarea_buscada(uint32_t numero_de_tarea, uint32_t direccion_inicio_tareas, uint32_t pid);
 private void paginacion_marcar_como_expulsado(p_patota_y_tabla_t* patota, int pagina);
 private p_fila_tabla_de_paginas_t* paginacion_buscar_en_tablas_la_pagina_correspondiente_al_frame(uint32_t numero_de_frame);
-
+private void paginacion_liberar_todas_las_paginas(p_patota_y_tabla_t* patota);
+private void destructor_patota(p_patota_y_tabla_t* patota);
 
 void* memoria_swap_fisica;
 char* algoritmo_reemplazo;
@@ -288,6 +289,20 @@ bool           paginacion_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid
         return false;
     };
     list_remove_and_destroy_by_condition(patota->direcciones_logicas, (void*)tid_buscado, u_free);
+
+//SI NO TIENE MAS TRIPULANTES, LIBERO TODOS LOS FRAMES DE LA PATOTA 
+    patota->tripulantes_escritos--;
+    if(patota->tripulantes_escritos == 0){  //aca se podria hacer la comparacion con el list size de direcciones logicas de tcb 
+        paginacion_liberar_todas_las_paginas(patota);
+        bool pid_buscado(p_patota_y_tabla_t* patota){
+            if(patota->pid == pid){
+                return true;
+            }
+            return false;
+        }
+        //Elimino la patota de mi lista de patotas adminisitrativa 
+        list_remove_and_destroy_by_condition(listado_patotas, (void*)pid_buscado, destructor_patota); 
+    }
 
     return true;
 }
@@ -1033,7 +1048,6 @@ private bool paginacion_pagina_esta_en_memoria_real(p_fila_tabla_de_paginas_t* f
 
 private p_fila_tabla_de_paginas_t* paginacion_seleccionar_pagina_por_CLOCK(){
     bool pagina_encontrada = false; 
-    p_fila_tabla_de_paginas_t* pagina_seleccionada;
     while(!pagina_encontrada){
         while(contador_clock < list_size(lista_frames_memoria)){
             p_fila_tabla_de_paginas_t* fila_tabla = paginacion_buscar_en_tablas_la_pagina_correspondiente_al_frame(contador_clock);
@@ -1198,7 +1212,7 @@ private void paginacion_marcar_como_expulsado(p_patota_y_tabla_t* patota, int pa
     p_fila_tabla_de_paginas_t* fila_tabla = list_get(patota->tabla, pagina);
     fila_tabla->ocupantes_pagina = (fila_tabla->ocupantes_pagina) - 1;
     U_LOG_TRACE("Expulsado tripulante en pagina %d, cantidad de ocupantes %d", pagina, fila_tabla->ocupantes_pagina);
-
+    
     if(fila_tabla->ocupantes_pagina == 0){
         p_frame_t* frame_a_modificar;
         if(fila_tabla->frame_memoria == -1){
@@ -1229,4 +1243,29 @@ private p_fila_tabla_de_paginas_t* paginacion_buscar_en_tablas_la_pagina_corresp
             }
         }
     }
+}
+
+private void paginacion_liberar_todas_las_paginas(p_patota_y_tabla_t* patota){
+    t_list_iterator* iterador_de_tabla = list_iterator_create(patota->tabla);
+    while(list_iterator_has_next(iterador_de_tabla)){
+        p_fila_tabla_de_paginas_t* pagina = list_iterator_next(iterador_de_tabla);
+        p_frame_t* frame_a_modificar;
+        if(pagina->frame_memoria != -1){
+            frame_a_modificar = list_get(lista_frames_memoria, pagina->frame_memoria);
+            frame_a_modificar->ocupado = 0;
+            pagina->frame_memoria = -1;
+        }
+        if(pagina->frame_swap != -1){   //se hace otro if, porq la pagina ya podria estar liberada. 
+            frame_a_modificar = list_get(lista_frames_swap, pagina->frame_swap);
+            frame_a_modificar->ocupado = 0;
+            pagina->frame_swap = -1;
+        }
+    }
+}
+
+private void destructor_patota(p_patota_y_tabla_t* patota){
+    list_destroy_and_destroy_elements(patota->tabla, u_free);
+    list_destroy_and_destroy_elements(patota->direcciones_logicas, u_free);
+    list_destroy_and_destroy_elements(patota->direcciones_tareas, u_free); 
+    u_free(patota);
 }
