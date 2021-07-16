@@ -113,19 +113,34 @@ uint32_t fs_bitacora_get_block_count(const fs_bitacora_t* this){
 //Devuelve contenido de la bitácora leyendo los bloques de la bitácora.
 char* fs_bitacora_get_content(const fs_bitacora_t* this){ //devuelve un string enorme basicamente
 
-	FILE* file = fopen(this->PATH, "r");
-	char** block_list = config_get_array_value(this->CONFIG, "BLOCKS");
+	char *content = string_new();
 
-	for(int i=0; i<config_get_int_value(this->CONFIG, "BLOCKS_COUNT"); i++){ //cambiar por longitud del array en vez de buscar en config?
-		fs_block_read(block_list[i],block_list->, uint64_t data_size,0);
+	string_append(&content, "SIZE=");
+	string_append(&content, itoa(fs_bitacora_get_size(this)));
 
-	}
-	fclose(file);
-    return NULL;
-    // usar realloc porque voy cambiando el tamaño
-    //como en files, probar igual
+	strcat(content,"\n");
+
+	string_append(&content, "BLOCKS=");
+	char* blocks = array_convert_to_string(config_get_array_value(this->CONFIG, "BLOCKS"), config_get_int_value(this->CONFIG, "BLOCKS_COUNT"));
+
+	string_append(&content, blocks);
+
+    return content;
 }
 
 private int get_offset(fs_file_t* this){
 	return config_get_array_value(this->CONFIG, "SIZE") % fs_blocks_manager_get_blocks_size();
 }
+
+private char* array_convert_to_string(char** array, int size_array){
+	char* string_list ="[";
+
+	for(int i=0; i<size_array ; i++){
+		strcat(string_list,array[i]);
+	}
+
+	strcat(string_list,"]");
+
+	return string_list;
+}
+
