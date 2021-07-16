@@ -64,13 +64,20 @@ private p_fila_tabla_de_paginas_t* paginacion_buscar_en_tablas_la_pagina_corresp
 private void paginacion_liberar_todas_las_paginas(p_patota_y_tabla_t* patota);
 private void destructor_patota(p_patota_y_tabla_t* patota);
 
+pthread_mutex_t lista_frames_memoria_mx = PTHREAD_MUTEX_INITIALIZER;
 t_list* lista_frames_memoria;
+uint32_t contador_clock;
+
+pthread_mutex_t lista_frames_swap_mx = PTHREAD_MUTEX_INITIALIZER;
 t_list* lista_frames_swap;
+
 int tamanio_pagina;
 int tamanio_swap;
+
 void* memoria_swap_fisica;
 char* algoritmo_reemplazo;
-uint32_t contador_clock;
+
+pthread_mutex_t contador_memoria_mx = PTHREAD_MUTEX_INITIALIZER;
 int contador_memoria;
 
 void paginacion_memoria_init(void)
@@ -258,12 +265,17 @@ t_list*        paginacion_memoria_obtener_todos_los_tripulantes(void)
 
     for(i=0; i<cantidad_patotas; i++){
         p_patota_y_tabla_t* patota = list_get(listado_patotas, i);
+
+        pthread_mutex_lock(&patota->direcciones_logicas_mx);
         int direcciones_tcb = list_size(patota->direcciones_logicas);
+
         for(j=0; j<direcciones_tcb; j++){
             p_direcciones_logicas_t* direccion = list_get(patota->direcciones_logicas, j);
             tripulantes_t* tripulante = paginacion_obtener_tripulante_de_patota(patota, direccion->direccion_logica);
             list_add(lista_de_todos_los_tripulantes, tripulante);
         }
+
+        pthread_mutex_unlock(&patota->direcciones_logicas_mx);
     }
     return lista_de_todos_los_tripulantes;
 }
@@ -372,7 +384,8 @@ private p_patota_y_tabla_t* paginacion_agregar_patota_a_listado(uint32_t pid, in
         fila->num_pagina = i;
         fila->frame_memoria = -1;
         fila->frame_swap = -1;
-        fila->ocupantes_pagina = 0;   
+        fila->ocupantes_pagina = 0;
+        pthread_mutex_init(&fila->mx, NULL);   
         
         //p_frame_t* frame_a_escribir = list_find(lista_frames_swap, (void*)paginacion_frame_esta_libre);
         p_frame_t* frame_a_escribir = paginacion_encontrar_frame_libre(&tipo_memoria);
@@ -449,6 +462,8 @@ private bool paginacion_agregar_patota_en_memoria_swap(uint32_t pid, uint32_t ca
 private void paginacion_modificar_frame(int32_t numero_de_frame, p_tipo_escritura_e escritura, p_patota_y_tabla_t* patota){
     p_frame_t* frame = list_get(lista_frames_memoria, numero_de_frame);
     p_fila_tabla_de_paginas_t* fila_tabla = buscar_fila_por_frame(patota->tabla, numero_de_frame, MEMORIA_FISICA);
+
+    pthread_mutex_lock(&fila_tabla->mx);
     switch(escritura){
         case NUEVA_ESCRITURA:;
             //frame->ocupantes_frame = (frame->ocupantes_frame) + 1;  //modificar a tabla de paginas 
@@ -466,6 +481,7 @@ private void paginacion_modificar_frame(int32_t numero_de_frame, p_tipo_escritur
             U_LOG_TRACE("modificando/leyendo datos en frame %d", numero_de_frame);
             break;
     }
+    pthread_mutex_unlock(&fila_tabla->mx);
     
 }
 

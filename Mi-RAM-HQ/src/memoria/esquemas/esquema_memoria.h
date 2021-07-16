@@ -2,6 +2,7 @@
 #define MEMORIA_ESQUEMAS_H
 
 #include <utils/utils.h>
+#include <pthread.h>
 
 typedef struct
 {
@@ -15,6 +16,8 @@ typedef struct
 
 int esquema_memoria_tamanio;
 void* esquema_memoria_mfisica;
+
+pthread_mutex_t listado_patotas = PTHREAD_MUTEX_INITIALIZER;
 t_list* listado_patotas;
 
 void esquema_memoria_init(void);

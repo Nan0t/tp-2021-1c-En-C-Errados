@@ -14,16 +14,22 @@ typedef struct
 typedef struct
 {
     uint32_t pid;
+
     t_list* tabla;
+
     uint32_t tamanio_tareas;
     uint32_t tripulantes_escritos;
+
+    pthread_mutex_t direcciones_logicas_mx;
     t_list* direcciones_logicas; //perteneciente a los tcb
+
     t_list* direcciones_tareas; 
-}p_patota_y_tabla_t; 
+}p_patota_y_tabla_t;
 
 
 typedef struct
 {
+    pthread_mutex_t mx;
     uint32_t num_pagina;
     int32_t frame_memoria; //en caso de -1 no esta en memoria 
     int32_t frame_swap; 
