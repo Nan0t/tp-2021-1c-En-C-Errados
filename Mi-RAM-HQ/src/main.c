@@ -15,15 +15,25 @@ app_attr_t get_app_setup(void)
     };
 }
 
+__attribute__((noreturn))
+private void setup()
+{
+    esquema_memoria_init();
+    //map_init();
+
+    if(servidor_init(u_config_get_string_value("PUERTO")))
+        exit(-1);
+
+    while(1);
+}
+
 int entry_point(int argc, char** argv)
 {
     (void)argc; // --> para evitar el warning unused_parameter
     (void)argv; // --> para evitar el warning unused_parameter
 
     U_LOG_INFO("Modulo Mi-RAM-HQ iniciado");
+    setup();
     
-    esquema_memoria_init();
-    //map_init();
-
-    return servidor_init(u_config_get_string_value("PUERTO"));
+    return 0;
 }
