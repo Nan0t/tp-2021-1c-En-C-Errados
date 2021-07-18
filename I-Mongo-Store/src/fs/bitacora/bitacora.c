@@ -57,14 +57,14 @@ void fs_bitacora_delete(fs_bitacora_t* this){
 // todo el contenido en el nuevo bloque, seguir pidiendo bloqueas hasta terminar de escribir
 // todo el contenido.
 void fs_bitacora_add_content(fs_bitacora_t* this, const char* content){
-	int amount_values = config_get_int_value(this->CONFIG, "BLOCK_COUNT");
+	int amount_values = fs_bitacora_get_block_count();
 	char** blocks = config_get_array_value(this->CONFIG, "BLOCKS");
 	t_list* blocks_tlist = lista_id_bloques_archivo(blocks);
 	char* last_block = blocks_tlist->elements_count - 1;
 
 	//uint32_t block_id =  atoi(values[amount_values-1]); se hace por t_list en vez de strings
 
-	int offset = config_get_array_value(this->CONFIG, "SIZE") % fs_blocks_manager_get_blocks_size();
+	int offset = fs_bitacora_get_size() % fs_blocks_manager_get_blocks_size();
 
 	int escritos  = u_malloc(sizeof(int));
 	escritos = fs_block_write(last_block, content, sizeof(content), offset);
@@ -118,7 +118,7 @@ char* fs_bitacora_get_content(const fs_bitacora_t* this){ //devuelve un string e
 	string_append(&content, "SIZE=");
 	string_append(&content, itoa(fs_bitacora_get_size(this)));
 
-	strcat(content,"\n");
+	string_append(&content, "\n");
 
 	string_append(&content, "BLOCKS=");
 	char* blocks = array_convert_to_string(config_get_array_value(this->CONFIG, "BLOCKS"), config_get_int_value(this->CONFIG, "BLOCKS_COUNT"));
@@ -129,17 +129,18 @@ char* fs_bitacora_get_content(const fs_bitacora_t* this){ //devuelve un string e
 }
 
 private int get_offset(fs_file_t* this){
-	return config_get_array_value(this->CONFIG, "SIZE") % fs_blocks_manager_get_blocks_size();
+	return fs_bitacora_get_size() % fs_blocks_manager_get_blocks_size();
 }
 
 private char* array_convert_to_string(char** array, int size_array){
-	char* string_list ="[";
+	char* string_list = string_new();
+	string_list ="[";
 
 	for(int i=0; i<size_array ; i++){
-		strcat(string_list,array[i]);
+		string_append(&string_list,array[i]);
 	}
 
-	strcat(string_list,"]");
+	string_append(&string_list,"]");
 
 	return string_list;
 }
