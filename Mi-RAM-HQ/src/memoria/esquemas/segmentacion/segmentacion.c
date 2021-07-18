@@ -2,7 +2,7 @@
 #include <pthread.h>
 #include <signal.h>
 
-private int segmentacion_recibir_signal(int value);
+private void segmentacion_recibir_signal(int value);
 private void segmentacion_inicializar_listado_segmentos(int tamanio_segmento_inicial);
 private void segmentacion_obtener_segmentos(uint32_t pid,int tamanio_pcb,int tamanio_tareas,uint32_t cant_tripulantes);
 private bool segmentacion_hay_segmento_libre(int tamanio_lista,int tamanio_segmento);
@@ -307,10 +307,9 @@ bool segmentacion_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid)
 
 //---------------------------------------------------------------------------------------
 
-private int segmentacion_recibir_signal(int code_signal)
+private void segmentacion_recibir_signal(int code_signal)
 {
 	segmentacion_compactar();
-	return 0;
 }
 
 private void segmentacion_inicializar_listado_segmentos(int tamanio_segmento_inicial){
