@@ -85,6 +85,7 @@ private void cliente_thread(int32_t sock_client)
                 u_buffer_write(buffer, msg, msg_length);
                 u_free(msg);
                 client_handler_manage_opcode(sock_client, op_code, buffer);
+                u_buffer_delete(buffer);
             }
         }
     }
