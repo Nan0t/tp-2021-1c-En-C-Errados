@@ -14,12 +14,6 @@ typedef struct
     uint32_t direccion_pcb;
 } tripulantes_t;
 
-int esquema_memoria_tamanio;
-void* esquema_memoria_mfisica;
-
-pthread_mutex_t listado_patotas = PTHREAD_MUTEX_INITIALIZER;
-t_list* listado_patotas;
-
 void esquema_memoria_init(void);
 
 bool esquema_memoria_inicializar_patota(uint32_t pid, uint32_t cant_tripulantes, const char* tareas);
