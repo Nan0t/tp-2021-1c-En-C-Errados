@@ -64,21 +64,27 @@ private p_fila_tabla_de_paginas_t* paginacion_buscar_en_tablas_la_pagina_corresp
 private void paginacion_liberar_todas_las_paginas(p_patota_y_tabla_t* patota);
 private void destructor_patota(p_patota_y_tabla_t* patota);
 
-pthread_mutex_t lista_frames_memoria_mx = PTHREAD_MUTEX_INITIALIZER;
-t_list* lista_frames_memoria;
-uint32_t contador_clock;
+private pthread_mutex_t lista_frames_memoria_mx = PTHREAD_MUTEX_INITIALIZER;
+private t_list* lista_frames_memoria;
+private uint32_t contador_clock;
 
-pthread_mutex_t lista_frames_swap_mx = PTHREAD_MUTEX_INITIALIZER;
-t_list* lista_frames_swap;
+private pthread_mutex_t lista_frames_swap_mx = PTHREAD_MUTEX_INITIALIZER;
+private t_list* lista_frames_swap;
 
-int tamanio_pagina;
-int tamanio_swap;
+private int tamanio_pagina;
+private int tamanio_swap;
 
-void* memoria_swap_fisica;
-char* algoritmo_reemplazo;
+private void* memoria_swap_fisica;
+private char* algoritmo_reemplazo;
 
-pthread_mutex_t contador_memoria_mx = PTHREAD_MUTEX_INITIALIZER;
-int contador_memoria;
+private pthread_mutex_t contador_memoria_mx = PTHREAD_MUTEX_INITIALIZER;
+private int contador_memoria;
+
+private int esquema_memoria_tamanio;
+private void* esquema_memoria_mfisica;
+
+private pthread_mutex_t listado_patotas_mx = PTHREAD_MUTEX_INITIALIZER;
+private t_list*         listado_patotas;
 
 void paginacion_memoria_init(void)
 {
