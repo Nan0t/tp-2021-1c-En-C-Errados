@@ -1,4 +1,5 @@
 #include "segmentacion.h"
+#include <pthread.h>
 #include <signal.h>
 
 private int segmentacion_recibir_signal(int value);
@@ -16,6 +17,23 @@ private void segmentacion_reasignar_segmento(void);
 private void segmentacion_actualizar_estructura_y_memoria(uint32_t inicio_segmento_libre,uint32_t tamanio_segmento_libre,uint32_t tipo_segmento_ocupado,
 		uint32_t id_segmento_ocupado,uint32_t inicio_segmento_ocupado,uint32_t tamanio_segmento_ocupado);
 private int segmentacion_memoria_total_tamanio_tareas_separadas(char** tareas_separadas);
+
+// **********************
+// Estructuras globales
+// **********************
+private t_list* listado_segmentos;
+private int espacio_libre;
+
+private int esquema_memoria_tamanio;
+
+private pthread_mutex_t esquema_memoria_mfisica_mx = PTHREAD_MUTEX_INITIALIZER;
+private void* esquema_memoria_mfisica;
+
+private pthread_mutex_t listado_patotas_mx = PTHREAD_MUTEX_INITIALIZER;
+private t_list*         listado_patotas;
+
+// **********************
+// **********************
 
 void segmentacion_memoria_init(void)
 {
@@ -58,13 +76,10 @@ bool segmentacion_memoria_inicializar_tripulante(uint32_t pid, uint32_t tid, u_p
 	    }
 	}
 	aux = list_get(listado_patotas, indice);
-	t_list* tabla;
-	tabla = list_create();
-	tabla = aux->tabla_segmentos;
+	t_list* tabla = aux->tabla_segmentos;
 	s_segmento_patota_t *aux2;
 	aux2 = list_get(tabla, 0);
-	t_list* tabla_tripulantes = list_create();
-	tabla_tripulantes = aux2->listado_tripulantes;
+	t_list* tabla_tripulantes = aux2->listado_tripulantes;
 	int tamanio_lista_tripulantes=list_size(tabla_tripulantes);
 	int indice_tripulante=tamanio_lista_tripulantes;
 	int i;
@@ -92,18 +107,24 @@ bool segmentacion_memoria_inicializar_tripulante(uint32_t pid, uint32_t tid, u_p
 
 	int desplazamiento = aux3->inicio_segmento_tcb;
 	char estado = 'N';
-	memcpy(esquema_memoria_mfisica + desplazamiento, &tid, sizeof(uint32_t));
-	desplazamiento = desplazamiento + sizeof(uint32_t);
-	memcpy(esquema_memoria_mfisica + desplazamiento, &estado, sizeof(char));
-	desplazamiento = desplazamiento + sizeof(char);
-	uint32_t identificador_nueva_tarea = 0;
-	uint32_t puntero_pcb = 0;
-	uint32_t posiciones_y_puntero[4] = {pos.x, pos.y, identificador_nueva_tarea, puntero_pcb};
-	int k;
-    for(k=0; k<4; k++){
-        memcpy(esquema_memoria_mfisica + desplazamiento, &posiciones_y_puntero[k], sizeof(uint32_t));
-        desplazamiento = desplazamiento + sizeof(uint32_t);
-    }
+
+	pthread_mutex_lock(&esquema_memoria_mfisica_mx);
+	{
+		memcpy(esquema_memoria_mfisica + desplazamiento, &tid, sizeof(uint32_t));
+		desplazamiento = desplazamiento + sizeof(uint32_t);
+		memcpy(esquema_memoria_mfisica + desplazamiento, &estado, sizeof(char));
+		desplazamiento = desplazamiento + sizeof(char);
+		uint32_t identificador_nueva_tarea = 0;
+		uint32_t puntero_pcb = 0;
+		uint32_t posiciones_y_puntero[4] = {pos.x, pos.y, identificador_nueva_tarea, puntero_pcb};
+		int k;
+		for(k=0; k<4; k++){
+			memcpy(esquema_memoria_mfisica + desplazamiento, &posiciones_y_puntero[k], sizeof(uint32_t));
+			desplazamiento = desplazamiento + sizeof(uint32_t);
+		}
+	}
+	pthread_mutex_unlock(&esquema_memoria_mfisica_mx);
+
     U_LOG_TRACE("Tripulante con tid %d guardado correctamente", tid);
     return true;
 }
@@ -187,16 +208,18 @@ char* segmentacion_memoria_obtener_proxima_tarea(uint32_t pid, uint32_t tid)
     uint32_t numero_de_tarea=segmentacion_obtener_y_actualizar_proxima_tarea_tripulante(pid,tid);
     char** tareas_separadas = string_split(todas_las_tareas, "\n");
     free(todas_las_tareas);
-	// int tamanio_vector=sizeof(tareas_separadas);
-	// int tamanio_elemento=sizeof(tareas_separadas[0]);
-	// if (tamanio_elemento == 0){
-	// 	return NULL;
-	// }
+
 	int cantidad_de_elementos=segmentacion_memoria_total_tamanio_tareas_separadas(tareas_separadas);
     if (numero_de_tarea<cantidad_de_elementos){
 		U_LOG_INFO("PROXIMA TAREA DE TRIPULANTE: %d, %s", tid, tareas_separadas[numero_de_tarea]);
     	return tareas_separadas[numero_de_tarea];
     }
+
+	for(char** c = tareas_separadas; *c != NULL; c ++)
+		u_free(*c);
+	
+	u_free(tareas_separadas);
+
     return NULL;
 }
 
@@ -214,12 +237,10 @@ t_list* segmentacion_memoria_obtener_todos_los_tripulantes(void)
     for(i=0; i<cantidad_patotas; i++){
         s_patota_y_tabla_t* patota = list_get(listado_patotas, i);
     	t_list* tabla;
-    	tabla = list_create();
     	tabla = patota->tabla_segmentos;
     	s_segmento_patota_t *aux;
     	aux = list_get(tabla, 0);
-    	t_list* tabla_tripulantes = list_create();
-    	tabla_tripulantes = aux->listado_tripulantes;
+    	t_list* tabla_tripulantes = aux->listado_tripulantes;
     	int cantidad_tripulantes=list_size(tabla_tripulantes);
     	s_segmento_tripulante_t *aux2;
         for(j=0; j<cantidad_tripulantes; j++){
@@ -247,12 +268,10 @@ bool segmentacion_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid)
 	}
 	aux = list_get(listado_patotas, indice);
 	t_list* tabla;
-	tabla = list_create();
 	tabla = aux->tabla_segmentos;
 	s_segmento_patota_t *aux2;
 	aux2 = list_get(tabla, 0);
-	t_list* tabla_tripulantes = list_create();
-	tabla_tripulantes = aux2->listado_tripulantes;
+	t_list* tabla_tripulantes = aux2->listado_tripulantes;
 	int tamanio_lista_tripulantes=list_size(tabla_tripulantes);
 	int indice_tripulante=tamanio_lista_tripulantes;
 	int i;
@@ -462,9 +481,7 @@ private bool segmentacion_agregar_patota_en_memoria(uint32_t pid,const char* tar
 	    }
 	}
 	aux = list_get(listado_patotas, indice);
-	t_list* tabla;
-	tabla = list_create();
-	tabla = aux->tabla_segmentos;
+	t_list* tabla = aux->tabla_segmentos;
 	s_segmento_patota_t *aux2;
 	aux2 = list_get(tabla, 0);
 	int offset_general = aux2->inicio_segmento_pcb;
@@ -497,7 +514,6 @@ private char* segmentacion_obtener_tareas_de_patota(uint32_t pid){
 	}
 	aux = list_get(listado_patotas, indice);
 	t_list* tabla;
-	tabla = list_create();
 	tabla = aux->tabla_segmentos;
 	s_segmento_patota_t *aux2;
 	aux2 = list_get(tabla, 0);
@@ -525,13 +541,10 @@ private uint32_t segmentacion_obtener_y_actualizar_proxima_tarea_tripulante(uint
 	    }
 	}
 	aux = list_get(listado_patotas, indice);
-	t_list* tabla;
-	tabla = list_create();
-	tabla = aux->tabla_segmentos;
+	t_list* tabla = aux->tabla_segmentos;
 	s_segmento_patota_t *aux2;
 	aux2 = list_get(tabla, 0);
-	t_list* tabla_tripulantes = list_create();
-	tabla_tripulantes = aux2->listado_tripulantes;
+	t_list* tabla_tripulantes = aux2->listado_tripulantes;
 	int tamanio_lista_tripulantes=list_size(tabla_tripulantes);
 	int indice_tripulante=-1;
 	int i;
@@ -568,12 +581,10 @@ private tripulantes_t* segmentacion_obtener_tcb(uint32_t pid,uint32_t tid){
 	}
 	aux = list_get(listado_patotas, indice);
 	t_list* tabla;
-	tabla = list_create();
 	tabla = aux->tabla_segmentos;
 	s_segmento_patota_t *aux2;
 	aux2 = list_get(tabla, 0);
-	t_list* tabla_tripulantes = list_create();
-	tabla_tripulantes = aux2->listado_tripulantes;
+	t_list* tabla_tripulantes = aux2->listado_tripulantes;
 	int tamanio_lista_tripulantes=list_size(tabla_tripulantes);
 	int indice_tripulante=-1;
 	int i;

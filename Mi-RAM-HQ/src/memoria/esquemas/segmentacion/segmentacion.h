@@ -33,9 +33,6 @@ typedef struct
     uint32_t tamanio_segmento_tcb;
 }s_segmento_tripulante_t;
 
-t_list* listado_segmentos;
-int espacio_libre;
-
 void segmentacion_memoria_init(void);
 
 bool segmentacion_memoria_inicializar_patota(uint32_t pid, uint32_t cant_tripulantes, const char* tareas);
