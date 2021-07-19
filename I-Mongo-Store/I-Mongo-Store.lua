@@ -22,7 +22,9 @@ project "I-Mongo-Store"
         "commons",
         "cunit",
         "pthread",
-        "readline"
+        "readline",
+        "m",
+        "crypto"
     }
     
     filter "configurations:Debug"

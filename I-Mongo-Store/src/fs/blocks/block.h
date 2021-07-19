@@ -34,7 +34,7 @@ uint64_t fs_block_write(uint32_t block_id, const void* data, uint64_t data_size,
  *              que se pudieron leer (que pueden resultar menor a la cantidad de bytes que
  *              se deseaban leer).
  */
-uint64_t fs_block_read(uint32_t block, void* data, uint64_t data_size, uint64_t offset);
+uint64_t fs_block_read(uint32_t block_id, void* data, uint64_t data_size, uint64_t offset);
 
 /**
  * @NAME: fs_block_get_disk_offset
@@ -44,6 +44,7 @@ uint64_t fs_block_read(uint32_t block, void* data, uint64_t data_size, uint64_t 
  * 
  * @RETURNS: el offset dentro del disco del bloque
  */
+//para testeo
 uint32_t fs_block_get_disk_offset(uint32_t block_id);
 
 #endif

@@ -38,7 +38,7 @@ private uint64_t fs_block_read_internal(const fs_block_t* this, void* data, uint
 
 private fs_blocks_manager_t* p_blocks_manager_instance = NULL;
 
-private void     fs_blocks_mangager_get_metadata(int32_t super_block_file);
+private void     fs_blocks_manager_get_metadata(int32_t super_block_file);
 private void     fs_blocks_manager_init_bitmap(int32_t super_block_file);
 private void     fs_blocks_manager_init_disk(void);
 private void     fs_blocks_manager_init_blocks(void);
@@ -65,7 +65,7 @@ void fs_blocks_manager_init(const char* mount_point)
 
     u_free(super_block_file_path);
 
-    fs_blocks_mangager_get_metadata(super_block_file);
+    fs_blocks_manager_get_metadata(super_block_file);
     fs_blocks_manager_init_disk();
     fs_blocks_manager_init_blocks();
 }
@@ -147,7 +147,7 @@ private uint64_t fs_block_read_internal(const fs_block_t* this, void* data, uint
     return bytes_to_read;
 }
 
-private void fs_blocks_mangager_get_metadata(int32_t super_block_file)
+private void fs_blocks_manager_get_metadata(int32_t super_block_file)
 {
     U_ASSERT(pread(super_block_file, &p_blocks_manager_instance->blocks_size, sizeof(uint32_t), 0) != -1,
         "No se pudo obtener el tamaño de los bloques del SuperBloque.ims: %s", strerror(errno));
