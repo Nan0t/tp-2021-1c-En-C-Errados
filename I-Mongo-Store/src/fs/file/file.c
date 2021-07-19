@@ -77,14 +77,14 @@ void fs_file_delete(fs_file_t* this){
 // la cantidad total de caracteres. Al final pone un centinela
 void fs_file_add_fill_char(fs_file_t* this, uint32_t amount){
 
-	int amount_values = fs_file_get_blocks_count();
+	int amount_values = fs_file_get_blocks_count(this);
 	char** blocks = config_get_array_value(this->CONFIG, "BLOCKS");
 	t_list* blocks_tlist = lista_id_bloques_archivo(blocks);
 	char* last_block = blocks_tlist->elements_count - 1;
 
 	//uint32_t block_id =  atoi(values[amount_values-1]); se hace por t_list en vez de strings
 
-	char* fill_char = fs_file_get_fill_char();
+	char* fill_char = fs_file_get_fill_char(this);
 
 	char* fill = string_repeat(*fill_char, amount);
 
@@ -113,7 +113,7 @@ void fs_file_add_fill_char(fs_file_t* this, uint32_t amount){
 		config_set_value(this->CONFIG, "BLOCKS", list_convert_to_string(blocks_tlist));
 
 		//actualizo config md5
-		char* md5_actualizado = generate_md5(blocks, fs_file_get_size(), fs_blocks_manager_get_blocks_size());
+		char* md5_actualizado = generate_md5(blocks, fs_file_get_size(this), fs_blocks_manager_get_blocks_size());
 		config_set_value(this->CONFIG, "MD5_ARCHIVO", md5_actualizado);
 
 	}
@@ -138,20 +138,20 @@ void fs_file_add_fill_char(fs_file_t* this, uint32_t amount){
 void fs_file_remove_fill_char(fs_file_t* this, uint32_t amount){
 
 	//reduzco tamaño del archivo
-	int size_archivo = fs_file_get_size();
+	int size_archivo = fs_file_get_size(this);
 	config_set_value(this->CONFIG, "SIZE",size_archivo-amount);
 	uint32_t tamanio_bloques = fs_blocks_manager_get_blocks_size();
 
 	//guardo centinela
-	fs_block_write(fs_file_get_blocks_count()-1, 0, sizeof(int), get_offset(this));
+	fs_block_write(fs_file_get_blocks_count(this)-1, 0, sizeof(int), get_offset(this));
 
-	int bloques_usados = fs_file_get_size() / tamanio_bloques;
+	int bloques_usados = fs_file_get_size(this) / tamanio_bloques;
 
-	if(bloques_usados < fs_file_get_blocks_count()){
-		int bloques_a_liberar = bloques_usados - fs_file_get_blocks_count();
+	if(bloques_usados < fs_file_get_blocks_count(this)){
+		int bloques_a_liberar = bloques_usados - fs_file_get_blocks_count(this);
 
 		for(int i=0; i<bloques_a_liberar ; i++){
-			fs_blocks_manager_release_block(fs_file_get_blocks_count()-1);
+			fs_blocks_manager_release_block(fs_file_get_blocks_count(this)-1);
 		}
 	}
 
@@ -236,7 +236,7 @@ private t_list* lista_id_bloques_archivo(char** lista_bloques)
 }
 
 private int get_offset(fs_file_t* this){
-	return fs_file_get_size() % fs_blocks_manager_get_blocks_size();
+	return fs_file_get_size(this) % fs_blocks_manager_get_blocks_size();
 }
 
 private char** list_convert_to_string(t_list* list){
@@ -255,7 +255,7 @@ private char** list_convert_to_string(t_list* list){
 private bool verificar_size_correcto(fs_file_t* this)
 {
 	// Acá recorro todos los bloques, y aunque encuentre el bloque con el centinela sigo recorriendo si en mi lista de bloques tengo más.
-	uint32_t tamanio_archivo  = fs_file_get_size();
+	uint32_t tamanio_archivo  = fs_file_get_size(this);
 	uint32_t  cantidad_caracteres_file = 0;
 	void _contar_cantidad_caracteres_bloque(uint32_t* id_bloque)
 	{
@@ -285,7 +285,7 @@ private bool verificar_size_correcto(fs_file_t* this)
 private bool verificar_cantidad_bloques_correcto(fs_file_t* this)
 {
 	char** lista_bloques = config_get_array_value(this->CONFIG, "BLOCKS");
-	uint32_t cantidad_bloques = fs_file_get_blocks_count();
+	uint32_t cantidad_bloques = fs_file_get_blocks_count(this);
 	t_list* lista_id_bloques = lista_id_bloques_archivo(lista_bloques);
 	uint32_t cantidad_bloques_segun_lista = list_size(lista_id_bloques);
 
@@ -302,7 +302,7 @@ private bool verificar_md5(fs_file_t* this)
 {
 	//esta recuperación la llevo sin intentar obtener nuevos bloques dado que en el video dicen que solo cambian de posicion los bloques. (a validar)
 	char* hash_archivo = config_get_string_value(this->CONFIG, "MD5_ARCHIVO");
-	uint32_t tamanio_archivo = fs_file_get_size();
+	uint32_t tamanio_archivo = fs_file_get_size(this);
 	char** lista_bloques = config_get_array_value(this->CONFIG, "BLOCKS");
 	uint32_t tamanio_bloques  = fs_blocks_manager_get_blocks_size();
 	char* md5_bloques_archivo = generate_md5(lista_bloques, tamanio_archivo, tamanio_bloques);
