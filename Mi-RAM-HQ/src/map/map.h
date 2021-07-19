@@ -5,6 +5,7 @@
 
 void map_init(void);
 void map_add_trip(uint32_t tid, const u_pos_t* pos);
+void map_move_trip(uint32_t tid, const u_pos_t* pos);
 void map_del_trip(uint32_t tid);
 
 #endif
