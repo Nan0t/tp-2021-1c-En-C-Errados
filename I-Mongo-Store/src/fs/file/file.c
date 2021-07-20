@@ -322,12 +322,9 @@ private bool verificar_md5(fs_file_t* this)
 			uint32_t tamanio_a_insertar = min(tamanio_aux, tamanio_bloques);
 			char* caracter_a_rellenar_repetido = string_repeat(*caracter_llenado, tamanio_a_insertar);
 			if(tamanio_a_insertar <tamanio_bloques){
-				caracteres_escritos = fs_block_write(*id_bloque, caracter_a_rellenar_repetido, tamanio_a_insertar + 1, 0);
+				tamanio_a_insertar++;
 			}
-			else
-			{
-				caracteres_escritos = fs_block_write(*id_bloque, caracter_a_rellenar_repetido, tamanio_a_insertar,0);
-			}
+			caracteres_escritos = fs_block_write(*id_bloque, caracter_a_rellenar_repetido, tamanio_a_insertar,0);
 			tamanio_aux -= caracteres_escritos;
 			free(caracter_a_rellenar_repetido);
 		}
