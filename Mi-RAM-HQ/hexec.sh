@@ -1,6 +1,6 @@
 #!/bin/bash
 FILE=Mi-RAM-HQ
-make $FILE
-if test -f "./$FILE"; then
-    valgrind --tool=helgrind ./$FILE
+make 
+if test -f "../outputs/bin/Mi-RAM-HQ/Debug/$FILE"; then
+    ../scripts/./ex.sh Mi-RAM-HQ --debug-tool helgrind
 fi

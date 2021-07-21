@@ -14,13 +14,13 @@ bool admin_memoria_iniciar_patota(uint32_t pid, uint32_t cant_tripulantes, const
 
 bool admin_memoria_iniciar_tripulante(uint32_t pid, uint32_t tid, u_pos_t pos)
 {
-    map_add_trip(tid, &pos);
+    //map_add_trip(tid, &pos);
     return esquema_memoria_inicializar_tripulante(pid, tid, pos);
 }
 
 bool admin_memoria_mover_tripulante(uint32_t pid, uint32_t tid, u_pos_t pos)
 {
-    map_move_trip(tid, &pos);
+    //map_move_trip(tid, &pos);
     return esquema_memoria_actualizar_posicion_tripulante(pid, tid, pos);
 }
 
