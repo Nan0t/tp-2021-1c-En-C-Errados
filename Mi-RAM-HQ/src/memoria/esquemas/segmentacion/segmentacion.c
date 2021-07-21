@@ -21,7 +21,11 @@ private int segmentacion_memoria_total_tamanio_tareas_separadas(char** tareas_se
 // **********************
 // Estructuras globales
 // **********************
+
+private pthread_mutex_t listado_segmentos_mx = PTHREAD_MUTEX_INITIALIZER;
 private t_list* listado_segmentos;
+
+private pthread_mutex_t espacio_libre_mx = PTHREAD_MUTEX_INITIALIZER;
 private int espacio_libre;
 
 private int esquema_memoria_tamanio;
@@ -51,20 +55,34 @@ bool segmentacion_memoria_inicializar_patota(uint32_t pid, uint32_t cant_tripula
 {
 	int tam_tareas = strlen(tareas)+1;
 	int tamanio_data = 2*(sizeof(uint32_t)) + 21* cant_tripulantes + tam_tareas;
+	int no_hay_memoria = 0;
+	pthread_mutex_lock(&espacio_libre_mx);
 	if(tamanio_data > espacio_libre){
+	    no_hay_memoria = 1;
+	}
+	pthread_mutex_unlock(&espacio_libre_mx);
+	if(no_hay_memoria == 1){
 	    return false;
 	}
 	int tamanio_pcb = 2*(sizeof(uint32_t));
 	int tamanio_tareas = strlen(tareas)+1;
+
+	pthread_mutex_lock(&listado_segmentos_mx);
+	pthread_mutex_lock(&listado_patotas_mx);
 	segmentacion_obtener_segmentos(pid,tamanio_pcb,tamanio_tareas,cant_tripulantes);
+	pthread_mutex_unlock(&listado_patotas_mx);
+	pthread_mutex_unlock(&listado_segmentos_mx);
 
 	U_LOG_TRACE("Segmentos creados");
+	pthread_mutex_lock(&listado_patotas_mx);
 	return segmentacion_agregar_patota_en_memoria(pid, tareas);
+	pthread_mutex_unlock(&listado_patotas_mx);
 }
 
 
 bool segmentacion_memoria_inicializar_tripulante(uint32_t pid, uint32_t tid, u_pos_t pos)
 {
+	pthread_mutex_lock(&listado_patotas_mx);
 	int tamanio_lista_patotas=list_size(listado_patotas);
 	int j;
 	int indice=-1;
@@ -96,6 +114,7 @@ bool segmentacion_memoria_inicializar_tripulante(uint32_t pid, uint32_t tid, u_p
 	aux3->tid=tid;
 
 	// actualizo en segmentos de la memoria
+	pthread_mutex_lock(&listado_segmentos_mx);
 	int tamanio_listado_segentos=list_size(listado_segmentos);
 	s_segmento_t *aux4;
     for(int s = 0; s < tamanio_listado_segentos; s++) {
@@ -104,24 +123,24 @@ bool segmentacion_memoria_inicializar_tripulante(uint32_t pid, uint32_t tid, u_p
 			aux4->id_propietario=aux3->tid;
 		}
     }
+	pthread_mutex_unlock(&listado_segmentos_mx);
 
 	int desplazamiento = aux3->inicio_segmento_tcb;
+	pthread_mutex_unlock(&listado_patotas_mx);
 	char estado = 'N';
 
 	pthread_mutex_lock(&esquema_memoria_mfisica_mx);
-	{
-		memcpy(esquema_memoria_mfisica + desplazamiento, &tid, sizeof(uint32_t));
+	memcpy(esquema_memoria_mfisica + desplazamiento, &tid, sizeof(uint32_t));
+	desplazamiento = desplazamiento + sizeof(uint32_t);
+	memcpy(esquema_memoria_mfisica + desplazamiento, &estado, sizeof(char));
+	desplazamiento = desplazamiento + sizeof(char);
+	uint32_t identificador_nueva_tarea = 0;
+	uint32_t puntero_pcb = 0;
+	uint32_t posiciones_y_puntero[4] = {pos.x, pos.y, identificador_nueva_tarea, puntero_pcb};
+	int k;
+	for(k=0; k<4; k++){
+		memcpy(esquema_memoria_mfisica + desplazamiento, &posiciones_y_puntero[k], sizeof(uint32_t));
 		desplazamiento = desplazamiento + sizeof(uint32_t);
-		memcpy(esquema_memoria_mfisica + desplazamiento, &estado, sizeof(char));
-		desplazamiento = desplazamiento + sizeof(char);
-		uint32_t identificador_nueva_tarea = 0;
-		uint32_t puntero_pcb = 0;
-		uint32_t posiciones_y_puntero[4] = {pos.x, pos.y, identificador_nueva_tarea, puntero_pcb};
-		int k;
-		for(k=0; k<4; k++){
-			memcpy(esquema_memoria_mfisica + desplazamiento, &posiciones_y_puntero[k], sizeof(uint32_t));
-			desplazamiento = desplazamiento + sizeof(uint32_t);
-		}
 	}
 	pthread_mutex_unlock(&esquema_memoria_mfisica_mx);
 
@@ -131,6 +150,7 @@ bool segmentacion_memoria_inicializar_tripulante(uint32_t pid, uint32_t tid, u_p
 
 bool segmentacion_memoria_actualizar_posicion_tripulante(uint32_t pid, uint32_t tid, u_pos_t pos)
 {
+	pthread_mutex_lock(&listado_patotas_mx);
 	int tamanio_lista_patotas=list_size(listado_patotas);
 	int j;
 	int indice=-1;
@@ -160,13 +180,17 @@ bool segmentacion_memoria_actualizar_posicion_tripulante(uint32_t pid, uint32_t 
 			 }
 	}
 	aux3 = list_get(tabla_tripulantes, indice_tripulante);
+	pthread_mutex_unlock(&listado_patotas_mx);
+	pthread_mutex_lock(&esquema_memoria_mfisica_mx);
 	memcpy(esquema_memoria_mfisica + aux3->inicio_segmento_tcb + sizeof(uint32_t)+ sizeof(char), &(pos.x), sizeof(uint32_t));
 	memcpy(esquema_memoria_mfisica + aux3->inicio_segmento_tcb + 2*sizeof(uint32_t)+ sizeof(char), &(pos.y), sizeof(uint32_t));
+	pthread_mutex_unlock(&esquema_memoria_mfisica_mx);
 	return true;
 }
 
 bool segmentacion_memoria_actualizar_estado_tripulante(uint32_t pid, uint32_t tid, char estado)
 {
+	pthread_mutex_lock(&listado_patotas_mx);
 	int tamanio_lista_patotas=list_size(listado_patotas);
 	int j;
 	int indice=-1;
@@ -196,16 +220,21 @@ bool segmentacion_memoria_actualizar_estado_tripulante(uint32_t pid, uint32_t ti
 			 }
 	}
 	aux3 = list_get(tabla_tripulantes, indice_tripulante);
+	pthread_mutex_unlock(&listado_patotas_mx);
+	pthread_mutex_lock(&esquema_memoria_mfisica_mx);
 	memcpy(esquema_memoria_mfisica + aux3->inicio_segmento_tcb + sizeof(uint32_t), &estado, sizeof(char));
+	pthread_mutex_unlock(&esquema_memoria_mfisica_mx);
 	return true;
 }
 
 
 char* segmentacion_memoria_obtener_proxima_tarea(uint32_t pid, uint32_t tid)
 {
+	pthread_mutex_lock(&listado_patotas_mx);
     char* todas_las_tareas = segmentacion_obtener_tareas_de_patota(pid);
     U_LOG_TRACE("TAREAS RECUPERADAS: %s", todas_las_tareas);
     uint32_t numero_de_tarea=segmentacion_obtener_y_actualizar_proxima_tarea_tripulante(pid,tid);
+	pthread_mutex_unlock(&listado_patotas_mx);
     char** tareas_separadas = string_split(todas_las_tareas, "\n");
     free(todas_las_tareas);
 
@@ -225,13 +254,16 @@ char* segmentacion_memoria_obtener_proxima_tarea(uint32_t pid, uint32_t tid)
 
 tripulantes_t* segmentacion_memoria_obtener_info_tripulante(uint32_t pid, uint32_t tid)
 {
+	pthread_mutex_lock(&listado_patotas_mx);
     tripulantes_t* tripulante = segmentacion_obtener_tcb(pid, tid);
+	pthread_mutex_unlock(&listado_patotas_mx);
     return tripulante;
 }
 
 t_list* segmentacion_memoria_obtener_todos_los_tripulantes(void)
 {
     t_list* lista_de_todos_los_tripulantes = list_create();
+	pthread_mutex_lock(&listado_patotas_mx);
     int cantidad_patotas = list_size(listado_patotas);
     int i, j;
     for(i=0; i<cantidad_patotas; i++){
@@ -251,11 +283,13 @@ t_list* segmentacion_memoria_obtener_todos_los_tripulantes(void)
 			 }
         }
     }
+	pthread_mutex_unlock(&listado_patotas_mx);
     return lista_de_todos_los_tripulantes;
 }
 
 bool segmentacion_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid)
 {
+	pthread_mutex_lock(&listado_patotas_mx);
 	int tamanio_lista_patotas=list_size(listado_patotas);
 	int j;
 	int indice=-1;
@@ -287,6 +321,8 @@ bool segmentacion_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid)
 	aux3->tid=-1;
 	aux3->inicio_segmento_tcb=-1;
 	aux3->tamanio_segmento_tcb=-1;
+	pthread_mutex_unlock(&listado_patotas_mx);
+	pthread_mutex_lock(&listado_segmentos_mx);
 	int tamanio_listado_segmentos=list_size(listado_segmentos);
 	int k;
 	int indice_segmento=-1;
@@ -300,6 +336,7 @@ bool segmentacion_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid)
 	aux4 = list_get(listado_segmentos, indice_segmento);
 	aux4->tipo_segmento=-1;
 	aux4->id_propietario=-1;
+	pthread_mutex_unlock(&listado_segmentos_mx);
 
 	return true;
 }
@@ -375,7 +412,9 @@ private void segmentacion_obtener_segmentos(uint32_t pid,int tamanio_pcb,int tam
 	segmento_patota_y_tabla->tabla_segmentos=lista_tabla_de_segmento;
 
 	list_add(listado_patotas, segmento_patota_y_tabla);
+	pthread_mutex_lock(&espacio_libre_mx);
 	espacio_libre = espacio_libre-tamanio_pcb-tamanio_tareas-(21*cant_tripulantes);
+	pthread_mutex_unlock(&espacio_libre_mx);
 }
 
 private bool segmentacion_hay_segmento_libre(int tamanio_lista,int tamanio_segmento){
@@ -485,6 +524,7 @@ private bool segmentacion_agregar_patota_en_memoria(uint32_t pid,const char* tar
 	aux2 = list_get(tabla, 0);
 	int offset_general = aux2->inicio_segmento_pcb;
 	int i;
+	pthread_mutex_lock(&esquema_memoria_mfisica_mx);
 	for(i = 0; i<2; i++){
 	        memcpy(esquema_memoria_mfisica + offset_general, &pid_y_direccion_tareas[i], sizeof(uint32_t));
 	        offset_general = offset_general + sizeof(uint32_t);
@@ -497,6 +537,7 @@ private bool segmentacion_agregar_patota_en_memoria(uint32_t pid,const char* tar
             offset_general++;
             U_LOG_TRACE("Escrito caracter: %d", i);
 	}
+	pthread_mutex_unlock(&esquema_memoria_mfisica_mx);
 	return true;
 }
 
@@ -521,10 +562,12 @@ private char* segmentacion_obtener_tareas_de_patota(uint32_t pid){
 	char* tareas = u_malloc(tamanio_tareas);
     //Recorro la memoria y copio caracter a caracter las tareas
     int i;
+	pthread_mutex_lock(&esquema_memoria_mfisica_mx);
     for(i=0; i<tamanio_tareas; i++){
         memcpy(tareas + i, esquema_memoria_mfisica + desplazamiento, sizeof(char));
         desplazamiento++;
     }
+	pthread_mutex_unlock(&esquema_memoria_mfisica_mx);
     return tareas;
 }
 
@@ -558,10 +601,12 @@ private uint32_t segmentacion_obtener_y_actualizar_proxima_tarea_tripulante(uint
 	uint32_t inicio_segmento_tcb= aux3->inicio_segmento_tcb;
 	uint32_t proxima_tarea;
     //recupera proxima tarea
+	pthread_mutex_lock(&esquema_memoria_mfisica_mx);
 	memcpy(&proxima_tarea, esquema_memoria_mfisica + inicio_segmento_tcb + 3*sizeof(uint32_t)+sizeof(char), sizeof(uint32_t));
     //incrementa proxima tarea
 	proxima_tarea ++;
 	memcpy(esquema_memoria_mfisica + inicio_segmento_tcb + 3*sizeof(uint32_t)+sizeof(char),&proxima_tarea,sizeof(uint32_t));
+	pthread_mutex_unlock(&esquema_memoria_mfisica_mx);
 	proxima_tarea --;
 	
 	return proxima_tarea;
@@ -600,10 +645,12 @@ private tripulantes_t* segmentacion_obtener_tcb(uint32_t pid,uint32_t tid){
 	tripulantes_t* tripulante = u_malloc(sizeof(tripulantes_t));
 	tripulante->pid = pid;
 	tripulante->tid = tid;
+	pthread_mutex_lock(&esquema_memoria_mfisica_mx);
 	memcpy(&(tripulante->estado), esquema_memoria_mfisica + inicio_segmento_tcb + sizeof(uint32_t), sizeof(char));
 	memcpy(&(tripulante->pos.x), esquema_memoria_mfisica + inicio_segmento_tcb + sizeof(uint32_t) + sizeof(char), sizeof(uint32_t));
 	memcpy(&(tripulante->pos.y), esquema_memoria_mfisica + inicio_segmento_tcb + 2 * sizeof(uint32_t) + sizeof(char), sizeof(uint32_t));
 	memcpy(&(tripulante->proxima_tarea), esquema_memoria_mfisica + inicio_segmento_tcb + 3 * sizeof(uint32_t) + sizeof(char), sizeof(uint32_t));
+	pthread_mutex_unlock(&esquema_memoria_mfisica_mx);
 
 	return tripulante;
 }
@@ -703,6 +750,7 @@ private void segmentacion_actualizar_estructura_y_memoria(uint32_t inicio_segmen
 		s_segmento_patota_t *segmento_patota;
 		segmento_patota = list_get(tabla, 0);
 
+        pthread_mutex_lock(&esquema_memoria_mfisica_mx);
 		if(tipo_segmento_ocupado==0){
 		   memcpy(esquema_memoria_mfisica + inicio_segmento_libre,esquema_memoria_mfisica + segmento_patota->inicio_segmento_pcb,segmento_patota->tamanio_segmento_pcb);
 		   segmento_patota->inicio_segmento_pcb=inicio_segmento_libre;
@@ -711,6 +759,7 @@ private void segmentacion_actualizar_estructura_y_memoria(uint32_t inicio_segmen
 		   memcpy(esquema_memoria_mfisica + inicio_segmento_libre,esquema_memoria_mfisica + segmento_patota->inicio_segmento_tareas,segmento_patota->tamanio_segmento_tareas);
 		   segmento_patota->inicio_segmento_tareas=inicio_segmento_libre;
 		}
+        pthread_mutex_unlock(&esquema_memoria_mfisica_mx);
 
 	}
 
@@ -733,11 +782,12 @@ private void segmentacion_actualizar_estructura_y_memoria(uint32_t inicio_segmen
 			for(i=0; i<tamanio_lista_tripulantes; i++){
 				segmento_tripulante = list_get(lista_tripulantes, i);
 				if(segmento_tripulante->tid==id_segmento_ocupado){
+					pthread_mutex_lock(&esquema_memoria_mfisica_mx);
 					memcpy(esquema_memoria_mfisica + inicio_segmento_libre,esquema_memoria_mfisica + segmento_tripulante->inicio_segmento_tcb,segmento_tripulante->tamanio_segmento_tcb);
+					pthread_mutex_unlock(&esquema_memoria_mfisica_mx);
 					segmento_tripulante->inicio_segmento_tcb=inicio_segmento_libre;
 				}
 			}
-
 		}
 	}
 
@@ -751,4 +801,3 @@ private int segmentacion_memoria_total_tamanio_tareas_separadas(char** tareas_se
 
 	return contador;
 }
-
