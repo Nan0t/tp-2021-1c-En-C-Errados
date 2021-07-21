@@ -9,7 +9,7 @@
  * @PARAMS:
  *  [in] const char* mount_point - punto de montaje.
  */
-void fs_files_manager_init(const char* mount_point);
+void fs_files_manager_init(const char* mount_point, bool is_clean_initialization);
 
 /**
  * @NAME: fs_files_manager_create_file
@@ -47,5 +47,7 @@ void fs_files_manager_release_file(const char* name);
  *  [in] const char* name - nombre del archivo que se quiere eliminar del sistema.
  */
 void fs_files_manager_delete_file(const char* name);
+
+bool fs_files_manager_check_files_integrity(void);
 
 #endif

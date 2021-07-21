@@ -9,7 +9,7 @@
  * @PARAMS:
  *  [in] const char* mount_point - punto de montaje del sistema.
  */
-void fs_bitacoras_manager_init(const char* mount_point);
+void fs_bitacoras_manager_init(const char* mount_point, bool is_clean_initialization);
 
 /**
  * @NAME: fs_bitacoras_manager_create_bitacora

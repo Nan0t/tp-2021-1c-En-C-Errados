@@ -1,5 +1,11 @@
 #include "files_manager.h"
+
 #include <pthread.h>
+#include <dirent.h>
+#include <sys/stat.h>
+
+#include <stdio.h>
+#include <errno.h>
 
 typedef struct
 {
@@ -22,12 +28,14 @@ private fs_files_manager_t* p_files_manager_instance = NULL;
 private fs_file_ref_t* fs_file_ref_create(const char* file_name, char fill_char);
 private void           fs_file_ref_delete(fs_file_ref_t* bitacora_ref);
 
+private void       fs_files_manager_load_all_files(const char* files_directory_path);
+private void       fs_files_manager_load_file(const char* file_path);
 private void       fs_files_manager_add_ref(fs_file_ref_t* bitacora_ref);
 private void       fs_files_manager_rm_ref(const char* file_name);
 private fs_file_t* fs_files_manager_hold_ref(const char* file_name);
 private void       fs_files_manager_release_ref(const char* file_name);
 
-void fs_files_manager_init(const char* mount_point)
+void fs_files_manager_init(const char* mount_point, bool is_clean_initialization)
 {
     if(p_files_manager_instance)
         return;
@@ -38,6 +46,16 @@ void fs_files_manager_init(const char* mount_point)
     p_files_manager_instance->mount_point = strdup(mount_point);
 
     pthread_mutex_init(&p_files_manager_instance->files_mx, NULL);
+
+    char* files_path = string_from_format("%s/Files", u_config_get_string_value("PUNTO_MONTAJE"));
+
+    if(is_clean_initialization)
+    {
+        mkdir(files_path, 0700);
+        u_free(files_path);
+    }
+    else
+        fs_files_manager_load_all_files(files_path);
 }
 
 void fs_files_manager_create_file(const char* name, char fill_char)
@@ -59,6 +77,23 @@ void fs_files_manager_release_file(const char* name)
 void fs_files_manager_delete_file(const char* name)
 {
     fs_files_manager_rm_ref(name);
+}
+
+bool fs_files_manager_check_files_integrity(void)
+{
+    bool corrupt_file_was_founded = false;
+
+    pthread_mutex_lock(&p_files_manager_instance->files_mx);
+
+    void _check_file_integrity(fs_file_ref_t* file_ref) {
+        if(fs_file_check_integrity(file_ref->file))
+            corrupt_file_was_founded = true;
+    };
+    dictionary_iterator(p_files_manager_instance->files, (void*)_check_file_integrity);
+
+    pthread_mutex_unlock(&p_files_manager_instance->files_mx);
+
+    return corrupt_file_was_founded;
 }
 
 // ========================================================
@@ -92,6 +127,27 @@ private void fs_file_ref_delete(fs_file_ref_t* file_ref)
     pthread_cond_destroy(&file_ref->can_be_deleted);
 
     u_free(file_ref);
+}
+
+private void fs_files_manager_load_all_files(const char* files_directory_path)
+{
+    char filename[512] = { 0 };
+
+    struct dirent* dir_info;
+    DIR* directory = opendir(files_directory_path);
+    U_ASSERT(directory != NULL, "Error al obtener el directorio %s: %s", files_directory_path, strerror(errno));
+
+
+    while((dir_info = readdir(directory)) != NULL)
+    {
+        sprintf(filename, "%s/%s", files_directory_path, dir_info->d_name);
+        fs_files_manager_load_file(filename);
+    }
+}
+
+private void fs_files_manager_load_file(const char* file_path)
+{
+    // TODO: Crear un fs_file_t a partir de un archivo existente.
 }
 
 private void fs_files_manager_add_ref(fs_file_ref_t* file_ref)

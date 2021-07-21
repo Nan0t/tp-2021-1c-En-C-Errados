@@ -7,7 +7,12 @@
 
 #include <pthread.h>
 
+#include <dirent.h>
+#include <sys/stat.h>
+
 typedef void(*fs_task_exec_func)(const fs_task_parser_result_t*);
+
+private bool file_system_check_for_clean_initialization(void);
 
 private void  file_system_update_bitacora(uint32_t tid, const char* content);
 private char* file_system_get_bitacora(uint32_t tid);
@@ -34,7 +39,9 @@ void file_system_init(const file_system_attr_t* attr){
     U_LOG_INFO("Punto de Montaje: %s", attr->mount_point);
     U_LOG_INFO("Tiempo de Sincronizacion: %d", attr->sync_time);
 
-    fs_blocks_manager_init(attr->mount_point);
+    bool is_clean_initialization = file_system_check_for_clean_initialization();
+
+    fs_blocks_manager_init(attr->mount_point, is_clean_initialization);
     fs_bitacoras_manager_init(attr->mount_point);
     fs_files_manager_init(attr->mount_point);
     fs_sabotage_notifier_init(attr->sabotage_positions);
@@ -85,8 +92,7 @@ void  file_system_atiende_sabotaje(uint32_t tid)
 void  file_system_resuelve_sabotaje(uint32_t tid)
 {
     char* resuelve_sabotaje =
-        string_from_format("Tripulante %d resuelve sabotaje",
-        tid);
+        string_from_format("Tripulante %d resuelve sabotaje", tid);
 
     file_system_update_bitacora(tid, resuelve_sabotaje);
 
@@ -101,6 +107,20 @@ char* file_system_obtener_bitacora(uint32_t tid)
 // ========================================================
 //             *** Private Functions ***
 // ========================================================
+
+private bool file_system_check_for_clean_initialization(void)
+{
+    const char* mount_point_path        = u_config_get_string_value("PUNTO_MONTAJE");
+    DIR*        mount_point             = opendir(mount_point_path);
+    bool        is_clean_initialization = true;
+
+    if(!mount_point)
+        mkdir(mount_point_path, 0700);
+    else
+        is_clean_initialization = false;
+
+    return is_clean_initialization;
+}
 
 private void  file_system_update_bitacora(uint32_t tid, const char* content)
 {

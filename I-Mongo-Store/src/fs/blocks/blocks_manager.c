@@ -38,6 +38,7 @@ private uint64_t fs_block_read_internal(const fs_block_t* this, void* data, uint
 
 private fs_blocks_manager_t* p_blocks_manager_instance = NULL;
 
+private void     fs_blocks_manager_init_super_bloque(const char* super_block_file_path);
 private void     fs_blocks_manager_get_metadata(int32_t super_block_file);
 private void     fs_blocks_manager_init_bitmap(int32_t super_block_file);
 private void     fs_blocks_manager_init_disk(void);
@@ -45,9 +46,7 @@ private void     fs_blocks_manager_init_blocks(void);
 private uint32_t fs_blocks_manager_get_free_block_index(void);
 private void     fs_blocks_manager_release_block_at(uint32_t index);
 
-private bool fs_blocks_manager_check_for_clean_initialization(void);
-
-void fs_blocks_manager_init(const char* mount_point)
+void fs_blocks_manager_init(const char* mount_point, bool is_clean_initialization)
 {
     if(p_blocks_manager_instance != NULL)
         return;
@@ -59,6 +58,9 @@ void fs_blocks_manager_init(const char* mount_point)
     pthread_mutex_init(&p_blocks_manager_instance->blocks_mx, NULL);
 
     char* super_block_file_path = string_from_format("%s/SuperBloque.ims", p_blocks_manager_instance->mount_point);
+
+    if(is_clean_initialization)
+        fs_blocks_manager_init_super_bloque(super_block_file_path);
 
     int32_t super_block_file = open(super_block_file_path, O_RDWR, 0666);
     U_ASSERT(super_block_file != -1, "No se pudo abrir el archivo de SuperBloque.ims: %s", strerror(errno));
@@ -112,6 +114,10 @@ uint32_t fs_blocks_manager_get_blocks_size(void)
     return p_blocks_manager_instance->blocks_size;
 }
 
+bool fs_blocks_manager_check_integrity(void)
+{
+
+}
 
 // =======================================================
 //              *** Private Functions ***
@@ -147,6 +153,26 @@ private uint64_t fs_block_read_internal(const fs_block_t* this, void* data, uint
     return bytes_to_read;
 }
 
+private void fs_blocks_manager_init_super_bloque(const char* super_block_file_path)
+{
+    uint32_t block_size = u_config_get_int_value("BLOCK_SIZE");
+    uint32_t blocks     = u_config_get_int_value("BLOCKS");
+    
+    uint64_t bitmap_length = 1 + (blocks / sizeof(char));
+
+    void* zero_memory = u_malloc(bitmap_length);
+    memset(zero_memory, 0, bitmap_length);
+
+    int32_t super_block_file = open(super_block_file_path, O_RDWR, 0666);
+    U_ASSERT(super_block_file != -1, "No se pudo abrir el archivo de SuperBloque.ims: %s", strerror(errno));
+
+    write(super_block_file, &block_size, sizeof(uint32_t));
+    write(super_block_file, &blocks, sizeof(uint32_t));
+    write(super_block_file, zero_memory, bitmap_length);
+
+    close(super_block_file);
+}
+
 private void fs_blocks_manager_get_metadata(int32_t super_block_file)
 {
     U_ASSERT(pread(super_block_file, &p_blocks_manager_instance->blocks_size, sizeof(uint32_t), 0) != -1,
@@ -154,11 +180,6 @@ private void fs_blocks_manager_get_metadata(int32_t super_block_file)
 
     U_ASSERT(pread(super_block_file, &p_blocks_manager_instance->blocks_count, sizeof(uint32_t), sizeof(uint32_t)) != -1,
         "No se pudo obtener la cantidad de los bloques del SuperBloque.ims: %s", strerror(errno));
-
-    bool is_clean_initialization = fs_blocks_manager_check_for_clean_initialization();
-
-    if(is_clean_initialization)
-        fs_blocks_manager_init_bitmap(super_block_file);
     
     uint32_t bitmap_size = ceil(p_blocks_manager_instance->blocks_count / 8);
     void*    bitmap_mem  =
@@ -227,15 +248,6 @@ private void fs_blocks_manager_release_block_at(uint32_t index)
     pthread_mutex_lock(&p_blocks_manager_instance->blocks_bitmap_mx);
     bitarray_clean_bit(p_blocks_manager_instance->bitmap, index - 1);
     pthread_mutex_unlock(&p_blocks_manager_instance->blocks_bitmap_mx);
-}
-
-private bool fs_blocks_manager_check_for_clean_initialization(void)
-{
-    char* disk_file_name = string_from_format("%s/Blocks.ims", p_blocks_manager_instance->mount_point);
-    bool disk_exist = access(disk_file_name, F_OK) == 0;
-    u_free(disk_file_name);
-
-    return disk_exist;
 }
 
 #ifdef UTESTS

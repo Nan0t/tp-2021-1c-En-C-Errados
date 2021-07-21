@@ -1,5 +1,8 @@
 #include "bitacoras_manager.h"
+
 #include <pthread.h>
+#include <sys/stat.h>
+
 #include <stdio.h>
 
 typedef struct
@@ -28,17 +31,24 @@ private void           fs_bitacoras_manager_rm_ref(uint32_t tid);
 private fs_bitacora_t* fs_bitacoras_manager_hold_ref(uint32_t tid);
 private void           fs_bitacoras_manager_release_ref(uint32_t tid);
 
-void fs_bitacoras_manager_init(const char* mount_point)
+void fs_bitacoras_manager_init(const char* mount_point, bool is_clean_initialization)
 {
     if(p_bitacoras_manager_instance)
         return;
 
     p_bitacoras_manager_instance = u_malloc(sizeof(fs_bitacoras_manager_t));
-    
+
     p_bitacoras_manager_instance->mount_point = strdup(mount_point);
     p_bitacoras_manager_instance->bitacoras   = dictionary_create();
     
     pthread_mutex_init(&p_bitacoras_manager_instance->bitacoras_mx, NULL);
+
+    if(is_clean_initialization)
+    {
+        char* bitacoras_path = string_from_format("%s/Bitacoras", u_config_get_string_value("PUNTO_MONTAJE"));
+        mkdir(bitacoras_path, 0700);
+        u_free(bitacoras_path);
+    }
 }
 
 void fs_bitacoras_manager_create_bitacora(uint32_t tid)
