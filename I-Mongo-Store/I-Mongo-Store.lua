@@ -24,7 +24,8 @@ project "I-Mongo-Store"
         "pthread",
         "readline",
         "m",
-        "crypto"
+        "crypto",
+        "ssl"
     }
     
     filter "configurations:Debug"
