@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include <stdio.h>
 #include <errno.h>
@@ -60,13 +61,22 @@ void fs_files_manager_init(const char* mount_point, bool is_clean_initialization
 
 void fs_files_manager_create_file(const char* name, char fill_char)
 {
-    fs_file_ref_t* file_ref = fs_file_ref_create(name, fill_char);
-    fs_files_manager_add_ref(file_ref);
+    char file_path[1024] = { 0 };
+    sprintf(file_path, "%s/%s", p_files_manager_instance->mount_point, name);
+
+    if(access(file_path, F_OK) == 0)
+    {
+        U_LOG_WARN("El archivo %s ya existe en el FileSystem.", file_path);
+        return;
+    }
+
+    fclose(fopen(file_path, "w")); // Trambolico xd
+    fs_files_manager_add_ref(fs_file_ref_create(file_path, fill_char));
 }
 
 fs_file_t* fs_files_manager_hold_file(const char* name)
 {
-    return fs_files_manager_hold_file(name);
+    return fs_files_manager_hold_ref(name);
 }
 
 void fs_files_manager_release_file(const char* name)
@@ -100,9 +110,11 @@ bool fs_files_manager_check_files_integrity(void)
 //             *** Private Functions ***
 // ========================================================
 
-private fs_file_ref_t* fs_file_ref_create(const char* file_name, char fill_char)
+private fs_file_ref_t* fs_file_ref_create(const char* file_path, char fill_char)
 {
-    fs_file_t* file = fs_file_create(p_files_manager_instance->mount_point, file_name, fill_char);
+    char fill_char_str[2] = { fill_char, '\0' };
+
+    fs_file_t*     file     = fs_file_create(file_path, fill_char_str);
     fs_file_ref_t* file_ref = u_malloc(sizeof(fs_file_ref_t));
 
     file_ref->file        = file;

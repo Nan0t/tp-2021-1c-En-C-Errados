@@ -24,14 +24,12 @@ private bool verificar_cantidad_bloques_correcto(fs_file_t* this);
 private bool verificar_md5(fs_file_t* this);
 
 
-fs_file_t* fs_file_create(const char* mount_point, const char* file_name, char* fill_char){
-
-	char * path = u_malloc(sizeof(char*));
-	path = string_from_format("%s/Files/%s",mount_point,file_name);
+fs_file_t* fs_file_create(const char* file_path, char* fill_char){
 
 	fs_file_t* this = u_malloc(sizeof(fs_file_t));
 
-	this->CONFIG = config_create(path);
+	this->NOMBRE_ARCHIVO = strdup(file_path);
+	this->CONFIG         = config_create(file_path);
 
 	config_set_value(this->CONFIG, "SIZE", "0");
 
@@ -39,14 +37,9 @@ fs_file_t* fs_file_create(const char* mount_point, const char* file_name, char* 
 	char* block_list = string_from_format("[%d]", block_id);
 
 	config_set_value(this->CONFIG, "BLOCKS", block_list);
-
 	config_set_value(this->CONFIG, "BLOCK_COUNT", "1");
-
 	config_set_value(this->CONFIG, "CARACTER_LLENADO", fill_char);
-
 	config_set_value(this->CONFIG, "MD5_ARCHIVO", NULL);
-
-	u_free(path);
 
     return this;
 }

@@ -9,13 +9,12 @@ typedef struct fs_file_t fs_file_t;
  * @NAME: fs_file_create
  * @DESC: crea un instancia de file.
  * @PARAMS:
- *  [in] const char* mount_point - punto de montaje del sistema.
- *  [in] const char* file_name   - nombre del archivo, sin la extension.
+ *  [in] const char* file_path   - ruta del archivo 
  *  [in] char        fill_char   - caracter de llenado.
  * 
  * @RETURNS: una instancia fs_file_t.
  */
-fs_file_t* fs_file_create(const char* mount_point, const char* file_name, char* fill_char);
+fs_file_t* fs_file_create(const char* file_path, char* fill_char);
 
 /**
  * @NAME: fs_file_delete
