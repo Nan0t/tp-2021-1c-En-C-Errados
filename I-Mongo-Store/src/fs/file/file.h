@@ -15,7 +15,7 @@ typedef struct fs_file_t fs_file_t;
  * 
  * @RETURNS: una instancia fs_file_t.
  */
-fs_file_t* fs_file_create(const char* mount_point, const char* file_name, char fill_char);
+fs_file_t* fs_file_create(const char* mount_point, const char* file_name, char* fill_char);
 
 /**
  * @NAME: fs_file_delete
@@ -81,7 +81,7 @@ uint32_t fs_file_get_size(const fs_file_t* file);
  * 
  * @RETURNS: el caracter de llenado del archivo.
  */
-char fs_file_get_fill_char(const fs_file_t* file);
+char* fs_file_get_fill_char(const fs_file_t* file);
 
 /**
  * @NAME: fs_file_get_md5
