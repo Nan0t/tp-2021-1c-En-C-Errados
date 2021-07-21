@@ -42,8 +42,8 @@ void file_system_init(const file_system_attr_t* attr){
     bool is_clean_initialization = file_system_check_for_clean_initialization();
 
     fs_blocks_manager_init(attr->mount_point, is_clean_initialization);
-    fs_bitacoras_manager_init(attr->mount_point);
-    fs_files_manager_init(attr->mount_point);
+    fs_bitacoras_manager_init(attr->mount_point, is_clean_initialization);
+    fs_files_manager_init(attr->mount_point, is_clean_initialization);
     fs_sabotage_notifier_init(attr->sabotage_positions);
 }
 
