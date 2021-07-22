@@ -77,7 +77,6 @@ void fs_file_add_fill_char(fs_file_t* this, uint32_t amount){
 	uint32_t escritos, a_escribir_en_bloque, nuevo_tamanio_archivo;
 	uint32_t* last_block = list_get(blocks_tlist, index_ultimo_id_bloque);
 	nuevo_tamanio_archivo = tamanio_archivo + amount;
-	uint32_t escritos, a_escribir_en_bloque;
 	int offset = get_offset(this);
 	char* caracter_repetido;
 
@@ -150,10 +149,10 @@ void fs_file_remove_fill_char(fs_file_t* this, uint32_t amount){
 	uint32_t offset = size_archivo % tamanio_bloques;
 	if(offset || !size_archivo)
 	{
-		uint32_t id_ultimo_bloque = list_get(blocks_tlist, indice_ultimo_bloque);
+		uint32_t* id_ultimo_bloque = list_get(blocks_tlist, indice_ultimo_bloque);
 		char* centinela = malloc(1);
 		*centinela = '\0';
-		fs_block_write(id_ultimo_bloque, centinela, 1, offset);
+		fs_block_write(*id_ultimo_bloque, centinela, 1, offset);
 		u_free(centinela);
 	}
 
