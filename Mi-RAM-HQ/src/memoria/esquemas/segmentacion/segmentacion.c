@@ -75,8 +75,10 @@ bool segmentacion_memoria_inicializar_patota(uint32_t pid, uint32_t cant_tripula
 
 	U_LOG_TRACE("Segmentos creados");
 	pthread_mutex_lock(&listado_patotas_mx);
-	return segmentacion_agregar_patota_en_memoria(pid, tareas);
+	bool resultado = segmentacion_agregar_patota_en_memoria(pid, tareas);
 	pthread_mutex_unlock(&listado_patotas_mx);
+
+	return resultado;
 }
 
 
