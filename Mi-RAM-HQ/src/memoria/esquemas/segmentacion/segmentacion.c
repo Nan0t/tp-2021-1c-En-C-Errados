@@ -393,8 +393,10 @@ bool segmentacion_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid)
 			 free(aux3);
 	    }
 		free(lista_de_tripulantes_a_eliminar);
+		aux2 = list_remove(tabla, 0);
 		free(aux2);
 		free(tabla);
+		aux = list_remove(listado_patotas, indice);
 		free(aux);
 
 
