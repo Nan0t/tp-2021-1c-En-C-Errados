@@ -6,10 +6,8 @@
 #include <openssl/md5.h>
 #include <stdlib.h>
 #include <stdio.h>
-#define min(a,b) \
-({ __typeof__ (a) _a = (a); \
-	__typeof__ (b) _b = (b); \
-	_a < _b ? _a : _b; })
+#define min(a, b)  (((a) < (b)) ? (a) : (b))
+#define max(a, b)  (((a) > (b)) ? (a) : (b))
 
 struct fs_file_t{
 	char*		NOMBRE_ARCHIVO;
@@ -76,12 +74,13 @@ void fs_file_add_fill_char(fs_file_t* this, uint32_t amount){
 	t_list* blocks_tlist = lista_id_bloques_archivo(blocks);
 	uint32_t tamanio_bloques = fs_blocks_manager_get_blocks_size();
 	uint32_t index_ultimo_id_bloque = fs_file_get_blocks_count(this) - 1;
-	uint32_t* last_block = list_get(blocks_tlist, index_ultimo_id_bloque);
 	uint32_t escritos, a_escribir_en_bloque, nuevo_tamanio_archivo;
+	uint32_t* last_block = list_get(blocks_tlist, index_ultimo_id_bloque);
 	nuevo_tamanio_archivo = tamanio_archivo + amount;
 	uint32_t escritos, a_escribir_en_bloque;
 	int offset = get_offset(this);
 	char* caracter_repetido;
+
 	//condicion por si el ultimo bloque no está lleno
 	if(offset || !tamanio_archivo){
 		a_escribir_en_bloque = tamanio_bloques - offset;
@@ -93,6 +92,7 @@ void fs_file_add_fill_char(fs_file_t* this, uint32_t amount){
 		amount -= escritos;
 		free(caracter_repetido);
 	}
+
 	while(!amount){
 		uint32_t* new_bloque_id = malloc(sizeof(uint32_t));
 		*new_bloque_id = fs_blocks_manager_request_block();
@@ -118,11 +118,16 @@ void fs_file_add_fill_char(fs_file_t* this, uint32_t amount){
 	char* tamanio_en_string = string_itoa(nuevo_tamanio_archivo);
 	config_set_value(this->CONFIG, "SIZE", tamanio_en_string);
 
+	char* cantidad_bloques_string = string_itoa(list_size(blocks_tlist));
+	config_set_value(this->CONFIG,"BLOCK_COUNT", cantidad_bloques_string);
 
-	
+
+	list_destroy_and_destroy_elements(blocks_tlist, free);
 	u_free(fill_char);
 	u_free(tamanio_en_string);
 	u_free(lista_a_string);
+	u_free(cantidad_bloques_string);
+	u_free(md5_actualizado);
 }
 
 //Elimina la cantidad especificada por "amount" de caracteres de llenado en el file.
@@ -137,37 +142,50 @@ void fs_file_add_fill_char(fs_file_t* this, uint32_t amount){
 void fs_file_remove_fill_char(fs_file_t* this, uint32_t amount){
 
 	//reduzco tamaño del archivo
-	int size_archivo = fs_file_get_size(this);
-	config_set_value(this->CONFIG, "SIZE",size_archivo-amount);
+	uint32_t size_archivo = max(0, fs_file_get_size(this) - amount);
 	uint32_t tamanio_bloques = fs_blocks_manager_get_blocks_size();
-
-	//guardo centinela
-	fs_block_write(fs_file_get_blocks_count(this)-1, 0, sizeof(int), get_offset(this));
-
-	int bloques_usados = fs_file_get_size(this) / tamanio_bloques;
-
-	if(bloques_usados < fs_file_get_blocks_count(this)){
-		int bloques_a_liberar = bloques_usados - fs_file_get_blocks_count(this);
-
-		for(int i=0; i<bloques_a_liberar ; i++){
-			fs_blocks_manager_release_block(fs_file_get_blocks_count(this)-1);
-		}
+	char** bloques_formato_array = config_get_array_value(this->CONFIG, "BLOCKS");
+	t_list* blocks_tlist = lista_id_bloques_archivo(bloques_formato_array);
+	uint32_t indice_ultimo_bloque = size_archivo / tamanio_bloques;
+	uint32_t offset = size_archivo % tamanio_bloques;
+	if(offset || !size_archivo)
+	{
+		uint32_t id_ultimo_bloque = list_get(blocks_tlist, indice_ultimo_bloque);
+		char* centinela = malloc(1);
+		*centinela = '\0';
+		fs_block_write(id_ultimo_bloque, centinela, 1, offset);
+		u_free(centinela);
 	}
 
-	char** blocks = config_get_array_value(this->CONFIG, "BLOCKS");
-	t_list* blocks_tlist = lista_id_bloques_archivo(blocks);
+	uint32_t indice_max_lista = list_size(blocks_tlist);
+	while( indice_max_lista!= indice_ultimo_bloque)
+	{
+		uint32_t* id_bloque = list_remove(blocks_tlist, indice_max_lista);
+		fs_blocks_manager_release_block(*id_bloque);
+		free(id_bloque);
+		indice_max_lista --;
 
+	}
+
+	char* string_de_id_bloques = list_convert_to_string(blocks_tlist);
 	//actualizo config blocks, guardo tlist en string config
-	config_set_value(this->CONFIG, "BLOCKS", list_convert_to_string(blocks_tlist));
+	config_set_value(this->CONFIG, "BLOCKS", string_de_id_bloques);
 
 	//actualizo config md5
-	char* md5_actualizado = generate_md5(blocks, size_archivo, tamanio_bloques);
+	char* md5_actualizado = generate_md5(blocks_tlist, size_archivo, tamanio_bloques);
 	config_set_value(this->CONFIG, "MD5_ARCHIVO", md5_actualizado);
 
-	u_free(size_archivo);
-	u_free(blocks);
-	u_free(blocks_tlist);
-	u_free(bloques_usados);
+	char* string_tamanio_archivo = string_itoa(size_archivo);
+	config_set_value(this->CONFIG, "SIZE", string_tamanio_archivo);
+
+	char* string_cantidad_bloques = string_itoa(indice_ultimo_bloque + 1);
+	config_set_value(this->CONFIG,"BLOCK_COUNT", string_cantidad_bloques);
+
+	list_destroy_and_destroy_elements(blocks_tlist, u_free);
+	u_free(string_de_id_bloques);
+	u_free(md5_actualizado);
+	u_free(string_tamanio_archivo);
+	u_free(string_cantidad_bloques);
 }
 
 bool fs_file_check_integrity(fs_file_t* this){
