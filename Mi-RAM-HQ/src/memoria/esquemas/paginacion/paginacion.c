@@ -272,13 +272,14 @@ tripulantes_t* paginacion_memoria_obtener_info_tripulante(uint32_t pid, uint32_t
 t_list*        paginacion_memoria_obtener_todos_los_tripulantes(void)
 {
     t_list* lista_de_todos_los_tripulantes = list_create();
+    pthread_mutex_lock(&listado_patotas_mx);
     int cantidad_patotas = list_size(listado_patotas);
     int i, j;
 
     for(i=0; i<cantidad_patotas; i++){
         p_patota_y_tabla_t* patota = list_get(listado_patotas, i);
 
-       // pthread_mutex_lock(&patota->direcciones_logicas_mx);
+        pthread_mutex_lock(&patota->direcciones_logicas_mx);
         int direcciones_tcb = list_size(patota->direcciones_logicas);
 
         for(j=0; j<direcciones_tcb; j++){
@@ -287,8 +288,9 @@ t_list*        paginacion_memoria_obtener_todos_los_tripulantes(void)
             list_add(lista_de_todos_los_tripulantes, tripulante);
         }
 
-       // pthread_mutex_unlock(&patota->direcciones_logicas_mx);
+        pthread_mutex_unlock(&patota->direcciones_logicas_mx);
     }
+    pthread_mutex_unlock(&listado_patotas_mx);
     return lista_de_todos_los_tripulantes;
 }
 
@@ -311,6 +313,7 @@ bool           paginacion_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid
         desplazamiento++;
     }
 
+    pthread_mutex_lock(&patota->direcciones_logicas_mx);
     bool tid_buscado(p_direcciones_logicas_t* direccion){
         if(tid == direccion->tid){
             return true;
@@ -318,10 +321,11 @@ bool           paginacion_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid
         return false;
     };
     list_remove_and_destroy_by_condition(patota->direcciones_logicas, (void*)tid_buscado, u_free);
-
+    
+    pthread_mutex_unlock(&patota->direcciones_logicas_mx);
 //SI NO TIENE MAS TRIPULANTES, LIBERO TODOS LOS FRAMES DE LA PATOTA 
-    patota->tripulantes_escritos--;
-    if(patota->tripulantes_escritos == 0){  //aca se podria hacer la comparacion con el list size de direcciones logicas de tcb 
+    //patota->tripulantes_escritos--;
+    if(list_size(patota->direcciones_logicas) == 0){  //se reemplazo la comparacion de tripulantes escritos, y se uso el tamaño de las direcciones logicas de tcb 
         paginacion_liberar_todas_las_paginas(patota);
         bool pid_buscado(p_patota_y_tabla_t* patota){
             if(patota->pid == pid){
@@ -329,10 +333,12 @@ bool           paginacion_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid
             }
             return false;
         }
-        //Elimino la patota de mi lista de patotas adminisitrativa 
+        //Elimino la patota de mi lista de patotas adminisitrativa
+        pthread_mutex_lock(&listado_patotas_mx); 
         list_remove_and_destroy_by_condition(listado_patotas, (void*)pid_buscado, destructor_patota); 
+        pthread_mutex_unlock(&listado_patotas_mx);
     }
-
+    
     return true;
 }
 
@@ -396,6 +402,7 @@ private p_patota_y_tabla_t* paginacion_agregar_patota_a_listado(uint32_t pid, in
     patota->tabla = list_create();
     patota->direcciones_logicas = list_create();
     patota->direcciones_tareas = list_create();
+    pthread_mutex_init(&patota->direcciones_logicas_mx, NULL);
 
     for(i=0; i<paginas; i++){
         p_tipo_memoria_e tipo_memoria;
@@ -414,7 +421,9 @@ private p_patota_y_tabla_t* paginacion_agregar_patota_a_listado(uint32_t pid, in
             //fila->frame_swap = -1;
             fila->frame_memoria = frame_a_escribir->num_frame;
             fila->uso = 1;
+            pthread_mutex_lock(&contador_memoria_mx);
             fila->ingreso_en_memoria = contador_memoria;
+            pthread_mutex_unlock(&contador_memoria_mx);
         }else{
             fila->frame_swap = frame_a_escribir->num_frame;
             //fila->frame_memoria = -1;
@@ -424,7 +433,9 @@ private p_patota_y_tabla_t* paginacion_agregar_patota_a_listado(uint32_t pid, in
 
         list_add(patota->tabla, fila); 
     }
-    list_add(listado_patotas, patota);   //mutex listado de patotas 
+    pthread_mutex_lock(&listado_patotas_mx);
+    list_add(listado_patotas, patota);   
+    pthread_mutex_unlock(&listado_patotas_mx);
     U_LOG_INFO("Se agrego patota con pid: %d, al listado de patotas", pid);
     mostrar_tabla_de_paginas(pid);
     return patota; 
@@ -483,6 +494,7 @@ private void paginacion_modificar_frame(int32_t numero_de_frame, p_tipo_escritur
     p_fila_tabla_de_paginas_t* fila_tabla = buscar_fila_por_frame(patota->tabla, numero_de_frame, MEMORIA_FISICA);
 
     pthread_mutex_lock(&fila_tabla->mx);
+    pthread_mutex_lock(&contador_memoria_mx);
     switch(escritura){
         case NUEVA_ESCRITURA:;
             //frame->ocupantes_frame = (frame->ocupantes_frame) + 1;  //modificar a tabla de paginas 
@@ -500,9 +512,9 @@ private void paginacion_modificar_frame(int32_t numero_de_frame, p_tipo_escritur
             U_LOG_TRACE("modificando/leyendo datos en frame %d", numero_de_frame);
             break;
     }
-    pthread_mutex_unlock(&lista_frames_memoria_mx);
+    pthread_mutex_unlock(&contador_memoria_mx);
     pthread_mutex_unlock(&fila_tabla->mx);
-    
+    pthread_mutex_unlock(&lista_frames_memoria_mx);
 }
 
 private void paginacion_modificar_frame_de_swap(int numero_de_frame, p_tipo_escritura_e escritura, p_patota_y_tabla_t* patota){
@@ -537,7 +549,9 @@ private void mostrar_tabla_de_paginas(uint32_t pid){
         }
         return false;
     };
-    p_patota_y_tabla_t* a_mostrar = list_find(listado_patotas, (void*)comparar_pid);
+    pthread_mutex_lock(&listado_patotas_mx);
+    p_patota_y_tabla_t* a_mostrar = list_find(listado_patotas, (void*)comparar_pid);//
+    pthread_mutex_unlock(&listado_patotas_mx);
     int i;
     for(i=0; i<(list_size(a_mostrar->tabla)); i++){
         p_fila_tabla_de_paginas_t* fila = list_get(a_mostrar->tabla, i);
@@ -553,7 +567,9 @@ private p_patota_y_tabla_t* buscar_patota_por_pid(uint32_t pid){
         }
         return false;
     };
+    pthread_mutex_lock(&listado_patotas_mx);
     p_patota_y_tabla_t* patota_buscada = list_find(listado_patotas, (void*)buscar_patota);
+    pthread_mutex_unlock(&listado_patotas_mx);
     return patota_buscada; 
 }
 
@@ -608,6 +624,7 @@ private tripulantes_t* paginacion_obtener_tcb(uint32_t pid, uint32_t tid){
 
     p_patota_y_tabla_t* patota = buscar_patota_por_pid(pid);
 
+    pthread_mutex_lock(&patota->direcciones_logicas_mx);
     bool _con_el_mismo_tid(p_direcciones_logicas_t* direccion_logica_de_lista){
         if(tid == direccion_logica_de_lista->tid){
             return true;
@@ -616,6 +633,7 @@ private tripulantes_t* paginacion_obtener_tcb(uint32_t pid, uint32_t tid){
         }
     };
     p_direcciones_logicas_t* direccion = list_find(patota->direcciones_logicas, (void*)_con_el_mismo_tid);
+    pthread_mutex_unlock(&patota->direcciones_logicas_mx);
     tripulantes_t* tripulante = paginacion_obtener_tripulante_de_patota(patota, direccion->direccion_logica);
    
     return tripulante;
@@ -685,11 +703,15 @@ private void paginacion_guardar_direccion_logica_tcb(int direccion_logica, int t
     p_direcciones_logicas_t* direccion = u_malloc(sizeof(p_direcciones_logicas_t));
     direccion->direccion_logica = direccion_logica;
     direccion->tid = tid;
+
+    pthread_mutex_lock(&patota->direcciones_logicas_mx);
     list_add(patota->direcciones_logicas, direccion);
+    pthread_mutex_unlock(&patota->direcciones_logicas_mx);
     U_LOG_TRACE("Guardada direccion logica de tid: %d, direccion: %d", direccion->tid, direccion->direccion_logica);
 }
 
 private int paginacion_buscar_tid_en_tabla_de_paginas(uint32_t tid, p_patota_y_tabla_t* patota){
+    pthread_mutex_lock(&patota->direcciones_logicas_mx);
     bool buscar_direccion_de_tid(p_direcciones_logicas_t* direccion_a_comparar){
         if(direccion_a_comparar->tid == tid){
             return true;
@@ -698,6 +720,7 @@ private int paginacion_buscar_tid_en_tabla_de_paginas(uint32_t tid, p_patota_y_t
         }
     };
     p_direcciones_logicas_t* direccion = list_find(patota->direcciones_logicas, (void*)buscar_direccion_de_tid);
+    pthread_mutex_unlock(&patota->direcciones_logicas_mx);
     return direccion->direccion_logica;
 }
 
@@ -772,8 +795,10 @@ private void paginacion_modificar_frame_y_tabla_de_paginas(int numero_de_frame, 
     p_fila_tabla_de_paginas_t* fila_de_tabla = list_get(patota->tabla, pagina); 
     fila_de_tabla->frame_memoria = numero_de_frame;
     fila_de_tabla->uso = 1;
+    pthread_mutex_lock(&contador_memoria_mx);
     fila_de_tabla->ingreso_en_memoria = contador_memoria;
     contador_memoria++;
+    pthread_mutex_unlock(&contador_memoria_mx);
 }
 
 
@@ -1055,9 +1080,9 @@ private int paginacion_liberar_un_frame(int pagina, p_patota_y_tabla_t* patota){
 }
 
 private p_fila_tabla_de_paginas_t* paginacion_seleccionar_pagina_por_LRU(){
-
+    //pthread_mutex_lock(&listado_patotas_mx);
     t_list_iterator* iterador_de_patotas = list_iterator_create(listado_patotas);
-    int ingreso_en_memoria_menor = contador_memoria;
+    int ingreso_en_memoria_menor = contador_memoria; // 
     p_fila_tabla_de_paginas_t* pagina_elegida; 
     
     while(list_iterator_has_next(iterador_de_patotas)){
@@ -1077,7 +1102,7 @@ private p_fila_tabla_de_paginas_t* paginacion_seleccionar_pagina_por_LRU(){
         list_destroy(tabla_de_paginas_filtrada); //agregado 
     }
     list_iterator_destroy(iterador_de_patotas);
-    
+    //pthread_mutex_unlock(&listado_patotas_mx);
     return pagina_elegida;
 }
 
@@ -1277,6 +1302,7 @@ private void paginacion_marcar_como_expulsado(p_patota_y_tabla_t* patota, int pa
 }
 
 private p_fila_tabla_de_paginas_t* paginacion_buscar_en_tablas_la_pagina_correspondiente_al_frame(uint32_t numero_de_frame){
+    pthread_mutex_lock(&listado_patotas_mx);
     t_list_iterator* iterador_de_patotas = list_iterator_create(listado_patotas);
     bool pagina_encontrada = false;
     while(!pagina_encontrada){
@@ -1287,6 +1313,7 @@ private p_fila_tabla_de_paginas_t* paginacion_buscar_en_tablas_la_pagina_corresp
             if(fila_de_tabla->frame_memoria == numero_de_frame){
                 list_iterator_destroy(iterador_de_tabla);
                 list_iterator_destroy(iterador_de_patotas);
+                pthread_mutex_unlock(&listado_patotas_mx);
                 return fila_de_tabla;
             }
         }
@@ -1317,7 +1344,7 @@ private void paginacion_liberar_todas_las_paginas(p_patota_y_tabla_t* patota){
 
 private void destructor_patota(p_patota_y_tabla_t* patota){
     list_destroy_and_destroy_elements(patota->tabla, u_free);
-    list_destroy_and_destroy_elements(patota->direcciones_logicas, u_free);
+    list_destroy_and_destroy_elements(patota->direcciones_logicas, u_free);//
     list_destroy_and_destroy_elements(patota->direcciones_tareas, u_free); 
     u_free(patota);
 }
