@@ -65,7 +65,7 @@ void fs_file_delete(fs_file_t* this){
 void fs_file_add_fill_char(fs_file_t* this, uint32_t amount){
 
 	if(amount == 0){
-		U_LOG_WARN("Recibi un archivo que pide escribir cero caracteres");
+		U_LOG_WARN("Recibi un pedido para escribir cero caracteres");
 		return; //En caso de que me pidan rellenar con cantidad menor 
 	}
 	char** blocks = config_get_array_value(this->CONFIG, "BLOCKS");
@@ -141,13 +141,19 @@ void fs_file_add_fill_char(fs_file_t* this, uint32_t amount){
 void fs_file_remove_fill_char(fs_file_t* this, uint32_t amount){
 
 	//reduzco tamaño del archivo
-	uint32_t size_archivo = max(0, fs_file_get_size(this) - amount);
+	uint32_t size_archivo = fs_file_get_size(this);
+	if(!size_archivo)
+	{
+		U_LOG_WARN("pedido para remover caracteres de un file sin contenido");
+		return;
+	}
+	uint32_t size_archivo_actualizado = max(0, size_archivo - amount);
 	uint32_t tamanio_bloques = fs_blocks_manager_get_blocks_size();
 	char** bloques_formato_array = config_get_array_value(this->CONFIG, "BLOCKS");
 	t_list* blocks_tlist = lista_id_bloques_archivo(bloques_formato_array);
-	uint32_t indice_ultimo_bloque = size_archivo / tamanio_bloques;
-	uint32_t offset = size_archivo % tamanio_bloques;
-	if(offset || !size_archivo)
+	uint32_t indice_ultimo_bloque = size_archivo_actualizado / tamanio_bloques;
+	uint32_t offset = size_archivo_actualizado % tamanio_bloques;
+	if(offset || !size_archivo_actualizado)
 	{
 		uint32_t* id_ultimo_bloque = list_get(blocks_tlist, indice_ultimo_bloque);
 		char* centinela = malloc(1);
@@ -171,10 +177,10 @@ void fs_file_remove_fill_char(fs_file_t* this, uint32_t amount){
 	config_set_value(this->CONFIG, "BLOCKS", string_de_id_bloques);
 
 	//actualizo config md5
-	char* md5_actualizado = generate_md5(blocks_tlist, size_archivo, tamanio_bloques);
+	char* md5_actualizado = generate_md5(blocks_tlist, size_archivo_actualizado, tamanio_bloques);
 	config_set_value(this->CONFIG, "MD5_ARCHIVO", md5_actualizado);
 
-	char* string_tamanio_archivo = string_itoa(size_archivo);
+	char* string_tamanio_archivo = string_itoa(size_archivo_actualizado);
 	config_set_value(this->CONFIG, "SIZE", string_tamanio_archivo);
 
 	char* string_cantidad_bloques = string_itoa(indice_ultimo_bloque + 1);
