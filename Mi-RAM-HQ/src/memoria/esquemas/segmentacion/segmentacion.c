@@ -2,6 +2,7 @@
 #include <pthread.h>
 #include <signal.h>
 
+
 private void segmentacion_recibir_signal(int value);
 private void segmentacion_inicializar_listado_segmentos(int tamanio_segmento_inicial);
 private void segmentacion_obtener_segmentos(uint32_t pid,int tamanio_pcb,int tamanio_tareas,uint32_t cant_tripulantes);
@@ -75,8 +76,10 @@ bool segmentacion_memoria_inicializar_patota(uint32_t pid, uint32_t cant_tripula
 
 	U_LOG_TRACE("Segmentos creados");
 	pthread_mutex_lock(&listado_patotas_mx);
-	return segmentacion_agregar_patota_en_memoria(pid, tareas);
+	bool resultado = segmentacion_agregar_patota_en_memoria(pid, tareas);
 	pthread_mutex_unlock(&listado_patotas_mx);
+
+	return resultado;
 }
 
 
@@ -321,7 +324,6 @@ bool segmentacion_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid)
 	aux3->tid=-1;
 	aux3->inicio_segmento_tcb=-1;
 	aux3->tamanio_segmento_tcb=-1;
-	pthread_mutex_unlock(&listado_patotas_mx);
 	pthread_mutex_lock(&listado_segmentos_mx);
 	int tamanio_listado_segmentos=list_size(listado_segmentos);
 	int k;
@@ -336,11 +338,74 @@ bool segmentacion_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid)
 	aux4 = list_get(listado_segmentos, indice_segmento);
 	aux4->tipo_segmento=-1;
 	aux4->id_propietario=-1;
+
+    // chequeo si no quedan más tripulantes
+	int tripulantes_expulsados=0;
+	for(i=0; i<tamanio_lista_tripulantes; i++){
+	         aux3 = list_get(tabla_tripulantes, i);
+			 if(aux3->tid==-1){
+				  tripulantes_expulsados++;
+			 }
+	}
+	if(tripulantes_expulsados==tamanio_lista_tripulantes){
+		for(j=0; j<tamanio_lista_patotas; j++){
+             aux = list_get(listado_patotas, j);
+		     if(aux->pid==pid){
+				indice=j;
+	         }
+	    }
+		aux = list_get(listado_patotas, indice);
+		tabla = aux->tabla_segmentos;
+		aux2 = list_get(tabla, 0);
+
+
+		uint32_t inicio_segmento_patota=aux2->inicio_segmento_pcb;
+		uint32_t inicio_segmento_tareas=aux2->inicio_segmento_tareas;
+
+		tamanio_listado_segmentos=list_size(listado_segmentos);
+	    indice_segmento=-1;
+	    for(k=0; k<tamanio_listado_segmentos; k++){
+           aux4 = list_get(listado_segmentos, k);
+		   if(aux4->inicio_segmento==inicio_segmento_patota){
+			indice_segmento=k;
+	       }
+	    }
+	    aux4 = list_get(listado_segmentos, indice_segmento);
+	    aux4->tipo_segmento=-1;
+	    aux4->id_propietario=-1;
+
+		tamanio_listado_segmentos=list_size(listado_segmentos);
+	    indice_segmento=-1;
+	    for(k=0; k<tamanio_listado_segmentos; k++){
+           aux4 = list_get(listado_segmentos, k);
+		   if(aux4->inicio_segmento==inicio_segmento_tareas){
+			indice_segmento=k;
+	       }
+	    }
+	    aux4 = list_get(listado_segmentos, indice_segmento);
+	    aux4->tipo_segmento=-1;
+	    aux4->id_propietario=-1;
+
+		t_list* lista_de_tripulantes_a_eliminar;
+		lista_de_tripulantes_a_eliminar=aux2->listado_tripulantes;
+		for(i=0; i<tamanio_lista_tripulantes; i++){
+	         aux3 = list_remove(lista_de_tripulantes_a_eliminar, i);
+			 free(aux3);
+	    }
+		free(lista_de_tripulantes_a_eliminar);
+		aux2 = list_remove(tabla, 0);
+		free(aux2);
+		free(tabla);
+		aux = list_remove(listado_patotas, indice);
+		free(aux);
+
+
+	}
 	pthread_mutex_unlock(&listado_segmentos_mx);
+	pthread_mutex_unlock(&listado_patotas_mx);
 
 	return true;
 }
-
 
 //---------------------------------------------------------------------------------------
 
