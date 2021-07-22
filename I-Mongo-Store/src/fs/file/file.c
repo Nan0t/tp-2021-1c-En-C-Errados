@@ -77,12 +77,13 @@ void fs_file_add_fill_char(fs_file_t* this, uint32_t amount){
 	uint32_t tamanio_bloques = fs_blocks_manager_get_blocks_size();
 	uint32_t index_ultimo_id_bloque = fs_file_get_blocks_count(this) - 1;
 	uint32_t* last_block = list_get(blocks_tlist, index_ultimo_id_bloque);
-	tamanio_archivo += amount;
+	uint32_t escritos, a_escribir_en_bloque, nuevo_tamanio_archivo;
+	nuevo_tamanio_archivo = tamanio_archivo + amount;
 	uint32_t escritos, a_escribir_en_bloque;
 	int offset = get_offset(this);
 	char* caracter_repetido;
 	//condicion por si el ultimo bloque no está lleno
-	if(offset){
+	if(offset || !tamanio_archivo){
 		a_escribir_en_bloque = tamanio_bloques - offset;
 		caracter_repetido = string_repeat(*fill_char, a_escribir_en_bloque);
 		if(a_escribir_en_bloque> tamanio_bloques){
@@ -114,7 +115,7 @@ void fs_file_add_fill_char(fs_file_t* this, uint32_t amount){
 	char* lista_a_string = list_convert_to_string(blocks_tlist);
 	config_set_value(this->CONFIG, "BLOCKS", lista_a_string);
 
-	char* tamanio_en_string = string_itoa(tamanio_archivo);
+	char* tamanio_en_string = string_itoa(nuevo_tamanio_archivo);
 	config_set_value(this->CONFIG, "SIZE", tamanio_en_string);
 
 
