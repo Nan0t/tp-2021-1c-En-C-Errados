@@ -18,6 +18,7 @@ private void segmentacion_reasignar_segmento(void);
 private void segmentacion_actualizar_estructura_y_memoria(uint32_t inicio_segmento_libre,uint32_t tamanio_segmento_libre,uint32_t tipo_segmento_ocupado,
 		uint32_t id_segmento_ocupado,uint32_t inicio_segmento_ocupado,uint32_t tamanio_segmento_ocupado);
 private int segmentacion_memoria_total_tamanio_tareas_separadas(char** tareas_separadas);
+/*private void segmentacion_memoria_dump(void);  poner mutex de patota y segmento antes y despues desde donde se la invoca  */
 
 // **********************
 // Estructuras globales
@@ -866,3 +867,43 @@ private int segmentacion_memoria_total_tamanio_tareas_separadas(char** tareas_se
 
 	return contador;
 }
+/*
+private void segmentacion_memoria_dump(void)
+{
+	int tamanio_listado_segmentos=list_size(listado_segmentos);
+	s_segmento_t *segmento_memoria;
+	U_LOG_INFO("--------------------------------------------------------------------------");
+	U_LOG_INFO("Dump: FECHA");
+	for(int s = 0; s < tamanio_listado_segmentos; s++){
+		 segmento_memoria = list_get(listado_segmentos, s);
+		 if((segmento_memoria->tipo_segmento==0)||(segmento_memoria->tipo_segmento==1)){
+			 U_LOG_INFO("Proceso: %d Segmento: %d Inicio: %d Tam: %d b", segmento_memoria->id_propietario, s, segmento_memoria->inicio_segmento, segmento_memoria->tamanio_segmento);
+		 }
+		 if((segmento_memoria->tipo_segmento==2)&&(segmento_memoria->id_propietario!=-1)){
+			int tamanio_lista_patotas=list_size(listado_patotas);
+			int indice_patota;
+			int j;
+			s_patota_y_tabla_t *estructura_patota;
+			t_list* tabla_segmentos_p_y_t;
+			s_segmento_patota_t *estructura_segmentos_p_y_t;
+			t_list* tabla_tripulantes;
+			int tamanio_lista_tripulantes
+			int i;
+			s_segmento_tripulante_t *estructura_tripulante;
+		    for(j=0; j<tamanio_lista_patotas; j++){
+                 estructura_patota = list_get(listado_patotas, j);
+				 tabla_segmentos_p_y_t = estructura_patota->tabla_segmentos;
+				 estructura_segmentos_p_y_t = list_get(tabla_segmentos_p_y_t, 0);
+				 tabla_tripulantes = estructura_segmentos_p_y_t->listado_tripulantes;
+				 tamanio_lista_tripulantes=list_size(tabla_tripulantes);
+				 for(i=0; i<tamanio_lista_tripulantes; i++){
+	                estructura_tripulante = list_get(tabla_tripulantes, i);
+			        if(estructura_tripulante->tid==segmento_memoria->id_propietario){
+                        U_LOG_INFO("Proceso: %d Segmento: %d Inicio: %d Tam: %d b", estructura_patota->pid, s, segmento_memoria->inicio_segmento, segmento_memoria->tamanio_segmento);
+                    }
+	             }
+	        }
+		 }
+	}
+}
+*/
