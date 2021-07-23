@@ -91,7 +91,7 @@ void fs_files_manager_delete_file(const char* name)
 
 bool fs_files_manager_check_files_integrity(void)
 {
-    bool corrupt_file_was_founded = false;
+    bool corrupt_file_was_found = false;
 
     pthread_mutex_lock(&p_files_manager_instance->files_mx);
 
@@ -103,7 +103,7 @@ bool fs_files_manager_check_files_integrity(void)
 
     pthread_mutex_unlock(&p_files_manager_instance->files_mx);
 
-    return corrupt_file_was_founded;
+    return corrupt_file_was_found;
 }
 
 // ========================================================
