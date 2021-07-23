@@ -1,4 +1,7 @@
 #include "paginacion.h"
+#include <commons/log.h>
+#include <commons/temporal.h>
+#include <signal.h>
 
 typedef enum
 {
@@ -64,6 +67,11 @@ private p_fila_tabla_de_paginas_t* paginacion_buscar_en_tablas_la_pagina_corresp
 private void paginacion_liberar_todas_las_paginas(p_patota_y_tabla_t* patota);
 private void destructor_patota(p_patota_y_tabla_t* patota);
 
+//dump
+private void paginacion_memoria_dump(int);
+private p_patota_y_tabla_t* paginacion_buscar_patota_que_ocupa_frame(int frame);
+
+//variables globales
 private pthread_mutex_t lista_frames_memoria_mx = PTHREAD_MUTEX_INITIALIZER;
 private t_list* lista_frames_memoria;
 private uint32_t contador_clock;
@@ -86,8 +94,10 @@ private void* esquema_memoria_mfisica;
 private pthread_mutex_t listado_patotas_mx = PTHREAD_MUTEX_INITIALIZER;
 private t_list*         listado_patotas;
 
+
+
 void paginacion_memoria_init(void)
-{
+{   
     esquema_memoria_tamanio = u_config_get_int_value("TAMANIO_MEMORIA");
     esquema_memoria_mfisica = u_malloc(esquema_memoria_tamanio);
     listado_patotas = list_create();
@@ -99,13 +109,14 @@ void paginacion_memoria_init(void)
     memoria_swap_fisica = u_malloc(tamanio_swap);
     contador_memoria = 0;
     contador_clock = 0;
+
+    signal(SIGUSR2, paginacion_memoria_dump);
+
     //inicializo frames memoria
     paginacion_inicializar_frames(esquema_memoria_tamanio/tamanio_pagina, lista_frames_memoria);
     //inicializar swap; 
     paginacion_inicializar_frames(tamanio_swap/tamanio_pagina, lista_frames_swap);
-    //paginacion_mostrar_frames(esquema_memoria_tamanio/tamanio_pagina, MEMORIA_FISICA);
-
-   // paginacion_mostrar_frames(tamanio_swap/tamanio_pagina, MEMORIA_SWAP);
+    
 }
 
 bool paginacion_memoria_inicializar_patota(uint32_t pid, uint32_t cant_tripulantes, const char* tareas)
@@ -1375,4 +1386,48 @@ private void destructor_patota(p_patota_y_tabla_t* patota){
     list_destroy_and_destroy_elements(patota->direcciones_logicas, u_free);//
     list_destroy_and_destroy_elements(patota->direcciones_tareas, u_free); 
     u_free(patota);
+}
+
+private void paginacion_memoria_dump(int signal){
+    char* timestamp = temporal_get_string_time("%d-%m-%y|%H:%M:%S");
+    char* dump_path = string_from_format("Dump_<%s>.dmp", timestamp);
+
+    t_log* dumper = log_create(dump_path, "DUMP", false, LOG_LEVEL_INFO);
+
+    log_info(dumper, "-------------------------------------------------------");
+    log_info(dumper, string_from_format("DUMP: %s", timestamp));
+
+    pthread_mutex_lock(&lista_frames_memoria_mx);
+    int i;
+    for(i=0; i<list_size(lista_frames_memoria); i++){
+        char* estado = malloc(strlen("OCUPADO")+1);
+        
+        if(paginacion_frame_esta_libre(list_get(lista_frames_memoria, i))){
+            estado = "Libre";
+            log_info(dumper, string_from_format("MARCO: %-6d Estado: %-6s Proceso: -    Pagina: -", i, estado));
+        }else{
+            estado = "Ocupado";
+            p_patota_y_tabla_t* patota = paginacion_buscar_patota_que_ocupa_frame(i);
+            p_fila_tabla_de_paginas_t* pagina = buscar_fila_por_frame(patota->tabla, i, MEMORIA_FISICA); 
+            log_info(dumper, string_from_format("MARCO: %-6d Estado: %-6s Proceso: %-5d Pagina: %d", i, estado, patota->pid, pagina->num_pagina));
+        }
+        //free(estado);
+    }
+    pthread_mutex_unlock(&lista_frames_memoria_mx);
+}
+
+private p_patota_y_tabla_t* paginacion_buscar_patota_que_ocupa_frame(int frame){
+    int i;
+    bool pagina_tiene_el_frame_asignado(p_fila_tabla_de_paginas_t* pagina){
+        if(pagina->frame_memoria==frame){
+            return true;
+        }
+        return false;
+    }
+    for(i=0; i<list_size(listado_patotas); i++){
+        p_patota_y_tabla_t* patota = list_get(listado_patotas, i);
+        if(list_any_satisfy(patota->tabla, (void*)pagina_tiene_el_frame_asignado)){
+            return patota; 
+        }
+    }
 }
