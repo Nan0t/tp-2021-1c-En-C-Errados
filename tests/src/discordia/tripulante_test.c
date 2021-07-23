@@ -28,12 +28,12 @@ void test_valid_parsear_tarea_con_parametro_bloqueante(void)
 
 void test_valid_parsear_tarea_sin_parametro_bloqueante(void)
 {
-    char* tarea_sin_parsear = "DESCARTAR_BASURA;2;3;5";
+    char* tarea_sin_parsear = "DESCARTAR_BASURA 0;2;3;5";
     tarea_t* tarea_parseada = parsear_tarea(tarea_sin_parsear);
 
     // Assert
     //-------
-    CU_ASSERT_STRING_EQUAL(tarea_parseada->tarea, "DESCARTAR_BASURA");
+    CU_ASSERT_STRING_EQUAL(tarea_parseada->tarea, "DESCARTAR_BASURA 0");
     CU_ASSERT_EQUAL(tarea_parseada->is_blocking, true);
     CU_ASSERT_EQUAL(tarea_parseada->is_finished, false);
     CU_ASSERT_EQUAL(tarea_parseada->tiempo_bloqueado, 5);
