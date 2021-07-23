@@ -1404,15 +1404,16 @@ private void paginacion_memoria_dump(int signal){
         
         if(paginacion_frame_esta_libre(list_get(lista_frames_memoria, i))){
             estado = "Libre";
-            log_info(dumper, string_from_format("MARCO: %-6d Estado: %-6s Proceso: -    Pagina: -", i, estado));
+            log_info(dumper, string_from_format("MARCO: %-6d Estado: %-10s Proceso: -    Pagina: -", i, estado));
         }else{
             estado = "Ocupado";
             p_patota_y_tabla_t* patota = paginacion_buscar_patota_que_ocupa_frame(i);
             p_fila_tabla_de_paginas_t* pagina = buscar_fila_por_frame(patota->tabla, i, MEMORIA_FISICA); 
-            log_info(dumper, string_from_format("MARCO: %-6d Estado: %-6s Proceso: %-5d Pagina: %d", i, estado, patota->pid, pagina->num_pagina));
+            log_info(dumper, string_from_format("MARCO: %-6d Estado: %-10s Proceso: %-5d Pagina: %d", i, estado, patota->pid, pagina->num_pagina));
         }
-        //free(estado);
+        
     }
+    log_info(dumper, "-------------------------------------------------------");
     pthread_mutex_unlock(&lista_frames_memoria_mx);
 }
 
