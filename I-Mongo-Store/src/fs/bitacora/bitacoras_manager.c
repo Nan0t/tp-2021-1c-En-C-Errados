@@ -72,6 +72,23 @@ void fs_bitacoras_manager_delete_bitacora(uint32_t tid)
     fs_bitacoras_manager_rm_ref(tid);
 }
 
+t_list* fs_bitacoras_manager_get_blocks_id(void)
+{
+    t_list* bloques = list_create();
+    pthread_mutex_lock(&p_bitacoras_manager_instance->bitacoras_mx);
+
+    void _get_bitacora_blocks_id(fs_bitacora_ref_t* bitacora_ref) {
+        t_list* lista_temporal = fs_bitacora_get_blocks(bitacora_ref->file);
+        list_add_all(bloques, lista_temporal);
+        free(lista_temporal);
+    };
+    dictionary_iterator(p_bitacoras_manager_instance->bitacoras, (void*)_get_bitacora_blocks_id);
+
+    pthread_mutex_unlock(&p_bitacoras_manager_instance->bitacoras_mx);
+
+    return bloques;
+}
+
 // ========================================================
 //             *** Private Functions ***
 // ========================================================

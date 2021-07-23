@@ -73,4 +73,15 @@ uint32_t  fs_bitacora_get_block_count(const fs_bitacora_t* bitacora);
  */
 char* fs_bitacora_get_content(const fs_bitacora_t* bitacora);
 
+
+/**
+ * @NAME: fs_bitacora_get_blocks
+ * @DESC: devuelve la t_list con los bloques utilizados por la bitacora.
+ * @PARAMS:
+ *  [in] const fs_bitacora_t* bitacora - bitacora de la cual se quiere obtener su contenido.
+ * 
+ * @RETURNS: devuelve la t_list. Esta debe ser liberada posteriormente con list_destroy_and_destroy_elements
+ */
+t_list* fs_bitacora_get_blocks(const fs_bitacora_t* this);
+
 #endif

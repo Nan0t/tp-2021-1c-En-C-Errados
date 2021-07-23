@@ -48,6 +48,20 @@ void fs_files_manager_release_file(const char* name);
  */
 void fs_files_manager_delete_file(const char* name);
 
+/**
+ * @NAME: fs_files_manager_check_files_integrity
+ * @DESC: retorna 1 si se encontró y resolvio un sabotaje alguno de los archivos. 
+ * @PARAMS:
+ *  NONE
+ */
 bool fs_files_manager_check_files_integrity(void);
+
+/**
+ * @NAME: fs_files_manager_get_blocks_id
+ * @DESC: retorna una lista que contiene todos los ids de los bloques utilizados por todos los archivos.
+ * @PARAMS:
+ *  NONE
+ */
+t_list* fs_files_manager_get_blocks_id(void);
 
 #endif

@@ -218,6 +218,12 @@ uint32_t fs_file_get_blocks_count(const fs_file_t* this){
     return config_get_int_value(this->CONFIG, "BLOCK_COUNT");
 }
 
+t_list* fs_file_get_blocks(const fs_file_t* this)
+{
+	char** blocks = config_get_array_value(this->CONFIG, "BLOCKS");
+	return lista_id_bloques_archivo(blocks);
+}
+
 
 private char* generate_md5(t_list* id_bloques, uint32_t tamanio_a_leer, uint32_t tamanio_bloques)
 {

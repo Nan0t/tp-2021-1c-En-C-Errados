@@ -46,4 +46,12 @@ void fs_bitacoras_manager_release_bitacora(uint32_t tid);
  */
 void fs_bitacoras_manager_delete_bitacora(uint32_t tid);
 
+/**
+ * @NAME: fs_bitacoras_manager_get_blocks_id
+ * @DESC: retorna una lista con todos los bloques utilizados por las bitacoras
+ * @PARAMS:
+ *  NONE
+ */
+t_list* fs_bitacoras_manager_get_blocks_id(void);
+
 #endif

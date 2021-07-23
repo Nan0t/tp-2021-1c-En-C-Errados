@@ -106,6 +106,23 @@ bool fs_files_manager_check_files_integrity(void)
     return corrupt_file_was_found;
 }
 
+t_list* fs_files_manager_get_blocks_id(void)
+{
+    t_list* bloques = list_create();
+    pthread_mutex_lock(&p_files_manager_instance->files_mx);
+
+    void _get_file_blocks_id(fs_file_ref_t* file_ref) {
+        t_list* lista_temporal = fs_file_get_blocks(file_ref->file);
+        list_add_all(bloques, lista_temporal);
+        free(lista_temporal);
+    };
+    dictionary_iterator(p_files_manager_instance->files, (void*)_get_file_blocks_id);
+
+    pthread_mutex_unlock(&p_files_manager_instance->files_mx);
+
+    return bloques;
+}
+
 // ========================================================
 //             *** Private Functions ***
 // ========================================================

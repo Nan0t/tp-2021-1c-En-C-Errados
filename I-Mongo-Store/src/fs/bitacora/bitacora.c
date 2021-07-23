@@ -100,6 +100,12 @@ uint32_t fs_bitacora_get_block_count(const fs_bitacora_t* this){
     return config_get_int_value(this, "BLOCK_COUNT");
 }
 
+t_list* fs_bitacora_get_blocks(const fs_bitacora_t* this)
+{
+	char** blocks = config_get_array_value(this->CONFIG, "BLOCKS");
+	return lista_id_bloques_bitacora(blocks);
+}
+
 
 //Devuelve contenido de la bitácora leyendo los bloques de la bitácora.
 char* fs_bitacora_get_content(const fs_bitacora_t* this){ //devuelve un string enorme basicamente
@@ -146,15 +152,15 @@ private char* list_convert_to_string(t_list* list){
 
 private t_list* lista_id_bloques_bitacora(char** lista_bloques)
 {
-	t_list* bloques_archivo = list_create();
+	t_list* bloques_bitacora = list_create();
 	for(char** bloques = lista_bloques; *bloques != NULL;  bloques ++)
     {
         uint32_t* bloque = u_malloc(sizeof(uint32_t));
         bloque = atoi(*bloques);
-        list_add(bloques_archivo, bloque);
+        list_add(bloques_bitacora, bloque);
         free(*bloques);
     }
 	free(lista_bloques);
 
-	return bloques_archivo;
+	return bloques_bitacora;
 }
