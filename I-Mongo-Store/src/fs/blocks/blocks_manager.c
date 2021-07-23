@@ -45,6 +45,7 @@ private void     fs_blocks_manager_init_disk(void);
 private void     fs_blocks_manager_init_blocks(void);
 private uint32_t fs_blocks_manager_get_free_block_index(void);
 private void     fs_blocks_manager_release_block_at(uint32_t index);
+private bool     fs_block_manager_verificar_integridad_bitmap(void);
 
 void fs_blocks_manager_init(const char* mount_point, bool is_clean_initialization)
 {
@@ -116,7 +117,7 @@ uint32_t fs_blocks_manager_get_blocks_size(void)
 
 bool fs_blocks_manager_check_integrity(void)
 {
-
+    return fs_block_manager_verificar_integridad_bitmap();
 }
 
 // =======================================================
@@ -248,6 +249,69 @@ private void fs_blocks_manager_release_block_at(uint32_t index)
     pthread_mutex_lock(&p_blocks_manager_instance->blocks_bitmap_mx);
     bitarray_clean_bit(p_blocks_manager_instance->bitmap, index - 1);
     pthread_mutex_unlock(&p_blocks_manager_instance->blocks_bitmap_mx);
+}
+
+private bool fs_block_manager_verificar_integridad_bitmap(void)
+{
+    bool fue_saboteado = false;
+    t_list* id_bloques_totales = fs_files_manager_get_blocks_id();
+    t_list* id_bloques_bitacoras = fs_bitacoras_manager_get_blocks_id();
+    list_add_all(id_bloques_totales, id_bloques_bitacoras);
+    uint32_t numero_bloque_buscado;
+    free(id_bloques_bitacoras);
+
+
+    void _setear_bit_de_bloque_usado(uint32_t* id_bloque)
+    {
+        bitarray_set_bit(p_blocks_manager_instance->bitmap, *id_bloque - 1);
+    }
+
+    bool _ordenar_menor_a_mayor(uint32_t* id_bloque_uno, uint32_t* id_bloque_dos)
+    {
+        return *id_bloque_uno < *id_bloque_dos;
+    }
+
+    bool _tiene_valor(uint32_t* id_bloque)
+    {
+        return *id_bloque == numero_bloque_buscado;
+    }
+    
+
+
+    list_sort(id_bloques_totales, (void*)_ordenar_menor_a_mayor);
+
+    pthread_mutex_lock(&p_blocks_manager_instance->blocks_bitmap_mx);
+    size_t tamanio_bitarray = bitarray_get_max_bit(p_blocks_manager_instance->bitmap);
+    for(int i = 0; i < tamanio_bitarray; i++)
+    {
+        if(bitarray_test_bit(p_blocks_manager_instance->bitmap, i) == 1)
+        {
+            numero_bloque_buscado = i + 1;
+            if(!list_is_empty(id_bloques_totales) && list_any_satisfy(id_bloques_totales, (void*)_tiene_valor))
+            {
+                list_remove_and_destroy_by_condition(id_bloques_totales, (void*)_tiene_valor, free);
+            }
+            else
+            {
+                bitarray_clean_bit(p_blocks_manager_instance->bitmap, i);
+                fue_saboteado = true;
+            }
+        }
+    }
+
+    if(!list_is_empty(id_bloques_totales))
+    {
+        list_iterate(id_bloques_totales, (void*)_setear_bit_de_bloque_usado);
+        list_iterate(id_bloques_totales, free);
+        fue_saboteado = true;
+    }
+
+    pthread_mutex_unlock(&p_blocks_manager_instance->blocks_bitmap_mx);
+
+    free(id_bloques_totales);
+
+    return fue_saboteado;
+
 }
 
 #ifdef UTESTS
