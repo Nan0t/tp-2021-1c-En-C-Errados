@@ -97,7 +97,7 @@ bool fs_files_manager_check_files_integrity(void)
 
     void _check_file_integrity(fs_file_ref_t* file_ref) {
         if(fs_file_check_integrity(file_ref->file))
-            corrupt_file_was_founded = true;
+            corrupt_file_was_found = true;
     };
     dictionary_iterator(p_files_manager_instance->files, (void*)_check_file_integrity);
 
@@ -114,7 +114,7 @@ t_list* fs_files_manager_get_blocks_id(void)
     void _get_file_blocks_id(fs_file_ref_t* file_ref) {
         t_list* lista_temporal = fs_file_get_blocks(file_ref->file);
         list_add_all(bloques, lista_temporal);
-        free(lista_temporal);
+        u_free(lista_temporal);
     };
     dictionary_iterator(p_files_manager_instance->files, (void*)_get_file_blocks_id);
 

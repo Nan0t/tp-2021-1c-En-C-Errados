@@ -78,7 +78,7 @@ t_list* fs_bitacoras_manager_get_blocks_id(void)
     pthread_mutex_lock(&p_bitacoras_manager_instance->bitacoras_mx);
 
     void _get_bitacora_blocks_id(fs_bitacora_ref_t* bitacora_ref) {
-        t_list* lista_temporal = fs_bitacora_get_blocks(bitacora_ref->file);
+        t_list* lista_temporal = fs_bitacora_get_blocks(bitacora_ref->bitacora);
         list_add_all(bloques, lista_temporal);
         free(lista_temporal);
     };

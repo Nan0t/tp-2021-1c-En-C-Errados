@@ -1,5 +1,7 @@
 #include "blocks_manager.h"
 #include "fs/disk/disk.h"
+#include "fs/bitacora/bitacoras_manager.h"
+#include "fs/file/files_manager.h"
 
 #include <commons/bitarray.h>
 
@@ -258,7 +260,7 @@ private bool fs_block_manager_verificar_integridad_bitmap(void)
     t_list* id_bloques_bitacoras = fs_bitacoras_manager_get_blocks_id();
     list_add_all(id_bloques_totales, id_bloques_bitacoras);
     uint32_t numero_bloque_buscado;
-    free(id_bloques_bitacoras);
+    u_free(id_bloques_bitacoras);
 
 
     void _setear_bit_de_bloque_usado(uint32_t* id_bloque)
@@ -282,14 +284,14 @@ private bool fs_block_manager_verificar_integridad_bitmap(void)
 
     pthread_mutex_lock(&p_blocks_manager_instance->blocks_bitmap_mx);
     size_t tamanio_bitarray = bitarray_get_max_bit(p_blocks_manager_instance->bitmap);
-    for(int i = 0; i < tamanio_bitarray; i++)
+    for(uint32_t i = 0; i < tamanio_bitarray; i++)
     {
         if(bitarray_test_bit(p_blocks_manager_instance->bitmap, i) == 1)
         {
             numero_bloque_buscado = i + 1;
             if(!list_is_empty(id_bloques_totales) && list_any_satisfy(id_bloques_totales, (void*)_tiene_valor))
             {
-                list_remove_and_destroy_by_condition(id_bloques_totales, (void*)_tiene_valor, free);
+                list_remove_and_destroy_by_condition(id_bloques_totales, (void*)_tiene_valor, u_free);
             }
             else
             {
@@ -302,13 +304,13 @@ private bool fs_block_manager_verificar_integridad_bitmap(void)
     if(!list_is_empty(id_bloques_totales))
     {
         list_iterate(id_bloques_totales, (void*)_setear_bit_de_bloque_usado);
-        list_iterate(id_bloques_totales, free);
+        list_iterate(id_bloques_totales, u_free);
         fue_saboteado = true;
     }
 
     pthread_mutex_unlock(&p_blocks_manager_instance->blocks_bitmap_mx);
 
-    free(id_bloques_totales);
+    u_free(id_bloques_totales);
 
     return fue_saboteado;
 

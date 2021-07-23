@@ -102,4 +102,15 @@ const char* fs_file_get_md5(const fs_file_t* file);
  */
 uint32_t fs_file_get_blocks_count(const fs_file_t* file);
 
+
+/**
+ * @NAME: fs_file_get_blocks
+ * @DESC: devuelve los id de bloques del archivo.
+ * @PARAMS: 
+ *  [in] const fs_file_t* file - file del cual se quiere obtener los id de bloques
+ * 
+ * @RETURNS: lista de id de bloques utilizadas por el archivo.
+ */
+t_list* fs_file_get_blocks(const fs_file_t* this);
+
 #endif
