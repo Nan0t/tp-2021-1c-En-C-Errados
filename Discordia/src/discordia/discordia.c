@@ -702,9 +702,11 @@ private uint32_t discordia_enviar_patota_a_memoria(uint32_t cant_trips, const ch
         char* msg_str = u_msg_iniciar_patota_to_string(msg);
         U_LOG_ERROR("No se pudo enviar el mensaje %s. Conexion perdida con la Memoria", msg_str);
         u_free(msg_str);
-    }
 
-    discordia_recibir_respuesta_memoria(conn);
+        pid = 0;
+    }
+    else if(!discordia_recibir_respuesta_memoria(conn))
+        pid = 0;
 
     u_msg_iniciar_patota_eliminar(msg);
     u_buffer_delete(msg_ser);
@@ -730,17 +732,22 @@ private bool discordia_recibir_respuesta_memoria(int32_t conn)
         {
             msg_buffer = u_malloc(msg_length);
 
-            u_buffer_t* buffer = u_buffer_create();
-            u_buffer_write(buffer, msg_buffer, msg_length);
+            if(u_socket_recv(conn, msg_buffer, msg_length))
+            {
+                u_buffer_t* buffer = u_buffer_create();
+                u_buffer_write(buffer, msg_buffer, msg_length);
 
-            u_msg_fail_t* msg = u_msg_fail_deserializar(buffer);
+                u_msg_fail_t* msg = u_msg_fail_deserializar(buffer);
 
-            U_LOG_ERROR("Memoria contesto con el siguiente error");
-            U_LOG_ERROR("%s", msg->description);
+                U_LOG_ERROR("Memoria contesto con el siguiente error");
+                U_LOG_ERROR("%s", msg->description);
 
-            u_msg_fail_eliminar(msg);
-            u_buffer_delete(buffer);
-            u_free(msg_buffer);
+                u_msg_fail_eliminar(msg);
+                u_buffer_delete(buffer);
+                u_free(msg_buffer);
+            }
+            else
+                U_LOG_ERROR("Memoria contesto FAIL. No se pudo obtener una descripcion");
         }
         else
             U_LOG_ERROR("Memoria contesto FAIL. No se pudo obtener una descripcion");
