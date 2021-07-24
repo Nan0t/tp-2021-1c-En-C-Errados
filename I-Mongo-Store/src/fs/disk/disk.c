@@ -17,7 +17,7 @@ void fs_physical_disk_init(uint64_t size)
     if(p_physical_disk != NULL)
         return;
 
-    char*   disk_file_dir = string_from_format("%s/Blocks.ims", u_config_get_string_value("PUNTO_MONTAJE"));
+    char*   disk_file_dir = string_from_format("%sBlocks.ims", u_config_get_string_value("PUNTO_MONTAJE"));
     int32_t disk_file_fd  = open(disk_file_dir, O_RDWR, 0666);
 
     U_ASSERT(disk_file_fd != -1,
