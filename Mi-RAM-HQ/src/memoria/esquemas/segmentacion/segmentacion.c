@@ -394,6 +394,7 @@ bool segmentacion_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid)
 
 		t_list* lista_de_tripulantes_a_eliminar;
 		lista_de_tripulantes_a_eliminar=aux2->listado_tripulantes;
+		tamanio_lista_tripulantes=list_size(lista_de_tripulantes_a_eliminar);
 		for(i=0; i<tamanio_lista_tripulantes; i++){
 	         aux3 = list_remove(lista_de_tripulantes_a_eliminar, i);
 			 free(aux3);
