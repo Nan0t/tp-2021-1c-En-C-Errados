@@ -48,6 +48,7 @@ private void     fs_blocks_manager_init_blocks(void);
 private uint32_t fs_blocks_manager_get_free_block_index(void);
 private void     fs_blocks_manager_release_block_at(uint32_t index);
 private bool     fs_block_manager_verificar_integridad_bitmap(void);
+private bool     fs_block_manager_verficar_integridad_cantidad_bloques(void);
 
 void fs_blocks_manager_init(const char* mount_point, bool is_clean_initialization)
 {
@@ -124,7 +125,7 @@ uint32_t fs_blocks_manager_get_blocks_size(void)
 
 bool fs_blocks_manager_check_integrity(void)
 {
-    return fs_block_manager_verificar_integridad_bitmap();
+    return fs_block_manager_verificar_integridad_bitmap() && fs_block_manager_verficar_integridad_cantidad_bloques();
 }
 
 // =======================================================
@@ -308,6 +309,23 @@ private bool fs_block_manager_verificar_integridad_bitmap(void)
 
     return fue_saboteado;
 
+}
+
+private bool fs_block_manager_verficar_integridad_cantidad_bloques (void)
+{
+    uint32_t block_size = p_blocks_manager_instance->blocks_size;
+    uint32_t blocks_count = p_blocks_manager_instance->blocks_count;
+    uint32_t tamanio_archivo_bloques = fs_physical_disk_get_size();
+    bool     fue_saboteado = false;
+    uint32_t cant_real_bloques = tamanio_archivo_bloques/ block_size;
+
+    if (cant_real_bloques!= blocks_count)
+    {
+        p_blocks_manager_instance->blocks_count = cant_real_bloques;
+        fue_saboteado = true;
+    }
+
+    return fue_saboteado;
 }
 
 #ifdef UTESTS
