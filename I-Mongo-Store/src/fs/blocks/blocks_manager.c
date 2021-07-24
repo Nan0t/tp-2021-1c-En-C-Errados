@@ -13,6 +13,7 @@
 #include <string.h>
 #include <errno.h>
 #include <math.h>
+#include <stdio.h>
 
 typedef struct
 {
@@ -42,7 +43,6 @@ private fs_blocks_manager_t* p_blocks_manager_instance = NULL;
 
 private void     fs_blocks_manager_init_super_bloque(const char* super_block_file_path);
 private void     fs_blocks_manager_get_metadata(int32_t super_block_file);
-private void     fs_blocks_manager_init_bitmap(int32_t super_block_file);
 private void     fs_blocks_manager_init_disk(void);
 private void     fs_blocks_manager_init_blocks(void);
 private uint32_t fs_blocks_manager_get_free_block_index(void);
@@ -60,10 +60,15 @@ void fs_blocks_manager_init(const char* mount_point, bool is_clean_initializatio
     pthread_mutex_init(&p_blocks_manager_instance->blocks_bitmap_mx, NULL);
     pthread_mutex_init(&p_blocks_manager_instance->blocks_mx, NULL);
 
-    char* super_block_file_path = string_from_format("%s/SuperBloque.ims", p_blocks_manager_instance->mount_point);
+    char* super_block_file_path = string_from_format("%sSuperBloque.ims", p_blocks_manager_instance->mount_point);
 
     if(is_clean_initialization)
+    {
         fs_blocks_manager_init_super_bloque(super_block_file_path);
+        char* blockims = string_from_format("%sBlocks.ims", p_blocks_manager_instance->mount_point);
+        fclose(fopen(blockims, "w"));
+        u_free(blockims);
+    }
 
     int32_t super_block_file = open(super_block_file_path, O_RDWR, 0666);
     U_ASSERT(super_block_file != -1, "No se pudo abrir el archivo de SuperBloque.ims: %s", strerror(errno));
@@ -166,6 +171,8 @@ private void fs_blocks_manager_init_super_bloque(const char* super_block_file_pa
     void* zero_memory = u_malloc(bitmap_length);
     memset(zero_memory, 0, bitmap_length);
 
+    fclose(fopen(super_block_file_path, "w"));
+
     int32_t super_block_file = open(super_block_file_path, O_RDWR, 0666);
     U_ASSERT(super_block_file != -1, "No se pudo abrir el archivo de SuperBloque.ims: %s", strerror(errno));
 
@@ -192,19 +199,6 @@ private void fs_blocks_manager_get_metadata(int32_t super_block_file)
         "No se pudo mapear el bitmap del SuperBloque.ims: %s", strerror(errno));
 
     p_blocks_manager_instance->bitmap = bitarray_create(bitmap_mem + sizeof(uint32_t) * 2, bitmap_size);
-}
-
-private void fs_blocks_manager_init_bitmap(int32_t super_block_file)
-{
-    uint32_t bitmap_mem_size = ceil(p_blocks_manager_instance->blocks_count / 8);
-    void* bitmap_mem = u_malloc(bitmap_mem_size);
-
-    memset(bitmap_mem, 0, bitmap_mem_size);
-
-    U_ASSERT(pwrite(super_block_file, bitmap_mem, bitmap_mem_size, sizeof(uint32_t) * 2) != -1,
-        "No se pudo inicializar el Bitmap: %s", strerror(errno));
-
-    u_free(bitmap_mem);
 }
 
 private void fs_blocks_manager_init_disk(void)
