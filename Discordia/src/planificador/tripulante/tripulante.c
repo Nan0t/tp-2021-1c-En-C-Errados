@@ -153,14 +153,6 @@ private void tripulante_mover(tripulante_t* this, const u_pos_t* pos)
 
 private bool tripulante_check_tarea_actual(tripulante_t* this)
 {
-    if(this->tarea_actual->is_finished)
-    {
-        if(!tripulante_obtener_proxima_tarea(this))
-            discordia_expulsar_tripulante(this->tid);
-            
-        return false;
-    }
-
     if(CMP_POS(this->pos, this->tarea_actual->pos))
     {
         if(this->tarea_actual->is_blocking)
@@ -175,6 +167,14 @@ private bool tripulante_check_tarea_actual(tripulante_t* this)
                 this->tid, this->tarea_actual->tarea, this->tarea_actual->tiempo_bloqueado);
 
             this->tarea_actual->is_finished = this->tarea_actual->tiempo_bloqueado == 0;
+
+            if(this->tarea_actual->is_finished)
+            {
+                if(!tripulante_obtener_proxima_tarea(this))
+                    discordia_expulsar_tripulante(this->tid);
+                    
+                return false;
+            }
         }
 
         return false;
