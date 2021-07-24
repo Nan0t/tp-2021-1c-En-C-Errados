@@ -376,6 +376,7 @@ private void ds_planificador_admit_from_new_to_ready(void)
     while(trip != NULL)
     {
         tripulante_change_state(trip, TRIP_STATE_READY);
+        tripulante_obtener_proxima_tarea(trip);
         
         ds_queue_mt_t* ready_queue = ds_queue_manager_hold(DS_QUEUE_READY);
         ds_queue_mt_push(ready_queue, trip);

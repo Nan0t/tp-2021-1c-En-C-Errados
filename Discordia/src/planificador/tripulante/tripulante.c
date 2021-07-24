@@ -48,8 +48,6 @@ tripulante_t* tripulante_create(uint32_t pid, uint32_t tid, const u_pos_t* pos, 
     sem_init(&this->sem_sync, 0, 0);
     sem_init(&this->sem_end_exec, 0, 0);
 
-    tripulante_obtener_proxima_tarea(this);
-
     return this;
 }
 
