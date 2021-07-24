@@ -171,13 +171,10 @@ bool segmentacion_memoria_actualizar_posicion_tripulante(uint32_t pid, uint32_t 
 	    }
 	}
 	aux = list_get(listado_patotas, indice);
-	t_list* tabla;
-	tabla = list_create();
-	tabla = aux->tabla_segmentos;
+	t_list* tabla = aux->tabla_segmentos;
 	s_segmento_patota_t *aux2;
 	aux2 = list_get(tabla, 0);
-	t_list* tabla_tripulantes = list_create();
-	tabla_tripulantes = aux2->listado_tripulantes;
+	t_list* tabla_tripulantes = aux2->listado_tripulantes;
 	int tamanio_lista_tripulantes=list_size(tabla_tripulantes);
 	int indice_tripulante=-1;
 	int i;
@@ -212,12 +209,10 @@ bool segmentacion_memoria_actualizar_estado_tripulante(uint32_t pid, uint32_t ti
 	}
 	aux = list_get(listado_patotas, indice);
 	t_list* tabla;
-	tabla = list_create();
 	tabla = aux->tabla_segmentos;
 	s_segmento_patota_t *aux2;
 	aux2 = list_get(tabla, 0);
-	t_list* tabla_tripulantes = list_create();
-	tabla_tripulantes = aux2->listado_tripulantes;
+	t_list* tabla_tripulantes = aux2->listado_tripulantes;
 	int tamanio_lista_tripulantes=list_size(tabla_tripulantes);
 	int indice_tripulante=-1;
 	int i;
@@ -250,7 +245,14 @@ char* segmentacion_memoria_obtener_proxima_tarea(uint32_t pid, uint32_t tid)
 	int cantidad_de_elementos=segmentacion_memoria_total_tamanio_tareas_separadas(tareas_separadas);
     if (numero_de_tarea<cantidad_de_elementos){
 		U_LOG_INFO("PROXIMA TAREA DE TRIPULANTE: %d, %s", tid, tareas_separadas[numero_de_tarea]);
-    	return tareas_separadas[numero_de_tarea];
+
+		char* tarea_buscada = strdup(tareas_separadas[numero_de_tarea]);
+
+		for(char** c = tareas_separadas; *c != NULL; c ++)
+			u_free(*c);
+		u_free(tareas_separadas);
+
+    	return tarea_buscada;
     }
 
 	for(char** c = tareas_separadas; *c != NULL; c ++)
@@ -345,6 +347,9 @@ bool segmentacion_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid)
 	aux4->tipo_segmento=-1;
 	aux4->id_propietario=-1;
 
+	pthread_mutex_lock(&espacio_libre_mx);
+	espacio_libre += 21;
+
     // chequeo si no quedan más tripulantes
 	int tripulantes_expulsados=0;
 	for(i=0; i<tamanio_lista_tripulantes; i++){
@@ -367,6 +372,8 @@ bool segmentacion_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid)
 
 		uint32_t inicio_segmento_patota=aux2->inicio_segmento_pcb;
 		uint32_t inicio_segmento_tareas=aux2->inicio_segmento_tareas;
+
+		espacio_libre += 8 + aux2->tamanio_segmento_tareas;
 
 		tamanio_listado_segmentos=list_size(listado_segmentos);
 	    indice_segmento=-1;
@@ -396,7 +403,7 @@ bool segmentacion_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid)
 		lista_de_tripulantes_a_eliminar=aux2->listado_tripulantes;
 		tamanio_lista_tripulantes=list_size(lista_de_tripulantes_a_eliminar);
 		for(i=0; i<tamanio_lista_tripulantes; i++){
-	         aux3 = list_remove(lista_de_tripulantes_a_eliminar, i);
+	         aux3 = list_remove(lista_de_tripulantes_a_eliminar, 0);
 			 free(aux3);
 	    }
 		free(lista_de_tripulantes_a_eliminar);
@@ -408,6 +415,8 @@ bool segmentacion_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid)
 
 
 	}
+
+	pthread_mutex_unlock(&espacio_libre_mx);
 	pthread_mutex_unlock(&listado_segmentos_mx);
 	pthread_mutex_unlock(&listado_patotas_mx);
 
@@ -456,6 +465,7 @@ private void segmentacion_obtener_segmentos(uint32_t pid,int tamanio_pcb,int tam
 		if(!segmentacion_hay_segmento_libre(tamanio_lista,21)){
 			U_LOG_TRACE("Para agregar al tripulante numero %d es necesario compactar", i);
 			segmentacion_compactar();
+			tamanio_lista=list_size(listado_segmentos);
 			U_LOG_TRACE("Se compacto exitosamente");
 		}
 		incio_segmento_tripulante = segmentacion_buscar_segmento(tamanio_lista,21,2,pid);// 2 es tipo tripulante
@@ -469,6 +479,7 @@ private void segmentacion_obtener_segmentos(uint32_t pid,int tamanio_pcb,int tam
 	if(!segmentacion_hay_segmento_libre(tamanio_lista,tamanio_tareas)){
 		U_LOG_TRACE("Para agregar la lista de tareas es necesario compactar");
 		segmentacion_compactar();
+		tamanio_lista=list_size(listado_segmentos);
 		U_LOG_TRACE("Se compacto exitosamente");
 	}
 	int incio_segmento_tareas = segmentacion_buscar_segmento(tamanio_lista,tamanio_tareas,1,pid); // 1 es tipo tarea
@@ -477,6 +488,7 @@ private void segmentacion_obtener_segmentos(uint32_t pid,int tamanio_pcb,int tam
 	if(!segmentacion_hay_segmento_libre(tamanio_lista,tamanio_pcb)){
 		U_LOG_TRACE("Para agregar la patota es necesario compactar");
 		segmentacion_compactar();
+		tamanio_lista=list_size(listado_segmentos);
 		U_LOG_TRACE("Se compacto exitosamente");
 	}
 	int incio_segmento_pcb = segmentacion_buscar_segmento(tamanio_lista,tamanio_pcb,0,pid); // 0 es tipo patota
@@ -891,11 +903,14 @@ private void segmentacion_memoria_dump(void)
 	char* timestamp = temporal_get_string_time("%d-%m-%y|%H:%M:%S");
 	char* dump_path = string_from_format("Dump_<%s>.dmp", timestamp);
 
+	u_free(timestamp);
+	timestamp = temporal_get_string_time("%d/%m/%y %H:%M:%S");
+
 	t_log* dumper = log_create(dump_path, "DUMP", false, LOG_LEVEL_INFO);
 
 	s_segmento_t *segmento_memoria;
 	log_info(dumper, "--------------------------------------------------------------------------");
-	log_info(dumper, "Dump: FECHA");
+	log_info(dumper, "Dump: %s", timestamp);
 	for(int s = 0; s < tamanio_listado_segmentos; s++){
 		 segmento_memoria = list_get(listado_segmentos, s);
 		 if((segmento_memoria->tipo_segmento==0)||(segmento_memoria->tipo_segmento==1)){
@@ -925,6 +940,10 @@ private void segmentacion_memoria_dump(void)
                     }
 	             }
 	        }
+		 }
+		 else if(segmento_memoria->id_propietario == -1)
+		 {
+			log_info(dumper, "Proceso: -1 Segmento: %d Inicio: %d Tam: %d b", s, segmento_memoria->inicio_segmento, segmento_memoria->tamanio_segmento);
 		 }
 	}
 	log_info(dumper, "--------------------------------------------------------------------------");
