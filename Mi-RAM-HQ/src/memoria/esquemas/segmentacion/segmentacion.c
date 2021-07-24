@@ -1,4 +1,8 @@
 #include "segmentacion.h"
+
+#include <commons/log.h>
+#include <commons/temporal.h>
+
 #include <pthread.h>
 #include <signal.h>
 
@@ -18,7 +22,7 @@ private void segmentacion_reasignar_segmento(void);
 private void segmentacion_actualizar_estructura_y_memoria(uint32_t inicio_segmento_libre,uint32_t tamanio_segmento_libre,uint32_t tipo_segmento_ocupado,
 		uint32_t id_segmento_ocupado,uint32_t inicio_segmento_ocupado,uint32_t tamanio_segmento_ocupado);
 private int segmentacion_memoria_total_tamanio_tareas_separadas(char** tareas_separadas);
-/*private void segmentacion_memoria_dump(void);  poner mutex de patota y segmento antes y despues desde donde se la invoca  */
+private void segmentacion_memoria_dump(void); /* poner mutex de patota y segmento antes y despues desde donde se la invoca  */
 
 // **********************
 // Estructuras globales
@@ -51,6 +55,7 @@ void segmentacion_memoria_init(void)
 	segmentacion_inicializar_listado_segmentos(esquema_memoria_tamanio);
 
 	signal(SIGUSR1, segmentacion_recibir_signal);
+	signal(SIGUSR2, segmentacion_recibir_signal);
 }
 
 bool segmentacion_memoria_inicializar_patota(uint32_t pid, uint32_t cant_tripulantes, const char* tareas)
@@ -412,7 +417,18 @@ bool segmentacion_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid)
 
 private void segmentacion_recibir_signal(int code_signal)
 {
-	segmentacion_compactar();
+	if(code_signal == SIGUSR1)
+		segmentacion_compactar();
+	else if(code_signal == SIGUSR2)
+	{
+		pthread_mutex_lock(&listado_patotas_mx);
+		pthread_mutex_lock(&listado_segmentos_mx);
+
+		segmentacion_memoria_dump();
+
+		pthread_mutex_unlock(&listado_patotas_mx);
+		pthread_mutex_unlock(&listado_segmentos_mx);
+	}
 }
 
 private void segmentacion_inicializar_listado_segmentos(int tamanio_segmento_inicial){
@@ -867,17 +883,22 @@ private int segmentacion_memoria_total_tamanio_tareas_separadas(char** tareas_se
 
 	return contador;
 }
-/*
+
 private void segmentacion_memoria_dump(void)
 {
 	int tamanio_listado_segmentos=list_size(listado_segmentos);
+	char* timestamp = temporal_get_string_time("%d-%m-%y|%H:%M:%S");
+	char* dump_path = string_from_format("Dump_<%s>.dmp", timestamp);
+
+	t_log* dumper = log_create(dump_path, "DUMP", false, LOG_LEVEL_INFO);
+
 	s_segmento_t *segmento_memoria;
-	U_LOG_INFO("--------------------------------------------------------------------------");
-	U_LOG_INFO("Dump: FECHA");
+	log_info(dumper, "--------------------------------------------------------------------------");
+	log_info(dumper, "Dump: FECHA");
 	for(int s = 0; s < tamanio_listado_segmentos; s++){
 		 segmento_memoria = list_get(listado_segmentos, s);
 		 if((segmento_memoria->tipo_segmento==0)||(segmento_memoria->tipo_segmento==1)){
-			 U_LOG_INFO("Proceso: %d Segmento: %d Inicio: %d Tam: %d b", segmento_memoria->id_propietario, s, segmento_memoria->inicio_segmento, segmento_memoria->tamanio_segmento);
+			 log_info(dumper, "Proceso: %d Segmento: %d Inicio: %d Tam: %d b", segmento_memoria->id_propietario, s, segmento_memoria->inicio_segmento, segmento_memoria->tamanio_segmento);
 		 }
 		 if((segmento_memoria->tipo_segmento==2)&&(segmento_memoria->id_propietario!=-1)){
 			int tamanio_lista_patotas=list_size(listado_patotas);
@@ -887,7 +908,7 @@ private void segmentacion_memoria_dump(void)
 			t_list* tabla_segmentos_p_y_t;
 			s_segmento_patota_t *estructura_segmentos_p_y_t;
 			t_list* tabla_tripulantes;
-			int tamanio_lista_tripulantes
+			int tamanio_lista_tripulantes;
 			int i;
 			s_segmento_tripulante_t *estructura_tripulante;
 		    for(j=0; j<tamanio_lista_patotas; j++){
@@ -899,11 +920,16 @@ private void segmentacion_memoria_dump(void)
 				 for(i=0; i<tamanio_lista_tripulantes; i++){
 	                estructura_tripulante = list_get(tabla_tripulantes, i);
 			        if(estructura_tripulante->tid==segmento_memoria->id_propietario){
-                        U_LOG_INFO("Proceso: %d Segmento: %d Inicio: %d Tam: %d b", estructura_patota->pid, s, segmento_memoria->inicio_segmento, segmento_memoria->tamanio_segmento);
+                        log_info(dumper, "Proceso: %d Segmento: %d Inicio: %d Tam: %d b", estructura_patota->pid, s, segmento_memoria->inicio_segmento, segmento_memoria->tamanio_segmento);
                     }
 	             }
 	        }
 		 }
 	}
+	log_info(dumper, "--------------------------------------------------------------------------");
+
+	u_free(timestamp);
+	u_free(dump_path);
+	log_destroy(dumper);
 }
-*/
+
