@@ -66,3 +66,17 @@ void  fs_physical_disk_flush(uint64_t offset, uint64_t size)
 
     msync(p_physical_disk + offset, size, MS_SYNC);
 }
+
+uint32_t fs_physical_disk_get_size(void)
+{
+    char* disk_file_dir = string_from_format("%s/Blocks.ims", u_config_get_string_value("PUNTO_MONTAJE"));
+    int disk_file_fd = open(disk_file_dir, O_RDONLY);
+    U_ASSERT(disk_file_fd != -1,
+        "No se pudo inicializar el Disco Fisico del FileSystem en la ruta %s. %s",  disk_file_dir, strerror(errno));
+    
+    u_free(disk_file_dir);
+    uint32_t size_file = lseek(disk_file_fd, 0, SEEK_END);
+    close(disk_file_fd);
+
+    return size_file;
+}
