@@ -37,7 +37,9 @@ fs_file_t* fs_file_create(const char* file_path, char* fill_char){
 	config_set_value(this->CONFIG, "BLOCKS", block_list);
 	config_set_value(this->CONFIG, "BLOCK_COUNT", "1");
 	config_set_value(this->CONFIG, "CARACTER_LLENADO", fill_char);
-	config_set_value(this->CONFIG, "MD5_ARCHIVO", NULL);
+	config_set_value(this->CONFIG, "MD5_ARCHIVO", "");
+
+	config_save(this->CONFIG);
 
     return this;
 }
@@ -46,7 +48,7 @@ fs_file_t* fs_file_create(const char* file_path, char* fill_char){
 void fs_file_delete(fs_file_t* this){
 
 	char** block_list = config_get_array_value(this->CONFIG, "BLOCKS");
-	for(int i=0; i<config_get_int_value(this->CONFIG, "BLOCKS_COUNT") ; i++){
+	for(int i=0; i<config_get_int_value(this->CONFIG, "BLOCK_COUNT") ; i++){
 		fs_blocks_manager_release_block(atoi(block_list[i]));
 		free(block_list[i]);
 	}
@@ -78,32 +80,27 @@ void fs_file_add_fill_char(fs_file_t* this, uint32_t amount){
 	uint32_t* last_block = list_get(blocks_tlist, index_ultimo_id_bloque);
 	nuevo_tamanio_archivo = tamanio_archivo + amount;
 	int offset = get_offset(this);
-	char* caracter_repetido;
+	char* caracter_repetido = string_repeat(*fill_char, amount);
 
-	//condicion por si el ultimo bloque no está lleno
-	if(offset || !tamanio_archivo){
-		a_escribir_en_bloque = tamanio_bloques - offset;
-		caracter_repetido = string_repeat(*fill_char, a_escribir_en_bloque);
-		if(a_escribir_en_bloque> tamanio_bloques){
-			a_escribir_en_bloque++;
-		}
-		escritos = fs_block_write(*last_block, caracter_repetido, a_escribir_en_bloque, offset);
+	escritos = fs_block_write(*last_block, caracter_repetido, amount, offset);
+	amount -= escritos;
+
+	while(amount){
+		last_block = malloc(sizeof(uint32_t));
+		*last_block = fs_blocks_manager_request_block();
+		list_add(blocks_tlist, last_block);
+
+		escritos = fs_block_write(*last_block, caracter_repetido, amount, 0);
 		amount -= escritos;
-		free(caracter_repetido);
+
 	}
+	free(caracter_repetido);
 
-	while(!amount){
-		uint32_t* new_bloque_id = malloc(sizeof(uint32_t));
-		*new_bloque_id = fs_blocks_manager_request_block();
-		list_add(blocks_tlist, new_bloque_id);
-		a_escribir_en_bloque = min(amount, tamanio_bloques);
-		caracter_repetido = string_repeat(*fill_char, a_escribir_en_bloque);
-		if(a_escribir_en_bloque < tamanio_bloques){
-			a_escribir_en_bloque++;
-		}
-		escritos = fs_block_write(*new_bloque_id, caracter_repetido, a_escribir_en_bloque, 0);
-		amount -= escritos;
-		free(caracter_repetido);
+	offset = nuevo_tamanio_archivo % tamanio_bloques;
+	if(offset != 0)
+	{
+		char nulo = '\0';
+		fs_block_write(*last_block, &nulo, sizeof(char), offset);
 	}
 
 	//actualizo config md5
@@ -120,9 +117,10 @@ void fs_file_add_fill_char(fs_file_t* this, uint32_t amount){
 	char* cantidad_bloques_string = string_itoa(list_size(blocks_tlist));
 	config_set_value(this->CONFIG,"BLOCK_COUNT", cantidad_bloques_string);
 
+	config_save(this->CONFIG);
 
 	list_destroy_and_destroy_elements(blocks_tlist, free);
-	u_free(fill_char);
+
 	u_free(tamanio_en_string);
 	u_free(lista_a_string);
 	u_free(cantidad_bloques_string);
@@ -151,18 +149,16 @@ void fs_file_remove_fill_char(fs_file_t* this, uint32_t amount){
 	uint32_t tamanio_bloques = fs_blocks_manager_get_blocks_size();
 	char** bloques_formato_array = config_get_array_value(this->CONFIG, "BLOCKS");
 	t_list* blocks_tlist = lista_id_bloques_archivo(bloques_formato_array);
-	uint32_t indice_ultimo_bloque = size_archivo_actualizado / tamanio_bloques;
+	uint32_t indice_ultimo_bloque = (size_archivo_actualizado / tamanio_bloques) - 1;
 	uint32_t offset = size_archivo_actualizado % tamanio_bloques;
 	if(offset || !size_archivo_actualizado)
 	{
 		uint32_t* id_ultimo_bloque = list_get(blocks_tlist, indice_ultimo_bloque);
-		char* centinela = malloc(1);
-		*centinela = '\0';
-		fs_block_write(*id_ultimo_bloque, centinela, 1, offset);
-		u_free(centinela);
+		char centinela = '\0';
+		fs_block_write(*id_ultimo_bloque, &centinela, 1, offset);
 	}
 
-	uint32_t indice_max_lista = list_size(blocks_tlist);
+	uint32_t indice_max_lista = list_size(blocks_tlist) - 1;
 	while( indice_max_lista!= indice_ultimo_bloque)
 	{
 		uint32_t* id_bloque = list_remove(blocks_tlist, indice_max_lista);
@@ -173,18 +169,21 @@ void fs_file_remove_fill_char(fs_file_t* this, uint32_t amount){
 	}
 
 	char* string_de_id_bloques = list_convert_to_string(blocks_tlist);
-	//actualizo config blocks, guardo tlist en string config
-	config_set_value(this->CONFIG, "BLOCKS", string_de_id_bloques);
 
 	//actualizo config md5
 	char* md5_actualizado = generate_md5(blocks_tlist, size_archivo_actualizado, tamanio_bloques);
+
 	config_set_value(this->CONFIG, "MD5_ARCHIVO", md5_actualizado);
+	//actualizo config blocks, guardo tlist en string config
+	config_set_value(this->CONFIG, "BLOCKS", string_de_id_bloques);
 
 	char* string_tamanio_archivo = string_itoa(size_archivo_actualizado);
 	config_set_value(this->CONFIG, "SIZE", string_tamanio_archivo);
 
 	char* string_cantidad_bloques = string_itoa(indice_ultimo_bloque + 1);
 	config_set_value(this->CONFIG,"BLOCK_COUNT", string_cantidad_bloques);
+
+	config_save(this->CONFIG);
 
 	list_destroy_and_destroy_elements(blocks_tlist, u_free);
 	u_free(string_de_id_bloques);
@@ -210,7 +209,7 @@ uint32_t fs_file_get_size(const fs_file_t* this){
     return config_get_int_value(this->CONFIG, "SIZE");
 }
 
-char* fs_file_get_fill_char(const fs_file_t* this){
+const char* fs_file_get_fill_char(const fs_file_t* this){
 	return config_get_string_value(this->CONFIG, "CARACTER_LLENADO");
 }
 
@@ -282,8 +281,8 @@ private char* list_convert_to_string(t_list* list){
 		}
 		
 	}
-	string_append(&string_list,"]");
 	list_iterate(list, (void*)_agregar_a_string);
+	string_append(&string_list,"]");
 
 	return string_list;
 }
@@ -324,6 +323,8 @@ private bool verificar_size_correcto(fs_file_t* this)
 	}
 	list_destroy_and_destroy_elements(lista_id_bloques, free);
 
+	config_save(this->CONFIG);
+
 	return estado_no_corrompido;
 }
 
@@ -343,6 +344,9 @@ private bool verificar_cantidad_bloques_correcto(fs_file_t* this)
 		estado_no_corrompido= false;
 	}
 	list_destroy_and_destroy_elements(lista_id_bloques, free);
+
+	config_save(this->CONFIG);
+
 	return estado_no_corrompido;
 }
 

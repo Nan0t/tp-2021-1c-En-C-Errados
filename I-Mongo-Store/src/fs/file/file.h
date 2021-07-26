@@ -80,7 +80,7 @@ uint32_t fs_file_get_size(const fs_file_t* file);
  * 
  * @RETURNS: el caracter de llenado del archivo.
  */
-char* fs_file_get_fill_char(const fs_file_t* file);
+const char* fs_file_get_fill_char(const fs_file_t* file);
 
 /**
  * @NAME: fs_file_get_md5
