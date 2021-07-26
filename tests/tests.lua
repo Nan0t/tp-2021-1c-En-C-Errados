@@ -9,6 +9,8 @@ project "tests"
     files {
         "%{wks.location}/Discordia/src/console/parser.c",
         "%{wks.location}/I-Mongo-Store/src/fs/blocks/blocks_manager.c",
+        "%{wks.location}/I-Mongo-Store/src/fs/file/files_manager.c",
+        "%{wks.location}/I-Mongo-Store/src/fs/bitacora/bitacoras_manager.c",
         "%{wks.location}/I-Mongo-Store/src/fs/blocks/block.c",
         "%{wks.location}/I-Mongo-Store/src/fs/disk/disk.c",
         "%{wks.location}/I-Mongo-Store/src/fs/file/file.c",
@@ -33,7 +35,9 @@ project "tests"
         "cunit",
         "pthread",
         "readline",
-        "m"
+        "m",
+        "crypto",
+        "ssl"
     }
     
     filter "configurations:Debug"
