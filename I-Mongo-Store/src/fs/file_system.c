@@ -50,7 +50,7 @@ void file_system_init(const file_system_attr_t* attr){
 void  file_system_desplazamiento_tripulante(uint32_t tid, const u_pos_t* from, const u_pos_t* to)
 {
     char* desplazamiento =
-        string_from_format("Tripulante %d se desplaza desde { %d, %d } hasta { %d, %d }",
+        string_from_format("Tripulante %d se desplaza desde { %d, %d } hasta { %d, %d }\n",
         tid, from->x, from->y, to->x, to->y);
 
     file_system_update_bitacora(tid, desplazamiento);
@@ -60,7 +60,7 @@ void  file_system_desplazamiento_tripulante(uint32_t tid, const u_pos_t* from, c
 void  file_system_inicio_tarea(uint32_t tid, const char* tarea)
 {
     char* inicio_tarea =
-        string_from_format("Tripulante %d inicia tarea %s", tid, tarea);
+        string_from_format("Tripulante %d inicia tarea %s\n", tid, tarea);
 
     file_system_update_bitacora(tid, inicio_tarea);
     file_system_execute_task(tarea);
@@ -71,7 +71,7 @@ void  file_system_inicio_tarea(uint32_t tid, const char* tarea)
 void  file_system_finalizacion_tarea(uint32_t tid, const char* tarea)
 {
     char* finaliza_tarea =
-        string_from_format("Tripulante %d finalizo tarea %s",
+        string_from_format("Tripulante %d finalizo tarea %s\n",
         tid, tarea);
 
     file_system_update_bitacora(tid, finaliza_tarea);
@@ -82,7 +82,7 @@ void  file_system_finalizacion_tarea(uint32_t tid, const char* tarea)
 void  file_system_atiende_sabotaje(uint32_t tid)
 {
     char* atiende_sabotaje =
-        string_from_format("Tripulante %d atiende sabotaje", tid);
+        string_from_format("Tripulante %d atiende sabotaje\n", tid);
 
     file_system_update_bitacora(tid, atiende_sabotaje);
 
@@ -92,7 +92,7 @@ void  file_system_atiende_sabotaje(uint32_t tid)
 void  file_system_resuelve_sabotaje(uint32_t tid)
 {
     char* resuelve_sabotaje =
-        string_from_format("Tripulante %d resuelve sabotaje", tid);
+        string_from_format("Tripulante %d resuelve sabotaje\n", tid);
 
     file_system_update_bitacora(tid, resuelve_sabotaje);
 
