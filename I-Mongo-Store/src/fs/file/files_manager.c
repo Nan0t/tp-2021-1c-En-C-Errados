@@ -48,7 +48,7 @@ void fs_files_manager_init(const char* mount_point, bool is_clean_initialization
 
     pthread_mutex_init(&p_files_manager_instance->files_mx, NULL);
 
-    char* files_path = string_from_format("%s/Files", u_config_get_string_value("PUNTO_MONTAJE"));
+    char* files_path = string_from_format("%sFiles", u_config_get_string_value("PUNTO_MONTAJE"));
 
     if(is_clean_initialization)
     {
