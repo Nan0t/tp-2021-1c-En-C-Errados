@@ -17,7 +17,7 @@ void test_block_setup(void)
     u_config_init("config/test.conf");
     u_logger_init("BlockTests.log", "BlockTests", false, U_LOG_LEVEL_TRACE);
     system("python3 ../scripts/gen_super_block.py fs_boot 16 16");
-    fs_blocks_manager_init(u_config_get_string_value("PUNTO_MONTAJE"));
+    fs_blocks_manager_init(u_config_get_string_value("PUNTO_MONTAJE"), true);
 }
 
 void test_block_tear_down(void)

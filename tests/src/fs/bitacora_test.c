@@ -14,7 +14,7 @@ void test_bitacora_setup(void)
     u_config_init("config/test.conf");
     u_logger_init("BlockManagerTest.log", "BlockManagerTest", false, U_LOG_LEVEL_TRACE);
     system("python3 ../scripts/gen_super_block.py fs_boot 16 16");
-    fs_blocks_manager_init(u_config_get_string_value("PUNTO_MONTAJE"));
+    fs_blocks_manager_init(u_config_get_string_value("PUNTO_MONTAJE"), true);
 }
 
 void test_bitacora_tear_down(void)
@@ -28,6 +28,12 @@ void test_bitacora_create(void)
 // Arrange.
 //---------
     fs_bitacora_t* bitacora = NULL;
+
+    char* bitacora_path =
+        string_from_format("%sBitacoras/Tripulante%d", u_config_get_string_value("PUNTO_MONTAJE"), 1);
+
+    fclose(fopen(bitacora_path, "w"));
+
 // Act.
 //-----
     bitacora = fs_bitacora_create(u_config_get_string_value("PUNTO_MONTAJE"), 1);
@@ -38,7 +44,6 @@ void test_bitacora_create(void)
 
     CU_ASSERT_EQUAL(fs_bitacora_get_tid(bitacora), 1);
     CU_ASSERT_EQUAL(fs_bitacora_get_size(bitacora), 0);
-    CU_ASSERT_EQUAL(fs_bitacora_get_block_count(bitacora), 1);
 
     char* content = fs_bitacora_get_content(bitacora);
 
@@ -62,6 +67,11 @@ void test_bitacora_add_content_with_no_overflow(void)
 
     fs_bitacora_t* bitacora = NULL;
 
+    char* bitacora_path =
+        string_from_format("%sBitacoras/Tripulante%d", u_config_get_string_value("PUNTO_MONTAJE"), 1);
+
+    fclose(fopen(bitacora_path, "w"));
+
 // Act.
 //-----
     bitacora = fs_bitacora_create(u_config_get_string_value("PUNTO_MONTAJE"), 1);
@@ -73,7 +83,6 @@ void test_bitacora_add_content_with_no_overflow(void)
 
     CU_ASSERT_EQUAL(fs_bitacora_get_tid(bitacora), 1);
     CU_ASSERT_EQUAL(fs_bitacora_get_size(bitacora), content_expected_length);
-    CU_ASSERT_EQUAL(fs_bitacora_get_block_count(bitacora), 1);
     
     char* content = fs_bitacora_get_content(bitacora);
 
@@ -97,6 +106,11 @@ void test_bitacora_add_content_with_overflow(void)
 
     fs_bitacora_t* bitacora = NULL;
 
+    char* bitacora_path =
+        string_from_format("%sBitacoras/Tripulante%d", u_config_get_string_value("PUNTO_MONTAJE"), 1);
+
+    fclose(fopen(bitacora_path, "w"));
+
 // Act.
 //-----
     bitacora = fs_bitacora_create(u_config_get_string_value("PUNTO_MONTAJE"), 1);
@@ -108,7 +122,6 @@ void test_bitacora_add_content_with_overflow(void)
 
     CU_ASSERT_EQUAL(fs_bitacora_get_tid(bitacora), 1);
     CU_ASSERT_EQUAL(fs_bitacora_get_size(bitacora), content_expected_length);
-    CU_ASSERT_EQUAL(fs_bitacora_get_block_count(bitacora), 2);
     
     char* content = fs_bitacora_get_content(bitacora);
 
