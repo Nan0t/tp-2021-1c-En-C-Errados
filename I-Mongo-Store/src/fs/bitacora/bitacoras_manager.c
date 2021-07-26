@@ -45,7 +45,7 @@ void fs_bitacoras_manager_init(const char* mount_point, bool is_clean_initializa
 
     if(is_clean_initialization)
     {
-        char* bitacoras_path = string_from_format("%s/Bitacoras", u_config_get_string_value("PUNTO_MONTAJE"));
+        char* bitacoras_path = string_from_format("%sBitacoras", u_config_get_string_value("PUNTO_MONTAJE"));
         mkdir(bitacoras_path, 0700);
         u_free(bitacoras_path);
     }
