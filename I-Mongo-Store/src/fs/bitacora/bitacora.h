@@ -54,16 +54,6 @@ uint32_t  fs_bitacora_get_tid(const fs_bitacora_t* bitacora);
 uint32_t  fs_bitacora_get_size(const fs_bitacora_t* bitacora);
 
 /**
- * @NAME: fs_bitacora_get_block_count
- * @DESC: devuelve la cantidad de bloques que ocupa una bitacora.
- * @PARAMS:
- *  [in] const fs_bitacora_t* bitacora - bitacora de la cual se quiere conocer la cantidad de bloques que ocupa.
- * 
- * @RETURNS: el numero de bloques ocupados por la bitacora.
- */
-uint32_t  fs_bitacora_get_block_count(const fs_bitacora_t* bitacora);
-
-/**
  * @NAME: fs_bitacora_get_content
  * @DESC: devuelve el contenido de una bitacora.
  * @PARAMS:

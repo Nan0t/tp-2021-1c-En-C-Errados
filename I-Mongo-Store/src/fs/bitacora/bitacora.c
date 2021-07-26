@@ -9,6 +9,7 @@ struct fs_bitacora_t{
     t_config* 	CONFIG;
     char *		PATH;
 };
+
 private t_list* lista_id_bloques_bitacora(char** lista_bloques);
 private char* list_convert_to_string(t_list* list);
 private int get_offset(fs_bitacora_t* this);
@@ -16,22 +17,23 @@ private int get_offset(fs_bitacora_t* this);
 
 fs_bitacora_t* fs_bitacora_create(const char* mount_point, uint32_t tid){
 
-	char * path = string_from_format("%s/Files/Bitacoras/Tripulante%d",mount_point,tid);
+	char * path = string_from_format("%sBitacoras/Tripulante%d",mount_point,tid);
 
 	FILE* file = fopen(path, "w");
 
-		fs_bitacora_t* this = u_malloc(sizeof(fs_bitacora_t));
+	fs_bitacora_t* this = u_malloc(sizeof(fs_bitacora_t));
 
-		this->CONFIG = config_create(path);
+	this->TID    = tid;
+	this->CONFIG = config_create(path);
+	this->PATH   = strdup(path);
 
-		this->PATH = strdup(path);
+	config_set_value(this->CONFIG, "SIZE", "0");
 
-		config_set_value(this->CONFIG, "SIZE", "0");
+	uint32_t block_id = fs_blocks_manager_request_block();
+	char* block_list = string_from_format("[%d]", block_id);
 
-		uint32_t block_id = fs_blocks_manager_request_block();
-		char* block_list = string_from_format("[%d]", block_id);
-
-		config_set_value(this->CONFIG, "BLOCKS", block_list);
+	config_set_value(this->CONFIG, "BLOCKS", block_list);
+	config_save(this->CONFIG);
 
     fclose(file);
 
@@ -45,14 +47,15 @@ fs_bitacora_t* fs_bitacora_create(const char* mount_point, uint32_t tid){
 void fs_bitacora_delete(fs_bitacora_t* this){
 
 	char** block_list = config_get_array_value(this->CONFIG, "BLOCKS");
-	for(int i=0; i<config_get_int_value(this->CONFIG, "BLOCKS_COUNT") ; i++){
-		fs_blocks_manager_release_block(atoi(block_list[i]));
-		u_free(block_list[i]);
+	t_list* tblock = lista_id_bloques_bitacora(block_list);
+
+	void _releasa_blocks(uint32_t* block_id) {
+		fs_blocks_manager_release_block(*block_id);
+		u_free(block_id);
 	}
 
-    u_free(block_list);
+	list_destroy_and_destroy_elements(tblock, (void*)_releasa_blocks);
     u_free(this);
-
 }
 
 //Se guarda el contenido de "content" en la bitacora. Para esto
@@ -62,7 +65,6 @@ void fs_bitacora_delete(fs_bitacora_t* this){
 // todo el contenido en el nuevo bloque, seguir pidiendo bloqueas hasta terminar de escribir
 // todo el contenido.
 void fs_bitacora_add_content(fs_bitacora_t* this, const char* content){
-	int amount_values = fs_bitacora_get_block_count(this);
 	char** blocks = config_get_array_value(this->CONFIG, "BLOCKS");
 	t_list* blocks_tlist = lista_id_bloques_bitacora(blocks);
 	
@@ -71,19 +73,27 @@ void fs_bitacora_add_content(fs_bitacora_t* this, const char* content){
 	int offset = get_offset(this);
 	uint32_t cantidad_a_escribir = strlen(content);
 	uint32_t escritos;
+	uint32_t cantidad_escrito = 0;
 	escritos = fs_block_write(*last_block, content, strlen(content), offset);
+	cantidad_escrito += escritos;
 	cantidad_a_escribir -= escritos;
 	while(cantidad_a_escribir != 0){
 		uint32_t* id_new_block = malloc(sizeof(uint32_t));
 		*id_new_block = fs_blocks_manager_request_block();
 		list_add(blocks_tlist, id_new_block);
 
-		escritos = fs_block_write(*id_new_block, content, cantidad_a_escribir, 0);
+		escritos = fs_block_write(*id_new_block, content + cantidad_escrito, cantidad_a_escribir, 0);
+		cantidad_escrito += escritos;
 		cantidad_a_escribir -= escritos;
 	}
 	char* string_de_bloques = list_convert_to_string(blocks_tlist);
-	config_set_value(this->CONFIG, "BLOCKS", string_de_bloques);
+	char* size = string_itoa(strlen(content) + fs_bitacora_get_size(this));
 
+	config_set_value(this->CONFIG, "BLOCKS", string_de_bloques);
+	config_set_value(this->CONFIG, "SIZE", size);
+	config_save(this->CONFIG);
+
+	u_free(size);
 	list_destroy_and_destroy_elements(blocks_tlist, free);
 }
 
@@ -93,12 +103,9 @@ uint32_t fs_bitacora_get_tid(const fs_bitacora_t* this){
 }
 
 uint32_t fs_bitacora_get_size(const fs_bitacora_t* this){
-    return config_get_int_value(this, "SIZE");
+    return config_get_int_value(this->CONFIG, "SIZE");
 }
 
-uint32_t fs_bitacora_get_block_count(const fs_bitacora_t* this){
-    return config_get_int_value(this, "BLOCK_COUNT");
-}
 
 t_list* fs_bitacora_get_blocks(const fs_bitacora_t* this)
 {
@@ -106,12 +113,11 @@ t_list* fs_bitacora_get_blocks(const fs_bitacora_t* this)
 	return lista_id_bloques_bitacora(blocks);
 }
 
-
 //Devuelve contenido de la bitácora leyendo los bloques de la bitácora.
 char* fs_bitacora_get_content(const fs_bitacora_t* this){ //devuelve un string enorme basicamente
 	char** blocks = config_get_array_value(this->CONFIG, "BLOCKS");
 	uint32_t tamanio_bitacora = fs_bitacora_get_size(this);
-	t_list* lista_id_bloques = list_convert_to_string(blocks);
+	t_list* lista_id_bloques = lista_id_bloques_bitacora(blocks);
 	char* bitacora = malloc(tamanio_bitacora + 1);
 	uint32_t bytes_leidos = 0;
 	void _append_from_log(uint32_t* block_id)
@@ -120,6 +126,8 @@ char* fs_bitacora_get_content(const fs_bitacora_t* this){ //devuelve un string e
 	}
 	list_iterate(lista_id_bloques, (void*)_append_from_log);
 	list_destroy_and_destroy_elements(lista_id_bloques, free);
+	bitacora[tamanio_bitacora] = '\0';
+	
     return bitacora;
 }
 
@@ -144,8 +152,8 @@ private char* list_convert_to_string(t_list* list){
 		}
 		
 	}
-	string_append(&string_list,"]");
 	list_iterate(list, (void*)_agregar_a_string);
+	string_append(&string_list,"]");
 
 	return string_list;
 }
@@ -156,7 +164,7 @@ private t_list* lista_id_bloques_bitacora(char** lista_bloques)
 	for(char** bloques = lista_bloques; *bloques != NULL;  bloques ++)
     {
         uint32_t* bloque = u_malloc(sizeof(uint32_t));
-        bloque = atoi(*bloques);
+        *bloque = atoi(*bloques);
         list_add(bloques_bitacora, bloque);
         free(*bloques);
     }
