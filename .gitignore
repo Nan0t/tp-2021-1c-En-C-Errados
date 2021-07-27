@@ -23,3 +23,6 @@ outputs
 
 #pregen script
 */pregen.sh
+
+#dumps
+*.dmp
