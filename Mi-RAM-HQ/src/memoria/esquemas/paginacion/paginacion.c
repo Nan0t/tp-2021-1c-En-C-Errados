@@ -1138,7 +1138,8 @@ private bool paginacion_inicializacion_chequear_overflow_de_pagina_byte_a_byte(i
 
 private int paginacion_liberar_un_frame(int pagina, p_patota_y_tabla_t* patota){
     p_fila_tabla_de_paginas_t* pagina_a_sacar;
-    
+    U_LOG_INFO("SE MUEVE DE SWAP A REAL PAGINA DE PATOTA %d", patota->pid);
+
     if(string_equals_ignore_case(algoritmo_reemplazo, "LRU")){
         pagina_a_sacar = paginacion_seleccionar_pagina_por_LRU();
     }else{
@@ -1180,6 +1181,9 @@ private p_fila_tabla_de_paginas_t* paginacion_seleccionar_pagina_por_LRU(){
     }
     list_iterator_destroy(iterador_de_patotas);
     pthread_mutex_lock(&pagina_elegida->mx);
+
+    p_patota_y_tabla_t* patota = paginacion_buscar_patota_que_ocupa_frame(pagina_elegida->frame_memoria);
+    U_LOG_INFO("SE SACA DE MEMORIA REAL PAGINA DE PATOTA %d", patota->pid);
     //pthread_mutex_unlock(&listado_patotas_mx);
     return pagina_elegida;
 }
@@ -1201,6 +1205,8 @@ private p_fila_tabla_de_paginas_t* paginacion_seleccionar_pagina_por_CLOCK(){
                 pagina_encontrada = true;
                 contador_clock++;
                 //
+                p_patota_y_tabla_t* patota = paginacion_buscar_patota_que_ocupa_frame(fila_tabla->frame_memoria);
+                U_LOG_INFO("SE SACA DE MEMORIA REAL PAGINA DE PATOTA %d", patota->pid);
                 return fila_tabla;
             }
             fila_tabla->uso = 0; 
