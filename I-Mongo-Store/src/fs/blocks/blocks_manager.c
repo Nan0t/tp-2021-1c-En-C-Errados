@@ -169,9 +169,9 @@ private void fs_blocks_manager_init_super_bloque(const char* super_block_file_pa
     
     uint64_t bitmap_length = 1 + (blocks / sizeof(char));
 
-    void* zero_memory = u_malloc(bitmap_length);
+    void* zero_memory = u_malloc(bitmap_length + 1);
     memset(zero_memory, 0, bitmap_length);
-
+    
     fclose(fopen(super_block_file_path, "w"));
 
     int32_t super_block_file = open(super_block_file_path, O_RDWR, 0666);
@@ -182,6 +182,8 @@ private void fs_blocks_manager_init_super_bloque(const char* super_block_file_pa
     write(super_block_file, zero_memory, bitmap_length);
 
     close(super_block_file);
+
+    u_free(zero_memory);
 }
 
 private void fs_blocks_manager_get_metadata(int32_t super_block_file)
