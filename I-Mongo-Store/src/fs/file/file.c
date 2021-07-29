@@ -41,6 +41,9 @@ fs_file_t* fs_file_create(const char* file_path, char* fill_char){
 	char* hash = generate_md5(NULL, 0, fs_blocks_manager_get_blocks_size());
     config_set_value(this->CONFIG, "MD5_ARCHIVO", hash);
 
+	char centinela = '\0';
+	fs_block_write(block_id, &centinela, 1, 0);
+
 	config_save(this->CONFIG);
 
 	u_free(hash);
