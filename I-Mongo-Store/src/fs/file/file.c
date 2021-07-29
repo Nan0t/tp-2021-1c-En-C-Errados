@@ -27,7 +27,7 @@ fs_file_t* fs_file_create(const char* file_path, char* fill_char){
 	fs_file_t* this = u_malloc(sizeof(fs_file_t));
 
 	this->NOMBRE_ARCHIVO = strdup(file_path);
-	this->CONFIG         = config_create(file_path);
+	this->CONFIG         = config_create((char*)file_path);
 
 	config_set_value(this->CONFIG, "SIZE", "0");
 
@@ -37,9 +37,14 @@ fs_file_t* fs_file_create(const char* file_path, char* fill_char){
 	config_set_value(this->CONFIG, "BLOCKS", block_list);
 	config_set_value(this->CONFIG, "BLOCK_COUNT", "1");
 	config_set_value(this->CONFIG, "CARACTER_LLENADO", fill_char);
-	config_set_value(this->CONFIG, "MD5_ARCHIVO", "");
+
+	char* hash = generate_md5(NULL, 0, fs_blocks_manager_get_blocks_size());
+    config_set_value(this->CONFIG, "MD5_ARCHIVO", hash);
 
 	config_save(this->CONFIG);
+
+	u_free(hash);
+	u_free(block_list);
 
     return this;
 }
@@ -53,6 +58,9 @@ void fs_file_delete(fs_file_t* this){
 		free(block_list[i]);
 	}
 
+	config_destroy(this->CONFIG);
+	
+	u_free(this->NOMBRE_ARCHIVO);
     u_free(block_list);
     u_free(this);
 
@@ -71,12 +79,12 @@ void fs_file_add_fill_char(fs_file_t* this, uint32_t amount){
 		return; //En caso de que me pidan rellenar con cantidad menor 
 	}
 	char** blocks = config_get_array_value(this->CONFIG, "BLOCKS");
-	char* fill_char = fs_file_get_fill_char(this);
+	const char* fill_char = fs_file_get_fill_char(this);
 	uint32_t tamanio_archivo = fs_file_get_size(this);
 	t_list* blocks_tlist = lista_id_bloques_archivo(blocks);
 	uint32_t tamanio_bloques = fs_blocks_manager_get_blocks_size();
 	uint32_t index_ultimo_id_bloque = fs_file_get_blocks_count(this) - 1;
-	uint32_t escritos, a_escribir_en_bloque, nuevo_tamanio_archivo;
+	uint32_t escritos, nuevo_tamanio_archivo;
 	uint32_t* last_block = list_get(blocks_tlist, index_ultimo_id_bloque);
 	nuevo_tamanio_archivo = tamanio_archivo + amount;
 	int offset = get_offset(this);
@@ -145,11 +153,11 @@ void fs_file_remove_fill_char(fs_file_t* this, uint32_t amount){
 		U_LOG_WARN("pedido para remover caracteres de un file sin contenido");
 		return;
 	}
-	uint32_t size_archivo_actualizado = max(0, size_archivo - amount);
+	uint32_t size_archivo_actualizado = max(0, (int)(size_archivo - amount));
 	uint32_t tamanio_bloques = fs_blocks_manager_get_blocks_size();
 	char** bloques_formato_array = config_get_array_value(this->CONFIG, "BLOCKS");
 	t_list* blocks_tlist = lista_id_bloques_archivo(bloques_formato_array);
-	uint32_t indice_ultimo_bloque = (size_archivo_actualizado / tamanio_bloques) - 1;
+	uint32_t indice_ultimo_bloque = (size_archivo_actualizado / (tamanio_bloques + 1));
 	uint32_t offset = size_archivo_actualizado % tamanio_bloques;
 	if(offset || !size_archivo_actualizado)
 	{
@@ -227,21 +235,36 @@ t_list* fs_file_get_blocks(const fs_file_t* this)
 private char* generate_md5(t_list* id_bloques, uint32_t tamanio_a_leer, uint32_t tamanio_bloques)
 {
 	MD5_CTX contexto;
-	char* hash = malloc(MD5_DIGEST_LENGTH);
+	char* hash = malloc(MD5_DIGEST_LENGTH + 1);
 	void* data_bloques = malloc(tamanio_bloques);
 
-	MD5_Init(&contexto);
 	void _actualizar_md5(uint32_t* id_bloque)
 	{
 		uint64_t cant_bytes_leidos = fs_block_read(*id_bloque, data_bloques ,tamanio_a_leer, 0);
 		MD5_Update(&contexto, data_bloques, cant_bytes_leidos);
 		tamanio_a_leer -= cant_bytes_leidos;
 	}
-	list_iterate(id_bloques, (void*)_actualizar_md5);
-	MD5_Final((unsigned char*)hash, &contexto);
-	free(data_bloques);
 
-	return hash;
+	MD5_Init(&contexto);
+    if(tamanio_a_leer == 0)
+    {
+        char centinela = '\0';
+        MD5_Update(&contexto, &centinela, 1);
+    }
+    else
+    {
+        list_iterate(id_bloques, (void*)_actualizar_md5);
+    }
+    MD5_Final((unsigned char*)hash, &contexto);
+    char* string_hash = malloc( MD5_DIGEST_LENGTH * 2 + 1);
+    for (int i = 0, j = 0; i < 16; i++, j+=2)
+        sprintf(string_hash+j, "%02x", hash[i]);
+    string_hash[MD5_DIGEST_LENGTH * 2] = 0;
+
+    free(data_bloques);
+    free(hash);
+
+    return string_hash;
 }
 
 
@@ -356,13 +379,13 @@ private bool verificar_md5(fs_file_t* this)
 	char* hash_archivo = config_get_string_value(this->CONFIG, "MD5_ARCHIVO");
 	uint32_t tamanio_archivo = fs_file_get_size(this);
 	char** lista_bloques = config_get_array_value(this->CONFIG, "BLOCKS");
-	char* caracter_llenado = fs_file_get_fill_char(this);
+	const char* caracter_llenado = fs_file_get_fill_char(this);
 	uint32_t tamanio_bloques  = fs_blocks_manager_get_blocks_size();
 	t_list* lista_id_bloques = lista_id_bloques_archivo(lista_bloques);
 	bool estado_no_corrompido = true;
 	char* md5_bloques_archivo = generate_md5(lista_id_bloques, tamanio_archivo, tamanio_bloques);
 
-	if(!strcmp(md5_bloques_archivo, hash_archivo))
+	if(!memcmp(md5_bloques_archivo, hash_archivo, MD5_DIGEST_LENGTH))
 	{
 		uint32_t tamanio_aux = tamanio_archivo;
 		uint32_t caracteres_escritos;
