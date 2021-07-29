@@ -42,11 +42,12 @@ void test_file_create(void)
 //--------
     CU_ASSERT_PTR_NOT_NULL_FATAL(file);
 
-    CU_ASSERT_EQUAL(fs_file_get_name(file), file_path);
+    CU_ASSERT_STRING_EQUAL(fs_file_get_name(file), file_path);
     CU_ASSERT_EQUAL(fs_file_get_size(file), 0);
     CU_ASSERT_STRING_EQUAL(fs_file_get_fill_char(file), "O");
     CU_ASSERT_EQUAL(fs_file_get_blocks_count(file), 1);
 
+    u_free(file_path);
     fs_file_delete(file);
 }
 
@@ -71,7 +72,7 @@ void test_file_add_fill_char_with_no_overflow(void)
 //--------
     CU_ASSERT_PTR_NOT_NULL_FATAL(file);
 
-    CU_ASSERT_EQUAL(fs_file_get_name(file), path);
+    CU_ASSERT_STRING_EQUAL(fs_file_get_name(file), path);
     CU_ASSERT_EQUAL(fs_file_get_size(file), 5);
     CU_ASSERT_STRING_EQUAL(fs_file_get_fill_char(file), "O");
     CU_ASSERT_EQUAL(fs_file_get_blocks_count(file), 1);
@@ -112,18 +113,21 @@ void test_file_add_fill_char_with_overflow(void)
     CU_ASSERT_PTR_NOT_NULL_FATAL(file_overflow_1);
     CU_ASSERT_PTR_NOT_NULL_FATAL(file_overflow_2);
 
-    CU_ASSERT_EQUAL(fs_file_get_name(file_overflow_1), file1_path);
+    CU_ASSERT_STRING_EQUAL(fs_file_get_name(file_overflow_1), file1_path);
     CU_ASSERT_EQUAL(fs_file_get_size(file_overflow_1), 20);
     CU_ASSERT_STRING_EQUAL(fs_file_get_fill_char(file_overflow_1), "O");
     CU_ASSERT_EQUAL(fs_file_get_blocks_count(file_overflow_1), 2);
 
-    CU_ASSERT_EQUAL(fs_file_get_name(file_overflow_2), file2_path);
-    CU_ASSERT_EQUAL(fs_file_get_size(file_overflow_2), 40);
+    CU_ASSERT_STRING_EQUAL(fs_file_get_name(file_overflow_2), file2_path);
+    CU_ASSERT_EQUAL(fs_file_get_size(file_overflow_2), 32);
     CU_ASSERT_STRING_EQUAL(fs_file_get_fill_char(file_overflow_2), "B");
-    CU_ASSERT_EQUAL(fs_file_get_blocks_count(file_overflow_2), 3);
+    CU_ASSERT_EQUAL(fs_file_get_blocks_count(file_overflow_2), 2);
 
     fs_file_delete(file_overflow_1);
     fs_file_delete(file_overflow_2);
+
+    u_free(file1_path);
+    u_free(file2_path);
 }
 
 void test_file_remove_fill_char_with_no_shrink(void)
@@ -151,12 +155,13 @@ void test_file_remove_fill_char_with_no_shrink(void)
 //--------
     CU_ASSERT_PTR_NOT_NULL_FATAL(file);
 
-    CU_ASSERT_EQUAL(fs_file_get_name(file), file_path);
+    CU_ASSERT_STRING_EQUAL(fs_file_get_name(file), file_path);
     CU_ASSERT_EQUAL(fs_file_get_size(file), 21);
     CU_ASSERT_STRING_EQUAL(fs_file_get_fill_char(file), "O");
     CU_ASSERT_EQUAL(fs_file_get_blocks_count(file), 2);
 
     fs_file_delete(file);
+    u_free(file_path);
 }
 
 void test_file_remove_fill_char_with_shrink(void)
@@ -184,10 +189,11 @@ void test_file_remove_fill_char_with_shrink(void)
 //--------
     CU_ASSERT_PTR_NOT_NULL_FATAL(file);
 
-    CU_ASSERT_EQUAL(fs_file_get_name(file), file_path);
-    CU_ASSERT_EQUAL(fs_file_get_size(file), 14);
+    CU_ASSERT_STRING_EQUAL(fs_file_get_name(file), file_path);
+    CU_ASSERT_EQUAL(fs_file_get_size(file), 16);
     CU_ASSERT_STRING_EQUAL(fs_file_get_fill_char(file), "O");
     CU_ASSERT_EQUAL(fs_file_get_blocks_count(file), 1);
 
     fs_file_delete(file);
+    u_free(file_path);
 }

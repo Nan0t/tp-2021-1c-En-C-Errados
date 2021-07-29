@@ -13,7 +13,7 @@ void test_fs_block_manager_setup(void)
 {
     u_config_init("config/test.conf");
     u_logger_init("BlockManagerTest.log", "BlockManagerTest", false, U_LOG_LEVEL_TRACE);
-    system("python3 ../scripts/gen_super_block.py fs_boot 16 16");
+    // system("python3 ../scripts/gen_super_block.py fs_boot 16 16");
     fs_blocks_manager_init(u_config_get_string_value("PUNTO_MONTAJE"), true);
 }
 
@@ -40,6 +40,7 @@ void test_fs_block_manager_request_and_release_blocks(void)
     {
         CU_ASSERT_EQUAL(blocks[i], i + 1);
         CU_ASSERT_EQUAL(fs_block_get_disk_offset(blocks[i]), 16 * i); // Disk_Offset
+        fs_blocks_manager_release_block(blocks[i]);
     }
 }
 
@@ -70,9 +71,11 @@ void test_fs_block_manager_request_and_get_a_intermidiate_block(void)
         {
             CU_ASSERT_EQUAL(intermediate_block, expected_block_number);
             CU_ASSERT_EQUAL(fs_block_get_disk_offset(intermediate_block), expected_block_disk_offset);
+            fs_blocks_manager_release_block(intermediate_block);
         }
         CU_ASSERT_EQUAL(blocks[i], i + 1);
         CU_ASSERT_EQUAL(fs_block_get_disk_offset(blocks[i]), 16 * i); // Disk_Offset
+        fs_blocks_manager_release_block(blocks[i]);
     }
 }
 

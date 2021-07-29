@@ -56,6 +56,7 @@ void test_bitacora_create(void)
     }
 
     fs_bitacora_delete(bitacora);
+    u_free(bitacora_path);
 }
 
 void test_bitacora_add_content_with_no_overflow(void)
@@ -95,6 +96,7 @@ void test_bitacora_add_content_with_no_overflow(void)
     }
 
     fs_bitacora_delete(bitacora);
+    u_free(bitacora_path);
 }
 
 void test_bitacora_add_content_with_overflow(void)
@@ -134,4 +136,5 @@ void test_bitacora_add_content_with_overflow(void)
     }
 
     fs_bitacora_delete(bitacora);
+    u_free(bitacora_path);
 }
