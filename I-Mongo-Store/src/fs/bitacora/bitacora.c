@@ -55,6 +55,8 @@ void fs_bitacora_delete(fs_bitacora_t* this){
 	}
 
 	list_destroy_and_destroy_elements(tblock, (void*)_releasa_blocks);
+	config_destroy(this->CONFIG);
+	u_free(this->PATH);
     u_free(this);
 }
 
@@ -94,6 +96,8 @@ void fs_bitacora_add_content(fs_bitacora_t* this, const char* content){
 	config_save(this->CONFIG);
 
 	u_free(size);
+	u_free(string_de_bloques);
+
 	list_destroy_and_destroy_elements(blocks_tlist, free);
 }
 
