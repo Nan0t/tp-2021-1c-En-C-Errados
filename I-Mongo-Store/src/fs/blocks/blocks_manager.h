@@ -19,6 +19,8 @@ void fs_blocks_manager_init(const char* mount_point, bool is_clean_initializatio
  */
 uint32_t fs_blocks_manager_request_block(void);
 
+void fs_blocks_manager_sync(void);
+
 /**
  * @NAME: fs_blocks_manager_release_block
  * @DESC: libera un bloque del disco.

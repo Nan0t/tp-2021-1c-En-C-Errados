@@ -43,7 +43,7 @@ private fs_blocks_manager_t* p_blocks_manager_instance = NULL;
 
 private void     fs_blocks_manager_init_super_bloque(const char* super_block_file_path);
 private void     fs_blocks_manager_get_metadata(int32_t super_block_file);
-private void     fs_blocks_manager_init_disk(void);
+private void     fs_blocks_manager_init_disk(bool is_clean_initialization);
 private void     fs_blocks_manager_init_blocks(void);
 private uint32_t fs_blocks_manager_get_free_block_index(void);
 private void     fs_blocks_manager_release_block_at(uint32_t index);
@@ -77,13 +77,18 @@ void fs_blocks_manager_init(const char* mount_point, bool is_clean_initializatio
     u_free(super_block_file_path);
 
     fs_blocks_manager_get_metadata(super_block_file);
-    fs_blocks_manager_init_disk();
+    fs_blocks_manager_init_disk(is_clean_initialization);
     fs_blocks_manager_init_blocks();
 }
 
 uint32_t fs_blocks_manager_request_block(void)
 {
     return fs_blocks_manager_get_free_block_index();
+}
+
+void fs_blocks_manager_sync(void)
+{
+    fs_physical_disk_flush(0, (p_blocks_manager_instance->blocks_count * p_blocks_manager_instance->blocks_size) - 1);
 }
 
 void fs_blocks_manager_release_block(uint32_t block_id)
@@ -125,7 +130,7 @@ uint32_t fs_blocks_manager_get_blocks_size(void)
 
 bool fs_blocks_manager_check_integrity(void)
 {
-    return fs_block_manager_verificar_integridad_bitmap() && fs_block_manager_verficar_integridad_cantidad_bloques();
+    return fs_block_manager_verificar_integridad_bitmap() || fs_block_manager_verficar_integridad_cantidad_bloques();
 }
 
 // =======================================================
@@ -204,9 +209,9 @@ private void fs_blocks_manager_get_metadata(int32_t super_block_file)
     p_blocks_manager_instance->bitmap = bitarray_create(bitmap_mem + sizeof(uint32_t) * 2, bitmap_size);
 }
 
-private void fs_blocks_manager_init_disk(void)
+private void fs_blocks_manager_init_disk(bool is_clean_initialization)
 {
-    fs_physical_disk_init(p_blocks_manager_instance->blocks_size * p_blocks_manager_instance->blocks_count);
+    fs_physical_disk_init(p_blocks_manager_instance->blocks_size * p_blocks_manager_instance->blocks_count, is_clean_initialization);
 }
 
 private void fs_blocks_manager_init_blocks(void)
