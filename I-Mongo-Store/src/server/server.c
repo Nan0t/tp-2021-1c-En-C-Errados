@@ -1,6 +1,5 @@
 #include "server.h"
 #include "client_handler.h"
-#include "thread_pool.h"
 
 #include <pthread.h>
 
@@ -28,8 +27,11 @@ void fs_server_init(const char* port)
     }
     u_sock_err_delete(err);
 
-    fs_thread_pool_init(10);
-    fs_server_loop();
+    pthread_t server_thread;
+    U_ASSERT(pthread_create(&server_thread, NULL, (void*)fs_server_loop, NULL) != -1,
+        "No se pudo crear el hilo del servidor");
+
+    pthread_detach(server_thread);
 }
 
 private void fs_server_loop(void)

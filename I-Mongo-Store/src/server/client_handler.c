@@ -1,6 +1,7 @@
 #include "fs/file_system.h"
 #include "client_handler.h"
-#include "thread_pool.h"
+
+#include <pthread.h>
 
 private void fs_client_handler_task(int32_t* client_sock);
 private void fs_client_handler_check_opcode(int32_t client_sock, u_opcode_e opcode);
@@ -18,7 +19,10 @@ private bool fs_client_handler_is_valid_opcode(u_opcode_e opcode);
 
 void fs_client_handler_new_connection(int32_t* client_sock)
 {
-    fs_thread_pool_push_task(client_sock, (void*)fs_client_handler_task);
+    pthread_t client_thread;
+    U_ASSERT(pthread_create(&client_thread, NULL, (void*)fs_client_handler_task, client_sock) != -1,
+        "No se pudo crear un hilo para atender a una conexion");
+    pthread_detach(client_thread);
 }
 
 private void fs_client_handler_task(int32_t* client_sock)
