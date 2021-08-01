@@ -29,25 +29,28 @@ fs_file_t* fs_file_create(const char* file_path, char* fill_char){
 	this->NOMBRE_ARCHIVO = strdup(file_path);
 	this->CONFIG         = config_create((char*)file_path);
 
-	config_set_value(this->CONFIG, "SIZE", "0");
+	if(fill_char)
+	{
+		config_set_value(this->CONFIG, "SIZE", "0");
 
-	uint32_t block_id = fs_blocks_manager_request_block();
-	char* block_list = string_from_format("[%d]", block_id);
+		uint32_t block_id = fs_blocks_manager_request_block();
+		char* block_list = string_from_format("[%d]", block_id);
 
-	config_set_value(this->CONFIG, "BLOCKS", block_list);
-	config_set_value(this->CONFIG, "BLOCK_COUNT", "1");
-	config_set_value(this->CONFIG, "CARACTER_LLENADO", fill_char);
+		config_set_value(this->CONFIG, "BLOCKS", block_list);
+		config_set_value(this->CONFIG, "BLOCK_COUNT", "1");
+		config_set_value(this->CONFIG, "CARACTER_LLENADO", fill_char);
 
-	char* hash = generate_md5(NULL, 0, fs_blocks_manager_get_blocks_size());
-    config_set_value(this->CONFIG, "MD5_ARCHIVO", hash);
+		char* hash = generate_md5(NULL, 0, fs_blocks_manager_get_blocks_size());
+		config_set_value(this->CONFIG, "MD5_ARCHIVO", hash);
 
-	char centinela = '\0';
-	fs_block_write(block_id, &centinela, 1, 0);
+		char centinela = '\0';
+		fs_block_write(block_id, &centinela, 1, 0);
 
-	config_save(this->CONFIG);
+		config_save(this->CONFIG);
 
-	u_free(hash);
-	u_free(block_list);
+		u_free(hash);
+		u_free(block_list);
+	}
 
     return this;
 }
@@ -62,6 +65,7 @@ void fs_file_delete(fs_file_t* this){
 	}
 
 	config_destroy(this->CONFIG);
+	remove(this->NOMBRE_ARCHIVO);
 	
 	u_free(this->NOMBRE_ARCHIVO);
     u_free(block_list);
@@ -204,7 +208,7 @@ void fs_file_remove_fill_char(fs_file_t* this, uint32_t amount){
 }
 
 bool fs_file_check_integrity(fs_file_t* this){
-	return verificar_size_correcto(this) && verificar_cantidad_bloques_correcto(this) && verificar_md5(this);
+	return verificar_size_correcto(this) || verificar_cantidad_bloques_correcto(this) || verificar_md5(this);
 
 }
 
@@ -322,7 +326,7 @@ private bool verificar_size_correcto(fs_file_t* this)
 	t_list* lista_id_bloques = lista_id_bloques_archivo(lista_bloques);
 	uint32_t tamanio_archivo  = fs_file_get_size(this);
 	uint32_t  cantidad_caracteres_file = 0;
-	bool estado_no_corrompido = true;
+	bool estado_corrompido = false;
 
 	void _contar_cantidad_caracteres_bloque(uint32_t* id_bloque)
 	{
@@ -345,13 +349,13 @@ private bool verificar_size_correcto(fs_file_t* this)
 		char* caracter_cantidad_caracteres_file = string_itoa(cantidad_caracteres_file);
 		config_set_value(this->CONFIG, "SIZE", caracter_cantidad_caracteres_file);
 		u_free(caracter_cantidad_caracteres_file);
-		estado_no_corrompido = false;
+		estado_corrompido = true;
 	}
 	list_destroy_and_destroy_elements(lista_id_bloques, free);
 
 	config_save(this->CONFIG);
 
-	return estado_no_corrompido;
+	return estado_corrompido;
 }
 
 private bool verificar_cantidad_bloques_correcto(fs_file_t* this)
@@ -360,20 +364,20 @@ private bool verificar_cantidad_bloques_correcto(fs_file_t* this)
 	uint32_t cantidad_bloques = fs_file_get_blocks_count(this);
 	t_list* lista_id_bloques = lista_id_bloques_archivo(lista_bloques);
 	uint32_t cantidad_bloques_segun_lista = list_size(lista_id_bloques);
-	bool estado_no_corrompido = true;
+	bool estado_corrompido = false;
 
 	if(cantidad_bloques_segun_lista != cantidad_bloques)
 	{
 		char* caracter_cantidad_bloques_segun_lista = string_itoa(cantidad_bloques_segun_lista);
 		config_set_value(this->CONFIG, "BLOCKS", caracter_cantidad_bloques_segun_lista);
 		u_free(caracter_cantidad_bloques_segun_lista);
-		estado_no_corrompido= false;
+		estado_corrompido= true;
 	}
 	list_destroy_and_destroy_elements(lista_id_bloques, free);
 
 	config_save(this->CONFIG);
 
-	return estado_no_corrompido;
+	return estado_corrompido;
 }
 
 private bool verificar_md5(fs_file_t* this)
@@ -385,7 +389,7 @@ private bool verificar_md5(fs_file_t* this)
 	const char* caracter_llenado = fs_file_get_fill_char(this);
 	uint32_t tamanio_bloques  = fs_blocks_manager_get_blocks_size();
 	t_list* lista_id_bloques = lista_id_bloques_archivo(lista_bloques);
-	bool estado_no_corrompido = true;
+	bool estado_corrompido = false;
 	char* md5_bloques_archivo = generate_md5(lista_id_bloques, tamanio_archivo, tamanio_bloques);
 
 	if(!memcmp(md5_bloques_archivo, hash_archivo, MD5_DIGEST_LENGTH))
@@ -406,9 +410,9 @@ private bool verificar_md5(fs_file_t* this)
 		list_iterate(lista_id_bloques, (void*)_rellenar_bloques);
 		// acá por ahí podríamos verificar si el md5 está bien ahora
 		//luego libero la lista.
-		estado_no_corrompido = false;
+		estado_corrompido = true;
 	}
 	list_destroy_and_destroy_elements(lista_id_bloques, free);
 	free(md5_bloques_archivo);
-	return estado_no_corrompido;
+	return estado_corrompido;
 }
