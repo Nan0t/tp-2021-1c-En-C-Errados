@@ -15,30 +15,27 @@ private char* list_convert_to_string(t_list* list);
 private int get_offset(fs_bitacora_t* this);
 
 
-fs_bitacora_t* fs_bitacora_create(const char* mount_point, uint32_t tid){
-
-	char * path = string_from_format("%sBitacoras/Tripulante%d",mount_point,tid);
-
-	FILE* file = fopen(path, "w");
-
+fs_bitacora_t* fs_bitacora_create(const char* path, uint32_t tid)
+{
 	fs_bitacora_t* this = u_malloc(sizeof(fs_bitacora_t));
 
 	this->TID    = tid;
-	this->CONFIG = config_create(path);
+	this->CONFIG = config_create((char*)path);
 	this->PATH   = strdup(path);
 
-	config_set_value(this->CONFIG, "SIZE", "0");
+	if(tid != 0)
+	{
+		config_set_value(this->CONFIG, "SIZE", "0");
 
-	uint32_t block_id = fs_blocks_manager_request_block();
-	char* block_list = string_from_format("[%d]", block_id);
+		uint32_t block_id = fs_blocks_manager_request_block();
+		char* block_list = string_from_format("[%d]", block_id);
 
-	config_set_value(this->CONFIG, "BLOCKS", block_list);
-	config_save(this->CONFIG);
+		config_set_value(this->CONFIG, "BLOCKS", block_list);
+		config_save(this->CONFIG);
 
-    fclose(file);
+		u_free(block_list);
+	}
 
-    u_free(path);
-	u_free(block_list);
 
     return this;
 }
@@ -56,6 +53,9 @@ void fs_bitacora_delete(fs_bitacora_t* this){
 
 	list_destroy_and_destroy_elements(tblock, (void*)_releasa_blocks);
 	config_destroy(this->CONFIG);
+
+	remove(this->PATH);
+
 	u_free(this->PATH);
     u_free(this);
 }
@@ -72,7 +72,17 @@ void fs_bitacora_add_content(fs_bitacora_t* this, const char* content){
 	
 	uint32_t* last_block = list_get(blocks_tlist, list_size(blocks_tlist) - 1);
 
+	U_LOG_TRACE("Se actualiza la bitacora del tripulante %d: %s", this->TID, content);
+
 	int offset = get_offset(this);
+
+	if(!offset && fs_bitacora_get_size(this))
+	{
+		last_block = u_malloc(sizeof(uint32_t));
+		*last_block = fs_blocks_manager_request_block();
+		list_add(blocks_tlist, last_block);
+	}
+
 	uint32_t cantidad_a_escribir = strlen(content);
 	uint32_t escritos;
 	uint32_t cantidad_escrito = 0;

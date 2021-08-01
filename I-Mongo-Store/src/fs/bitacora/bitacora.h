@@ -9,12 +9,12 @@ typedef struct fs_bitacora_t fs_bitacora_t;
  * @NAME: fs_bitacora_create
  * @DESC: crea una instancia de bitacora
  * @PARAMS:
- *  [in] const char* mount_point - punto de montaje del sistema
- *  [in] uint32_t    tid         - numero del tripulante.
+ *  [in] const char* path - ruta de la bitacora
+ *  [in] uint32_t    tid  - numero del tripulante.
  * 
  * @RETURNS: una instancia fs_bitacora_t
  */
-fs_bitacora_t* fs_bitacora_create(const char* mount_point, uint32_t tid);
+fs_bitacora_t* fs_bitacora_create(const char* path, uint32_t tid);
 
 /**
  * @NAME: fs_bitacora_delete
