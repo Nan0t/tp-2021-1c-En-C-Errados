@@ -2,8 +2,10 @@
 
 #include <pthread.h>
 #include <sys/stat.h>
+#include <dirent.h>
 
 #include <stdio.h>
+#include <errno.h>
 
 typedef struct
 {
@@ -26,6 +28,11 @@ private fs_bitacoras_manager_t* p_bitacoras_manager_instance = NULL;
 private fs_bitacora_ref_t* fs_bitacora_ref_create(uint32_t tid);
 private void               fs_bitacora_ref_delete(fs_bitacora_ref_t* bitacora_ref);
 
+private void fs_bitacoras_manager_create_folder(void);
+private void fs_bitacoras_manager_release_prev_bitacoras(void);
+
+private void fs_bitacoras_manager_load_prev_bitacora_and_release(const char* bitacora_name);
+
 private void           fs_bitacoras_manager_add_ref(fs_bitacora_ref_t* bitacora_ref);
 private void           fs_bitacoras_manager_rm_ref(uint32_t tid);
 private fs_bitacora_t* fs_bitacoras_manager_hold_ref(uint32_t tid);
@@ -44,11 +51,9 @@ void fs_bitacoras_manager_init(const char* mount_point, bool is_clean_initializa
     pthread_mutex_init(&p_bitacoras_manager_instance->bitacoras_mx, NULL);
 
     if(is_clean_initialization)
-    {
-        char* bitacoras_path = string_from_format("%sBitacoras", u_config_get_string_value("PUNTO_MONTAJE"));
-        mkdir(bitacoras_path, 0700);
-        u_free(bitacoras_path);
-    }
+        fs_bitacoras_manager_create_folder();
+    else
+        fs_bitacoras_manager_release_prev_bitacoras();
 }
 
 void fs_bitacoras_manager_create_bitacora(uint32_t tid)
@@ -77,7 +82,8 @@ t_list* fs_bitacoras_manager_get_blocks_id(void)
     t_list* bloques = list_create();
     pthread_mutex_lock(&p_bitacoras_manager_instance->bitacoras_mx);
 
-    void _get_bitacora_blocks_id(fs_bitacora_ref_t* bitacora_ref) {
+    void _get_bitacora_blocks_id(char* _, fs_bitacora_ref_t* bitacora_ref) {
+        (void)_;
         t_list* lista_temporal = fs_bitacora_get_blocks(bitacora_ref->bitacora);
         list_add_all(bloques, lista_temporal);
         u_free(lista_temporal);
@@ -95,7 +101,13 @@ t_list* fs_bitacoras_manager_get_blocks_id(void)
 
 private fs_bitacora_ref_t* fs_bitacora_ref_create(uint32_t tid)
 {
-    fs_bitacora_t* bitacora = fs_bitacora_create(p_bitacoras_manager_instance->mount_point, tid);
+    char bitacora_name[1024] = { 0 };
+
+    sprintf(bitacora_name, "%sBitacoras/Tripulante%d.ims", p_bitacoras_manager_instance->mount_point, tid);
+
+    fclose(fopen(bitacora_name, "w"));
+
+    fs_bitacora_t* bitacora = fs_bitacora_create(bitacora_name, tid);
     fs_bitacora_ref_t* bitacora_ref = u_malloc(sizeof(fs_bitacora_ref_t));
 
     bitacora_ref->bitacora    = bitacora;
@@ -120,6 +132,39 @@ private void fs_bitacora_ref_delete(fs_bitacora_ref_t* bitacora_ref)
     pthread_cond_destroy(&bitacora_ref->can_be_deleted);
 
     u_free(bitacora_ref);
+}
+
+private void fs_bitacoras_manager_create_folder(void)
+{
+    char* bitacoras_path = string_from_format("%sBitacoras", u_config_get_string_value("PUNTO_MONTAJE"));
+    mkdir(bitacoras_path, 0700);
+    u_free(bitacoras_path);
+}
+
+private void fs_bitacoras_manager_release_prev_bitacoras(void)
+{
+    char bitacora_name[1024] = { 0 };
+    char bitacoras_path[512] = { 0 };
+    struct dirent* dir_info;
+
+    sprintf(bitacoras_path, "%sBitacoras", p_bitacoras_manager_instance->mount_point);
+
+    DIR* directory = opendir(bitacoras_path);
+    U_ASSERT(directory != NULL, "Error al obtener el directorio %s: %s", bitacoras_path, strerror(errno));
+
+    while((dir_info = readdir(directory)) != NULL)
+    {
+        if(dir_info->d_type != DT_DIR)
+        {
+            sprintf(bitacora_name, "%s/%s", bitacoras_path, dir_info->d_name);
+            fs_bitacoras_manager_load_prev_bitacora_and_release(bitacora_name);
+        }
+    }
+}
+
+private void fs_bitacoras_manager_load_prev_bitacora_and_release(const char* bitacora_name)
+{
+    fs_bitacora_delete(fs_bitacora_create(bitacora_name, 0));
 }
 
 private void fs_bitacoras_manager_add_ref(fs_bitacora_ref_t* bitacora_ref)
