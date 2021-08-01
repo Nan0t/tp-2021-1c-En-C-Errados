@@ -1,7 +1,11 @@
 #include "fs/file_system.h"
+#include "fs/blocks/blocks_manager.h"
+
 #include "server/server.h"
 
 #include <utils/entry_point.h>
+
+#include <unistd.h>
 
 #include <stdlib.h>
 
@@ -30,6 +34,14 @@ int entry_point(int argc, char** argv)
     });
 
     fs_server_init(u_config_get_string_value("PUERTO"));
+
+    while(1)
+    {
+        uint32_t sync_time = u_config_get_int_value("TIEMPO_SINCRONIZACION");
+        sleep(sync_time);
+
+        fs_blocks_manager_sync();
+    }
 
     return 0;
 }
