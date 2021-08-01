@@ -26,7 +26,7 @@ typedef struct
 
 private fs_files_manager_t* p_files_manager_instance = NULL;
 
-private fs_file_ref_t* fs_file_ref_create(const char* file_name, char fill_char);
+private fs_file_ref_t* fs_file_ref_create(const char* file_name, char* fill_char);
 private void           fs_file_ref_delete(fs_file_ref_t* bitacora_ref);
 
 private void       fs_files_manager_load_all_files(const char* files_directory_path);
@@ -62,7 +62,7 @@ void fs_files_manager_init(const char* mount_point, bool is_clean_initialization
 void fs_files_manager_create_file(const char* name, char fill_char)
 {
     char file_path[1024] = { 0 };
-    sprintf(file_path, "%s/%s", p_files_manager_instance->mount_point, name);
+    sprintf(file_path, "%sFiles/%s.ims", p_files_manager_instance->mount_point, name);
 
     if(access(file_path, F_OK) == 0)
     {
@@ -70,8 +70,9 @@ void fs_files_manager_create_file(const char* name, char fill_char)
         return;
     }
 
+    char fill_char_str[2] = { fill_char, '\0' };
     fclose(fopen(file_path, "w")); // Trambolico xd
-    fs_files_manager_add_ref(fs_file_ref_create(file_path, fill_char));
+    fs_files_manager_add_ref(fs_file_ref_create(file_path, fill_char_str));
 }
 
 fs_file_t* fs_files_manager_hold_file(const char* name)
@@ -95,7 +96,8 @@ bool fs_files_manager_check_files_integrity(void)
 
     pthread_mutex_lock(&p_files_manager_instance->files_mx);
 
-    void _check_file_integrity(fs_file_ref_t* file_ref) {
+    void _check_file_integrity(char* _, fs_file_ref_t* file_ref) {
+        (void)_;
         if(fs_file_check_integrity(file_ref->file))
             corrupt_file_was_found = true;
     };
@@ -111,7 +113,8 @@ t_list* fs_files_manager_get_blocks_id(void)
     t_list* bloques = list_create();
     pthread_mutex_lock(&p_files_manager_instance->files_mx);
 
-    void _get_file_blocks_id(fs_file_ref_t* file_ref) {
+    void _get_file_blocks_id(char* _, fs_file_ref_t* file_ref) {
+        (void)_;
         t_list* lista_temporal = fs_file_get_blocks(file_ref->file);
         list_add_all(bloques, lista_temporal);
         u_free(lista_temporal);
@@ -127,11 +130,9 @@ t_list* fs_files_manager_get_blocks_id(void)
 //             *** Private Functions ***
 // ========================================================
 
-private fs_file_ref_t* fs_file_ref_create(const char* file_path, char fill_char)
+private fs_file_ref_t* fs_file_ref_create(const char* file_path, char* fill_char)
 {
-    char fill_char_str[2] = { fill_char, '\0' };
-
-    fs_file_t*     file     = fs_file_create(file_path, fill_char_str);
+    fs_file_t*     file     = fs_file_create(file_path, fill_char);
     fs_file_ref_t* file_ref = u_malloc(sizeof(fs_file_ref_t));
 
     file_ref->file        = file;
@@ -166,17 +167,20 @@ private void fs_files_manager_load_all_files(const char* files_directory_path)
     DIR* directory = opendir(files_directory_path);
     U_ASSERT(directory != NULL, "Error al obtener el directorio %s: %s", files_directory_path, strerror(errno));
 
-
     while((dir_info = readdir(directory)) != NULL)
     {
-        sprintf(filename, "%s/%s", files_directory_path, dir_info->d_name);
-        fs_files_manager_load_file(filename);
+        if(dir_info->d_type != DT_DIR)
+        {
+            sprintf(filename, "%s/%s", files_directory_path, dir_info->d_name);
+            fs_files_manager_load_file(filename);
+        }
     }
 }
 
 private void fs_files_manager_load_file(const char* file_path)
 {
-    // TODO: Crear un fs_file_t a partir de un archivo existente.
+    fs_file_ref_t* file_ref = fs_file_ref_create(file_path, NULL);
+    fs_files_manager_add_ref(file_ref);
 }
 
 private void fs_files_manager_add_ref(fs_file_ref_t* file_ref)
@@ -188,20 +192,26 @@ private void fs_files_manager_add_ref(fs_file_ref_t* file_ref)
 
 private void fs_files_manager_rm_ref(const char* file_name)
 {
+    char* file_path = string_from_format("%sFiles/%s.ims", p_files_manager_instance->mount_point, file_name);
+
     pthread_mutex_lock(&p_files_manager_instance->files_mx);
-    fs_file_ref_t* file_ref = dictionary_remove(p_files_manager_instance->files, (char*)file_name);
+    fs_file_ref_t* file_ref = dictionary_remove(p_files_manager_instance->files, (char*)file_path);
     pthread_mutex_unlock(&p_files_manager_instance->files_mx);
 
     if(file_ref)
         fs_file_ref_delete(file_ref);
+
+    u_free(file_path);
 }
 
 private fs_file_t* fs_files_manager_hold_ref(const char* file_name)
 {
     fs_file_t* file = NULL;
 
+    char* file_path = string_from_format("%sFiles/%s.ims", p_files_manager_instance->mount_point, file_name);
+
     pthread_mutex_lock(&p_files_manager_instance->files_mx);
-    fs_file_ref_t* file_ref = dictionary_get(p_files_manager_instance->files, (char*)file_name);
+    fs_file_ref_t* file_ref = dictionary_get(p_files_manager_instance->files, (char*)file_path);
 
     if(file_ref)
     {
@@ -213,14 +223,16 @@ private fs_file_t* fs_files_manager_hold_ref(const char* file_name)
     }
 
     pthread_mutex_unlock(&p_files_manager_instance->files_mx);
+    u_free(file_path);
 
     return file;
 }
 
 private void fs_files_manager_release_ref(const char* file_name)
 {
+    char* file_path = string_from_format("%sFiles/%s.ims", p_files_manager_instance->mount_point, file_name);
     pthread_mutex_lock(&p_files_manager_instance->files_mx);
-    fs_file_ref_t* file_ref = dictionary_get(p_files_manager_instance->files, (char*)file_name);
+    fs_file_ref_t* file_ref = dictionary_get(p_files_manager_instance->files, (char*)file_path);
 
     if(file_ref)
     {
