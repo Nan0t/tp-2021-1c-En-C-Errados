@@ -12,7 +12,7 @@
 private void*           p_physical_disk      = NULL;
 private uint64_t        p_physical_disk_size = 0;
 
-void fs_physical_disk_init(uint64_t size)
+void fs_physical_disk_init(uint64_t size, bool is_clean_initialization)
 {
     if(p_physical_disk != NULL)
         return;
@@ -25,10 +25,13 @@ void fs_physical_disk_init(uint64_t size)
         
     u_free(disk_file_dir);
 
-    void* zero_memory = u_malloc(size);
-    memset(zero_memory, 0, size);
-    write(disk_file_fd, zero_memory, size);
-    u_free(zero_memory);
+    if(is_clean_initialization)
+    {
+        void* zero_memory = u_malloc(size);
+        memset(zero_memory, 0, size);
+        write(disk_file_fd, zero_memory, size);
+        u_free(zero_memory);
+    }
 
     p_physical_disk      = mmap(NULL, size, PROT_WRITE | PROT_READ, MAP_SHARED, disk_file_fd, 0);
     p_physical_disk_size = size;
