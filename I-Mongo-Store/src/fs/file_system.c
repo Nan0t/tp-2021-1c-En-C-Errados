@@ -86,6 +86,12 @@ void  file_system_atiende_sabotaje(uint32_t tid)
 
     file_system_update_bitacora(tid, atiende_sabotaje);
 
+    if(fs_blocks_manager_check_integrity())
+        U_LOG_TRACE("Sabotaje en SuperBloque.ims");
+
+    if(fs_files_manager_check_files_integrity())
+        U_LOG_TRACE("Sabotaje en Files.ims");
+
     u_free(atiende_sabotaje);
 }
 
