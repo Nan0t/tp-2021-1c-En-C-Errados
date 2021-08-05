@@ -15,6 +15,9 @@
 #include <math.h>
 #include <stdio.h>
 
+#define BLOCKS_SIZE(super_bloque)   *((uint32_t*)(super_bloque))
+#define BLOCKS_COUNT(super_bloque)   *((uint32_t*)(super_bloque + sizeof(uint32_t)))
+
 typedef struct
 {
     uint32_t number;
@@ -33,6 +36,8 @@ typedef struct
 
     pthread_mutex_t blocks_bitmap_mx;
     t_bitarray*     bitmap;
+
+    void* super_bloque;
 } fs_blocks_manager_t;
 
 private void     fs_block_init(fs_block_t* block, uint32_t number, uint32_t disk_offset);
@@ -49,6 +54,7 @@ private uint32_t fs_blocks_manager_get_free_block_index(void);
 private void     fs_blocks_manager_release_block_at(uint32_t index);
 private bool     fs_block_manager_verificar_integridad_bitmap(void);
 private bool     fs_block_manager_verficar_integridad_cantidad_bloques(void);
+private bool     fs_blocks_manager_test_block_at(uint32_t index);
 
 void fs_blocks_manager_init(const char* mount_point, bool is_clean_initialization)
 {
@@ -133,6 +139,15 @@ bool fs_blocks_manager_check_integrity(void)
     return fs_block_manager_verificar_integridad_bitmap() || fs_block_manager_verficar_integridad_cantidad_bloques();
 }
 
+bool fs_block_manager_is_block_requested_and_valid(uint32_t block_id)
+{
+    bool requested = true;
+    bool valid = block_id <= p_blocks_manager_instance->blocks_count;
+    if(valid)
+        requested = fs_blocks_manager_test_block_at(block_id);
+    return requested && valid;
+}
+
 // =======================================================
 //              *** Private Functions ***
 // =======================================================
@@ -200,13 +215,14 @@ private void fs_blocks_manager_get_metadata(int32_t super_block_file)
         "No se pudo obtener la cantidad de los bloques del SuperBloque.ims: %s", strerror(errno));
     
     uint32_t bitmap_size = ceil(p_blocks_manager_instance->blocks_count / 8);
-    void*    bitmap_mem  =
+    p_blocks_manager_instance->super_bloque =
         mmap(NULL, bitmap_size, PROT_READ | PROT_WRITE, MAP_SHARED, super_block_file, 0);
 
-    U_ASSERT(bitmap_mem != MAP_FAILED,
+    U_ASSERT(p_blocks_manager_instance->super_bloque != MAP_FAILED,
         "No se pudo mapear el bitmap del SuperBloque.ims: %s", strerror(errno));
 
-    p_blocks_manager_instance->bitmap = bitarray_create(bitmap_mem + sizeof(uint32_t) * 2, bitmap_size);
+    p_blocks_manager_instance->bitmap =
+        bitarray_create(p_blocks_manager_instance->super_bloque + sizeof(uint32_t) * 2, bitmap_size);
 }
 
 private void fs_blocks_manager_init_disk(bool is_clean_initialization)
@@ -264,12 +280,6 @@ private bool fs_block_manager_verificar_integridad_bitmap(void)
     uint32_t numero_bloque_buscado;
     u_free(id_bloques_bitacoras);
 
-
-    void _setear_bit_de_bloque_usado(uint32_t* id_bloque)
-    {
-        bitarray_set_bit(p_blocks_manager_instance->bitmap, *id_bloque - 1);
-    }
-
     bool _ordenar_menor_a_mayor(uint32_t* id_bloque_uno, uint32_t* id_bloque_dos)
     {
         return *id_bloque_uno < *id_bloque_dos;
@@ -280,8 +290,6 @@ private bool fs_block_manager_verificar_integridad_bitmap(void)
         return *id_bloque == numero_bloque_buscado;
     }
     
-
-
     list_sort(id_bloques_totales, (void*)_ordenar_menor_a_mayor);
 
     pthread_mutex_lock(&p_blocks_manager_instance->blocks_bitmap_mx);
@@ -304,11 +312,7 @@ private bool fs_block_manager_verificar_integridad_bitmap(void)
     }
 
     if(!list_is_empty(id_bloques_totales))
-    {
-        list_iterate(id_bloques_totales, (void*)_setear_bit_de_bloque_usado);
         list_iterate(id_bloques_totales, u_free);
-        fue_saboteado = true;
-    }
 
     pthread_mutex_unlock(&p_blocks_manager_instance->blocks_bitmap_mx);
 
@@ -320,19 +324,31 @@ private bool fs_block_manager_verificar_integridad_bitmap(void)
 
 private bool fs_block_manager_verficar_integridad_cantidad_bloques (void)
 {
-    uint32_t block_size = p_blocks_manager_instance->blocks_size;
-    uint32_t blocks_count = p_blocks_manager_instance->blocks_count;
+    uint32_t block_size = BLOCKS_SIZE(p_blocks_manager_instance->super_bloque);
+    uint32_t blocks_count = BLOCKS_COUNT(p_blocks_manager_instance->super_bloque);
     uint32_t tamanio_archivo_bloques = fs_physical_disk_get_size();
     bool     fue_saboteado = false;
     uint32_t cant_real_bloques = tamanio_archivo_bloques/ block_size;
 
     if (cant_real_bloques!= blocks_count)
     {
-        p_blocks_manager_instance->blocks_count = cant_real_bloques;
+        memcpy(&BLOCKS_COUNT(p_blocks_manager_instance->super_bloque), &cant_real_bloques, sizeof(uint32_t));
+        msync(p_blocks_manager_instance->super_bloque, sizeof(uint32_t), MS_SYNC);
         fue_saboteado = true;
     }
 
     return fue_saboteado;
+}
+
+private bool fs_blocks_manager_test_block_at(uint32_t index)
+{
+    bool esta_seteado;
+
+    pthread_mutex_lock(&p_blocks_manager_instance->blocks_bitmap_mx);
+    esta_seteado = bitarray_test_bit(p_blocks_manager_instance->bitmap, index - 1);
+    pthread_mutex_unlock(&p_blocks_manager_instance->blocks_bitmap_mx);
+
+    return esta_seteado;
 }
 
 #ifdef UTESTS

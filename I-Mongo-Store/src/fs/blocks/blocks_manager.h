@@ -38,4 +38,6 @@ uint32_t fs_blocks_manager_get_blocks_size(void);
 
 bool fs_blocks_manager_check_integrity(void);
 
+bool fs_block_manager_is_block_requested_and_valid(uint32_t block_id);
+
 #endif
