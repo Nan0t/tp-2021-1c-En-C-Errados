@@ -39,7 +39,7 @@ function set_debug_tool {
     elif [ "$1" ==  "valgrind" ];then
         OPT="valgrind --leak-check=full --log-file=valgrind.log --show-reachable=no --show-possibly-lost=no"
     elif [ "$1" == "helgrind" ];then
-        OPT="valgrind --tool=helgrind"
+        OPT="valgrind --tool=helgrind --log-file=helgrind.log"
     else
         echo "Invalid debug tool."
         echo ""
