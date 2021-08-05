@@ -9,6 +9,7 @@
 
 #include <string.h>
 
+private pthread_mutex_t p_physical_disk_mx   = PTHREAD_MUTEX_INITIALIZER;
 private void*           p_physical_disk      = NULL;
 private uint64_t        p_physical_disk_size = 0;
 
@@ -47,7 +48,9 @@ void fs_physical_disk_write(const void* data, uint64_t size, uint64_t offset)
 
     U_LOG_TRACE("Se escriben %ld bytes en el disco. Offset %ld", size, offset);
 
+    pthread_mutex_lock(&p_physical_disk_mx);
     memcpy(p_physical_disk + offset, data, size);
+    pthread_mutex_unlock(&p_physical_disk_mx);
 }
 
 void  fs_physical_disk_read(void* data, uint64_t size, uint64_t offset)
@@ -58,7 +61,9 @@ void  fs_physical_disk_read(void* data, uint64_t size, uint64_t offset)
 
     U_LOG_TRACE("Se leen %ld bytes en el disco. Offset %ld", size, offset);
 
+    pthread_mutex_lock(&p_physical_disk_mx);
     memcpy(data, p_physical_disk + offset, size);
+    pthread_mutex_unlock(&p_physical_disk_mx);
 }
 
 void  fs_physical_disk_flush(uint64_t offset, uint64_t size)
@@ -67,7 +72,9 @@ void  fs_physical_disk_flush(uint64_t offset, uint64_t size)
         offset + size < p_physical_disk_size,
         "Trying to flush in OutOfBound memory disk. Offset: %ld | Size: %ld", offset, size);
 
+    pthread_mutex_lock(&p_physical_disk_mx);
     msync(p_physical_disk + offset, size, MS_SYNC);
+    pthread_mutex_unlock(&p_physical_disk_mx);
 }
 
 uint32_t fs_physical_disk_get_size(void)
