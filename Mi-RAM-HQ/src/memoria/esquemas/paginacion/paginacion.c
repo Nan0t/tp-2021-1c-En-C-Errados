@@ -1030,7 +1030,7 @@ private int paginacion_copiar_paginas(int pagina, p_fila_tabla_de_paginas_t* fil
     int frame_memoria = fila_de_tabla->frame_memoria;
 
     memcpy(buffer_temporal, esquema_memoria_mfisica + frame_memoria * tamanio_pagina, tamanio_pagina);
-    U_LOG_TRACE("Copiado frame de memoria %d a buffer temporal", frame_memoria);
+    U_LOG_INFO("Copiado frame de memoria %d a buffer temporal", frame_memoria);
 
     p_frame_t* frame_memoria_liberado = list_get(lista_frames_memoria, fila_de_tabla->frame_memoria);
     frame_memoria_liberado->ocupado = 0;
