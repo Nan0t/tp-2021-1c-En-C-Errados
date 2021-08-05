@@ -119,7 +119,7 @@ void fs_file_add_fill_char(fs_file_t* this, uint32_t amount){
 	}
 
 	//actualizo config md5
-	char* md5_actualizado = generate_md5(blocks_tlist, fs_file_get_size(this), tamanio_bloques);
+	char* md5_actualizado = generate_md5(blocks_tlist, nuevo_tamanio_archivo, tamanio_bloques);
 	config_set_value(this->CONFIG, "MD5_ARCHIVO", md5_actualizado);
 
 	//actualizo config blocks, guardo tlist en string config
@@ -208,8 +208,12 @@ void fs_file_remove_fill_char(fs_file_t* this, uint32_t amount){
 }
 
 bool fs_file_check_integrity(fs_file_t* this){
-	return verificar_size_correcto(this) || verificar_cantidad_bloques_correcto(this) || verificar_md5(this);
-
+    bool verifica_size, verifica_block_count, verifica_bloque;
+    verifica_size = verificar_size_correcto(this);
+    verifica_block_count = verificar_cantidad_bloques_correcto(this);
+    verifica_bloque = verificar_md5(this);
+    
+    return verifica_size|| verifica_block_count || verifica_bloque;
 }
 
 const char* fs_file_get_name(const fs_file_t* this){
@@ -262,10 +266,11 @@ private char* generate_md5(t_list* id_bloques, uint32_t tamanio_a_leer, uint32_t
     {
         list_iterate(id_bloques, (void*)_actualizar_md5);
     }
+
     MD5_Final((unsigned char*)hash, &contexto);
     char* string_hash = malloc( MD5_DIGEST_LENGTH * 2 + 1);
     for (int i = 0, j = 0; i < 16; i++, j+=2)
-        sprintf(string_hash+j, "%02x", hash[i]);
+        sprintf(string_hash+j, "%02x", (unsigned char)hash[i]);
     string_hash[MD5_DIGEST_LENGTH * 2] = 0;
 
     free(data_bloques);
@@ -390,9 +395,29 @@ private bool verificar_md5(fs_file_t* this)
 	uint32_t tamanio_bloques  = fs_blocks_manager_get_blocks_size();
 	t_list* lista_id_bloques = lista_id_bloques_archivo(lista_bloques);
 	bool estado_corrompido = false;
+
+	uint32_t bloque_invalido;
+    void _es_valido_bloque(uint32_t* id_bloque)
+    {
+        if(!fs_block_manager_is_block_requested_and_valid(*id_bloque))
+        {
+            bloque_invalido = *id_bloque;
+            estado_corrompido = true;
+        }
+    }
+
+    bool _borrar_bloque_invalido( uint32_t* id_bloque)
+    {
+        return bloque_invalido == *id_bloque;
+    }
+
+    list_iterate(lista_id_bloques, (void*)_es_valido_bloque);
+    if(estado_corrompido)
+        list_remove_and_destroy_by_condition(lista_id_bloques,(void*)_borrar_bloque_invalido ,u_free);
+
 	char* md5_bloques_archivo = generate_md5(lista_id_bloques, tamanio_archivo, tamanio_bloques);
 
-	if(!memcmp(md5_bloques_archivo, hash_archivo, MD5_DIGEST_LENGTH))
+	if(!strcmp(md5_bloques_archivo, hash_archivo))
 	{
 		uint32_t tamanio_aux = tamanio_archivo;
 		uint32_t caracteres_escritos;
@@ -412,7 +437,19 @@ private bool verificar_md5(fs_file_t* this)
 		//luego libero la lista.
 		estado_corrompido = true;
 	}
-	list_destroy_and_destroy_elements(lista_id_bloques, free);
-	free(md5_bloques_archivo);
-	return estado_corrompido;
+
+	char* string_cant_bloques = string_itoa(list_size(lista_id_bloques));
+    config_set_value(this->CONFIG, "BLOCK_COUNT",string_cant_bloques);
+
+    char* string_lista = list_convert_to_string(lista_id_bloques);
+    config_set_value(this->CONFIG, "BLOCKS", string_lista);
+
+
+    config_save(this->CONFIG);
+
+    list_destroy_and_destroy_elements(lista_id_bloques, free);
+    free(md5_bloques_archivo);
+    free(string_cant_bloques);
+    free(string_lista);
+    return estado_corrompido;
 }
