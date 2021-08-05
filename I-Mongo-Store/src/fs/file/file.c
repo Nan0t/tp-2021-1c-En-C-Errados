@@ -413,7 +413,9 @@ private bool verificar_md5(fs_file_t* this)
 
     list_iterate(lista_id_bloques, (void*)_es_valido_bloque);
     if(estado_corrompido)
+	{
         list_remove_and_destroy_by_condition(lista_id_bloques,(void*)_borrar_bloque_invalido ,u_free);
+	}
 
 	char* md5_bloques_archivo = generate_md5(lista_id_bloques, tamanio_archivo, tamanio_bloques);
 
