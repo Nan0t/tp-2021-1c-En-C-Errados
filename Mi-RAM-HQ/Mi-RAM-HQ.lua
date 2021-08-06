@@ -13,6 +13,7 @@ project "Mi-RAM-HQ"
 
     includedirs {
         "%{CommonLocations.Commons.IncludeDir}",
+        "%{CommonLocations.NivelGUI.IncludeDir}",
         "%{CommonLocations.Utils.IncludeDir}",
         "%{prj.location}/src"
     }
@@ -20,7 +21,8 @@ project "Mi-RAM-HQ"
     links {
         "utils",
         "commons",
-        "cunit",
+        "nivel_gui",
+        "ncurses",
         "pthread",
         "readline"
     }
@@ -34,3 +36,4 @@ project "Mi-RAM-HQ"
         optimize "speed"
         warnings "extra"
         fatalwarnings "all"
+        defines "NDEBUG"
