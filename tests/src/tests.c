@@ -4,6 +4,12 @@
 #include "discordia/parser_test.h"
 #include "discordia/tripulante_test.h"
 
+#include "fs/block_manager_test.h"
+#include "fs/block_tests.h"
+#include "fs/file_test.h"
+#include "fs/bitacora_test.h"
+#include "fs/task_parser_test.h"
+
 #include <CUnit/Basic.h>
 
 #define FUNCTION_TEST(f) { "\033[93m"#f"\033[0m", f }
@@ -20,6 +26,7 @@ typedef struct {
 static void utils_tests(void);
 static void discordia_tests(void);
 static void tripulante_test(void);
+static void fs_tests(void);
 
 int main(int argc, char** argv)
 {
@@ -31,6 +38,7 @@ int main(int argc, char** argv)
         utils_tests();
         discordia_tests();
         tripulante_test();
+        fs_tests();
     }
     else
     {
@@ -38,6 +46,8 @@ int main(int argc, char** argv)
             utils_tests();
         else if(!strcmp(argv[1], "discordia"))
             discordia_tests();
+        else if(!strcmp(argv[1], "fs"))
+            fs_tests();
     }
 
     CU_basic_run_tests();
@@ -129,6 +139,7 @@ static void discordia_tests(void)
     ADD_TEST_TO_TEST_SUITE(parser_test_suite, parser_test_cases)
 }
 
+
 static void tripulante_test(void)
 {
     CU_pSuite parser_test_suite = CU_add_suite_with_setup_and_teardown(
@@ -147,4 +158,101 @@ static void tripulante_test(void)
     };
 
     ADD_TEST_TO_TEST_SUITE(parser_test_suite, parser_test_cases)
+}
+
+static void fs_tests(void)
+{
+    CU_pSuite block_manager_test_suite = CU_add_suite_with_setup_and_teardown(
+        "I-Mongo-Store BlockManager Test Suite",
+        NULL,
+        NULL,
+        test_fs_block_manager_setup,
+        test_fs_block_manager_tear_down
+    );
+
+    test_case_t block_manager_test_cases[] =
+    {
+        FUNCTION_TEST(test_fs_block_manager_request_and_release_blocks),
+        FUNCTION_TEST(test_fs_block_manager_request_and_get_a_intermidiate_block),
+        FUNCTION_TEST(test_fs_block_manager_request_and_reject)
+    };
+
+    ADD_TEST_TO_TEST_SUITE(block_manager_test_suite, block_manager_test_cases)
+
+    CU_pSuite block_test_suite = CU_add_suite_with_setup_and_teardown(
+        "I-Mongo-Store Block Test Suite",
+        NULL,
+        NULL,
+        test_block_setup,
+        test_block_tear_down
+    );
+
+    test_case_t block_test_cases[] =
+    {
+        FUNCTION_TEST(test_block_write_with_no_overflow),
+        FUNCTION_TEST(test_block_write_with_overflow),
+        FUNCTION_TEST(test_block_write_in_non_contiguous_blocks),
+        FUNCTION_TEST(test_block_read_with_no_overflow),
+        FUNCTION_TEST(test_block_read_with_overflow),
+        FUNCTION_TEST(test_block_read_in_non_contiguous_blocks)
+    };
+
+    ADD_TEST_TO_TEST_SUITE(block_test_suite, block_test_cases)
+
+    CU_pSuite file_test_suite = CU_add_suite_with_setup_and_teardown(
+        "I-Mongo-Store File Test Suite",
+        NULL,
+        NULL,
+        test_file_setup,
+        test_file_tear_down
+    );
+
+    test_case_t file_test_cases[] =
+    {
+        FUNCTION_TEST(test_file_create),
+        FUNCTION_TEST(test_file_add_fill_char_with_no_overflow),
+        FUNCTION_TEST(test_file_add_fill_char_with_overflow),
+        FUNCTION_TEST(test_file_remove_fill_char_with_no_shrink),
+        FUNCTION_TEST(test_file_remove_fill_char_with_shrink)
+    };
+
+    ADD_TEST_TO_TEST_SUITE(file_test_suite, file_test_cases)
+
+    CU_pSuite bitacora_test_suite = CU_add_suite_with_setup_and_teardown(
+        "I-Mongo-Store Bitacora Test Suite",
+        NULL,
+        NULL,
+        test_bitacora_setup,
+        test_bitacora_tear_down
+    );
+
+    test_case_t bitacora_test_cases[] =
+    {
+        FUNCTION_TEST(test_bitacora_create),
+        FUNCTION_TEST(test_bitacora_add_content_with_no_overflow),
+        FUNCTION_TEST(test_bitacora_add_content_with_overflow)
+    };
+
+    ADD_TEST_TO_TEST_SUITE(bitacora_test_suite, bitacora_test_cases)
+
+    CU_pSuite task_parser_test_suite = CU_add_suite_with_setup_and_teardown(
+        "I-Mongo-Store Task Parser Test Suite",
+        NULL,
+        NULL,
+        NULL,
+        NULL
+    );
+
+    test_case_t task_parser_test_cases[] =
+    {
+        FUNCTION_TEST(test_task_parser_unknown_task),
+        FUNCTION_TEST(test_task_parser_generar_oxigeno),
+        FUNCTION_TEST(test_task_parser_consumir_oxigeno),
+        FUNCTION_TEST(test_task_parser_generar_comida),
+        FUNCTION_TEST(test_task_parser_consumir_comida),
+        FUNCTION_TEST(test_task_parser_generar_basura),
+        FUNCTION_TEST(test_task_parser_descartar_basura)
+    };
+
+    ADD_TEST_TO_TEST_SUITE(task_parser_test_suite, task_parser_test_cases)
 }

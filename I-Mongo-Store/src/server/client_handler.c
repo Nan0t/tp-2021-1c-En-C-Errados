@@ -1,6 +1,7 @@
 #include "fs/file_system.h"
 #include "client_handler.h"
-#include "thread_pool.h"
+
+#include <pthread.h>
 
 private void fs_client_handler_task(int32_t* client_sock);
 private void fs_client_handler_check_opcode(int32_t client_sock, u_opcode_e opcode);
@@ -12,14 +13,16 @@ private void fs_client_handler_msg_inicio_tarea(const u_buffer_t* buffer);
 private void fs_client_handler_msg_finalizacion_tarea(const u_buffer_t* buffer);
 private void fs_client_handler_msg_atiende_sabotaje(const u_buffer_t* buffer);
 private void fs_client_handler_msg_resuelve_sabotaje(const u_buffer_t* buffer);
-private void fs_client_handler_msg_eliminar_tripulante(const u_buffer_t* buffer);
 private void fs_client_handler_msg_obtener_bitacora(int32_t client_sock, const u_buffer_t* buffer);
 
 private bool fs_client_handler_is_valid_opcode(u_opcode_e opcode);
 
 void fs_client_handler_new_connection(int32_t* client_sock)
 {
-    fs_thread_pool_push_task(client_sock, (void*)fs_client_handler_task);
+    pthread_t client_thread;
+    U_ASSERT(pthread_create(&client_thread, NULL, (void*)fs_client_handler_task, client_sock) != -1,
+        "No se pudo crear un hilo para atender a una conexion");
+    pthread_detach(client_thread);
 }
 
 private void fs_client_handler_task(int32_t* client_sock)
@@ -83,10 +86,6 @@ private void fs_client_handler_deserialize_msg(int32_t client_sock, u_opcode_e o
         fs_client_handler_msg_resuelve_sabotaje(buffer);
         break;
 
-    case ELIMINAR_TRIPULANTE:
-        fs_client_handler_msg_eliminar_tripulante(buffer);
-        break;
-
     default:
         fs_client_handler_msg_obtener_bitacora(client_sock, buffer);
     }
@@ -132,14 +131,6 @@ private void fs_client_handler_msg_resuelve_sabotaje(const u_buffer_t* buffer)
     file_system_resuelve_sabotaje(msg->tripulante_id);
 
     u_msg_resuelve_sabotaje_eliminar(msg);
-}
-
-private void fs_client_handler_msg_eliminar_tripulante(const u_buffer_t* buffer)
-{
-    u_msg_eliminar_tripulante_t* msg = u_msg_eliminar_tripulante_deserializar(buffer);
-    file_system_eliminar_tripulante(msg->tripulante_id);
-
-    u_msg_eliminar_tripulante_eliminar(msg);
 }
 
 private void fs_client_handler_msg_obtener_bitacora(int32_t client_sock, const u_buffer_t* buffer)

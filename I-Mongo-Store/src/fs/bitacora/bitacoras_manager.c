@@ -1,0 +1,238 @@
+#include "bitacoras_manager.h"
+
+#include <pthread.h>
+#include <sys/stat.h>
+#include <dirent.h>
+
+#include <stdio.h>
+#include <errno.h>
+
+typedef struct
+{
+    pthread_mutex_t ref_counter_mx;
+    uint32_t        ref_counter;
+    pthread_cond_t  can_be_deleted;
+
+    fs_bitacora_t* bitacora;
+} fs_bitacora_ref_t;
+
+typedef struct
+{
+    char*           mount_point;
+    pthread_mutex_t bitacoras_mx;
+    t_dictionary*   bitacoras;
+} fs_bitacoras_manager_t;
+
+private fs_bitacoras_manager_t* p_bitacoras_manager_instance = NULL;
+
+private fs_bitacora_ref_t* fs_bitacora_ref_create(uint32_t tid);
+private void               fs_bitacora_ref_delete(fs_bitacora_ref_t* bitacora_ref);
+
+private void fs_bitacoras_manager_create_folder(void);
+private void fs_bitacoras_manager_release_prev_bitacoras(void);
+
+private void fs_bitacoras_manager_load_prev_bitacora_and_release(const char* bitacora_name);
+
+private void           fs_bitacoras_manager_add_ref(fs_bitacora_ref_t* bitacora_ref);
+private void           fs_bitacoras_manager_rm_ref(uint32_t tid);
+private fs_bitacora_t* fs_bitacoras_manager_hold_ref(uint32_t tid);
+private void           fs_bitacoras_manager_release_ref(uint32_t tid);
+
+void fs_bitacoras_manager_init(const char* mount_point, bool is_clean_initialization)
+{
+    if(p_bitacoras_manager_instance)
+        return;
+
+    p_bitacoras_manager_instance = u_malloc(sizeof(fs_bitacoras_manager_t));
+
+    p_bitacoras_manager_instance->mount_point = strdup(mount_point);
+    p_bitacoras_manager_instance->bitacoras   = dictionary_create();
+    
+    pthread_mutex_init(&p_bitacoras_manager_instance->bitacoras_mx, NULL);
+
+    if(is_clean_initialization)
+        fs_bitacoras_manager_create_folder();
+    else
+        fs_bitacoras_manager_release_prev_bitacoras();
+}
+
+void fs_bitacoras_manager_create_bitacora(uint32_t tid)
+{
+    fs_bitacora_ref_t* bitacora_ref = fs_bitacora_ref_create(tid);
+    fs_bitacoras_manager_add_ref(bitacora_ref);
+}
+
+fs_bitacora_t* fs_bitacoras_manager_hold_bitacora(uint32_t tid)
+{
+    return fs_bitacoras_manager_hold_ref(tid);
+}
+
+void fs_bitacoras_manager_release_bitacora(uint32_t tid)
+{
+    fs_bitacoras_manager_release_ref(tid);
+}
+
+void fs_bitacoras_manager_delete_bitacora(uint32_t tid)
+{
+    fs_bitacoras_manager_rm_ref(tid);
+}
+
+t_list* fs_bitacoras_manager_get_blocks_id(void)
+{
+    t_list* bloques = list_create();
+    pthread_mutex_lock(&p_bitacoras_manager_instance->bitacoras_mx);
+
+    void _get_bitacora_blocks_id(char* _, fs_bitacora_ref_t* bitacora_ref) {
+        (void)_;
+        t_list* lista_temporal = fs_bitacora_get_blocks(bitacora_ref->bitacora);
+        list_add_all(bloques, lista_temporal);
+        u_free(lista_temporal);
+    };
+    dictionary_iterator(p_bitacoras_manager_instance->bitacoras, (void*)_get_bitacora_blocks_id);
+
+    pthread_mutex_unlock(&p_bitacoras_manager_instance->bitacoras_mx);
+
+    return bloques;
+}
+
+// ========================================================
+//             *** Private Functions ***
+// ========================================================
+
+private fs_bitacora_ref_t* fs_bitacora_ref_create(uint32_t tid)
+{
+    char bitacora_name[1024] = { 0 };
+
+    sprintf(bitacora_name, "%sBitacoras/Tripulante%d.ims", p_bitacoras_manager_instance->mount_point, tid);
+
+    fclose(fopen(bitacora_name, "w"));
+
+    fs_bitacora_t* bitacora = fs_bitacora_create(bitacora_name, tid);
+    fs_bitacora_ref_t* bitacora_ref = u_malloc(sizeof(fs_bitacora_ref_t));
+
+    bitacora_ref->bitacora    = bitacora;
+    bitacora_ref->ref_counter = 0;
+    
+    pthread_mutex_init(&bitacora_ref->ref_counter_mx, NULL);
+    pthread_cond_init(&bitacora_ref->can_be_deleted, NULL);
+
+    return bitacora_ref;
+}
+
+private void fs_bitacora_ref_delete(fs_bitacora_ref_t* bitacora_ref)
+{
+    pthread_mutex_lock(&bitacora_ref->ref_counter_mx);
+    if(bitacora_ref->ref_counter != 0)
+        pthread_cond_wait(&bitacora_ref->can_be_deleted, &bitacora_ref->ref_counter_mx);
+    pthread_mutex_unlock(&bitacora_ref->ref_counter_mx);
+
+    fs_bitacora_delete(bitacora_ref->bitacora);
+
+    pthread_mutex_destroy(&bitacora_ref->ref_counter_mx);
+    pthread_cond_destroy(&bitacora_ref->can_be_deleted);
+
+    u_free(bitacora_ref);
+}
+
+private void fs_bitacoras_manager_create_folder(void)
+{
+    char* bitacoras_path = string_from_format("%sBitacoras", u_config_get_string_value("PUNTO_MONTAJE"));
+    mkdir(bitacoras_path, 0700);
+    u_free(bitacoras_path);
+}
+
+private void fs_bitacoras_manager_release_prev_bitacoras(void)
+{
+    char bitacora_name[1024] = { 0 };
+    char bitacoras_path[512] = { 0 };
+    struct dirent* dir_info;
+
+    sprintf(bitacoras_path, "%sBitacoras", p_bitacoras_manager_instance->mount_point);
+
+    DIR* directory = opendir(bitacoras_path);
+    U_ASSERT(directory != NULL, "Error al obtener el directorio %s: %s", bitacoras_path, strerror(errno));
+
+    while((dir_info = readdir(directory)) != NULL)
+    {
+        if(dir_info->d_type != DT_DIR)
+        {
+            sprintf(bitacora_name, "%s/%s", bitacoras_path, dir_info->d_name);
+            fs_bitacoras_manager_load_prev_bitacora_and_release(bitacora_name);
+        }
+    }
+}
+
+private void fs_bitacoras_manager_load_prev_bitacora_and_release(const char* bitacora_name)
+{
+    fs_bitacora_delete(fs_bitacora_create(bitacora_name, 0));
+}
+
+private void fs_bitacoras_manager_add_ref(fs_bitacora_ref_t* bitacora_ref)
+{
+    pthread_mutex_lock(&p_bitacoras_manager_instance->bitacoras_mx);
+
+    char bitacora_key[64] = { 0 };
+    sprintf(bitacora_key, "Tripulante%d", fs_bitacora_get_tid(bitacora_ref->bitacora));
+
+    dictionary_put(p_bitacoras_manager_instance->bitacoras, (char*)bitacora_key, bitacora_ref);
+
+    pthread_mutex_unlock(&p_bitacoras_manager_instance->bitacoras_mx);
+}
+
+private void fs_bitacoras_manager_rm_ref(uint32_t tid)
+{
+    pthread_mutex_lock(&p_bitacoras_manager_instance->bitacoras_mx);
+
+    char bitacora_key[64] = { 0 };
+    sprintf(bitacora_key, "Tripulante%d", tid);
+
+    fs_bitacora_ref_t* bitacora_ref = dictionary_remove(p_bitacoras_manager_instance->bitacoras, (char*)bitacora_key);
+
+    pthread_mutex_unlock(&p_bitacoras_manager_instance->bitacoras_mx);
+
+    fs_bitacora_ref_delete(bitacora_ref);
+}
+
+private fs_bitacora_t* fs_bitacoras_manager_hold_ref(uint32_t tid)
+{
+    fs_bitacora_t* bitacora = NULL;
+
+    char bitacora_key[64] = { 0 };
+    sprintf(bitacora_key, "Tripulante%d", tid);
+
+    pthread_mutex_lock(&p_bitacoras_manager_instance->bitacoras_mx);
+    fs_bitacora_ref_t* bitacora_ref = dictionary_get(p_bitacoras_manager_instance->bitacoras, (char*)bitacora_key);
+
+    if(bitacora_ref)
+    {
+        pthread_mutex_lock(&bitacora_ref->ref_counter_mx);
+        bitacora_ref->ref_counter ++;
+        pthread_mutex_unlock(&bitacora_ref->ref_counter_mx);
+
+        bitacora = bitacora_ref->bitacora;
+    }
+
+    pthread_mutex_unlock(&p_bitacoras_manager_instance->bitacoras_mx);
+
+    return bitacora;
+}
+
+private void fs_bitacoras_manager_release_ref(uint32_t tid)
+{
+    char bitacora_key[64] = { 0 };
+    sprintf(bitacora_key, "Tripulante%d", tid);
+
+    pthread_mutex_lock(&p_bitacoras_manager_instance->bitacoras_mx);
+    fs_bitacora_ref_t* bitacora_ref = dictionary_get(p_bitacoras_manager_instance->bitacoras, (char*)bitacora_key);
+
+    if(bitacora_ref)
+    {
+        pthread_mutex_lock(&bitacora_ref->ref_counter_mx);
+        bitacora_ref->ref_counter --;
+        if(bitacora_ref->ref_counter == 0)
+            pthread_cond_signal(&bitacora_ref->can_be_deleted);
+        pthread_mutex_unlock(&bitacora_ref->ref_counter_mx);
+    }
+
+    pthread_mutex_unlock(&p_bitacoras_manager_instance->bitacoras_mx);
+}
