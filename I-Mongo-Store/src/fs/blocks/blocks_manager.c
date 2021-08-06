@@ -307,6 +307,8 @@ private bool fs_block_manager_verificar_integridad_bitmap(void)
             {
                 bitarray_clean_bit(p_blocks_manager_instance->bitmap, i);
                 fue_saboteado = true;
+
+                U_LOG_INFO("Hubo un sabotaje de BITMAP en el SuperBloque.ims.");
             }
         }
     }
@@ -335,6 +337,8 @@ private bool fs_block_manager_verficar_integridad_cantidad_bloques (void)
         memcpy(&BLOCKS_COUNT(p_blocks_manager_instance->super_bloque), &cant_real_bloques, sizeof(uint32_t));
         msync(p_blocks_manager_instance->super_bloque, sizeof(uint32_t), MS_SYNC);
         fue_saboteado = true;
+
+        U_LOG_INFO("Hubo un sabotaje en la cantidad de bloques en el SuperBloque.ims.");
     }
 
     return fue_saboteado;

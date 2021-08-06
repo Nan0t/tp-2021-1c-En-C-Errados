@@ -49,6 +49,8 @@ private void fs_sabotaje_notifier_sig_handler(int sig)
     u_free(next_sabotage_pos);
 
     u_socket_close(conn);
+
+    U_LOG_INFO("Nuevo sabotaje en el FS: { x: %d | y: %d }", next_sabotage_pos->x, next_sabotage_pos->y);
 }
 
 private int32_t fs_sabotage_notifier_connect_to_discordia(void)

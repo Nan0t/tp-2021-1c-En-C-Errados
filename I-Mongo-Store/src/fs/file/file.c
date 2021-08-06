@@ -10,16 +10,16 @@
 #define max(a, b)  (((a) > (b)) ? (a) : (b))
 
 struct fs_file_t{
-	char*		NOMBRE_ARCHIVO;
-    t_config* 	CONFIG;
+	char*			NOMBRE_ARCHIVO;
+    t_config* 		CONFIG;
 };
 private t_list* lista_id_bloques_archivo(char** lista_bloques);
 private char* generate_md5(t_list* lista_bloques, uint32_t tamanio_a_leer, uint32_t tamanio_bloques);
 private int get_offset(fs_file_t* this);
 private char* list_convert_to_string(t_list* list);
-private bool verificar_size_correcto(fs_file_t* this);
-private bool verificar_cantidad_bloques_correcto(fs_file_t* this);
-private bool verificar_md5(fs_file_t* this);
+private bool verificar_size_correcto(fs_file_t* this, t_config* config_actual);
+private bool verificar_cantidad_bloques_correcto(fs_file_t* this, t_config* config_actual);
+private bool verificar_md5(fs_file_t* this, t_config* config_actual);
 
 
 fs_file_t* fs_file_create(const char* file_path, char* fill_char){
@@ -50,13 +50,18 @@ fs_file_t* fs_file_create(const char* file_path, char* fill_char){
 
 		u_free(hash);
 		u_free(block_list);
+
+		U_LOG_INFO("Archivo %s creado.", this->NOMBRE_ARCHIVO);
 	}
+	else
+		U_LOG_INFO("Archivo %s cargado.", this->NOMBRE_ARCHIVO);
 
     return this;
 }
 
 //Elimina la estructura de la bitacora y libera los bloques que tenga asignados.
 void fs_file_delete(fs_file_t* this){
+	U_LOG_INFO("Se elimina el archivo %s.", this->NOMBRE_ARCHIVO);
 
 	char** block_list = config_get_array_value(this->CONFIG, "BLOCKS");
 	for(int i=0; i<config_get_int_value(this->CONFIG, "BLOCK_COUNT") ; i++){
@@ -80,6 +85,7 @@ void fs_file_delete(fs_file_t* this){
 // todo el contenido en el nuevo bloque, seguir pidiendo bloqueas hasta terminar de escribir
 // la cantidad total de caracteres. Al final pone un centinela
 void fs_file_add_fill_char(fs_file_t* this, uint32_t amount){
+	uint32_t req_amount = amount;
 
 	if(amount == 0){
 		U_LOG_WARN("Recibi un pedido para escribir cero caracteres");
@@ -136,6 +142,9 @@ void fs_file_add_fill_char(fs_file_t* this, uint32_t amount){
 
 	list_destroy_and_destroy_elements(blocks_tlist, free);
 
+	U_LOG_INFO("Se agregaron %d caracteres %s al archivo %s", req_amount, fill_char, this->NOMBRE_ARCHIVO);
+	U_LOG_INFO("MD5 del archivo: %s", md5_actualizado);
+
 	u_free(tamanio_en_string);
 	u_free(lista_a_string);
 	u_free(cantidad_bloques_string);
@@ -152,7 +161,7 @@ void fs_file_add_fill_char(fs_file_t* this, uint32_t amount){
 // los últimos 2 bloques (llamando a la función "fs_blocks_manager_release_block(num_bloque)")
 //escribo como último caracter el centinela
 void fs_file_remove_fill_char(fs_file_t* this, uint32_t amount){
-
+	uint32_t req_amount = amount;
 	//reduzco tamaño del archivo
 	uint32_t size_archivo = fs_file_get_size(this);
 	if(!size_archivo)
@@ -200,6 +209,9 @@ void fs_file_remove_fill_char(fs_file_t* this, uint32_t amount){
 
 	config_save(this->CONFIG);
 
+	U_LOG_INFO("Se sacaron %d caracteres %s al archivo %s", req_amount, config_get_string_value(this->CONFIG, "CARACTER_LLENADO"), this->NOMBRE_ARCHIVO);
+	U_LOG_INFO("MD5 del archivo: %s", md5_actualizado);
+
 	list_destroy_and_destroy_elements(blocks_tlist, u_free);
 	u_free(string_de_id_bloques);
 	u_free(md5_actualizado);
@@ -208,10 +220,14 @@ void fs_file_remove_fill_char(fs_file_t* this, uint32_t amount){
 }
 
 bool fs_file_check_integrity(fs_file_t* this){
+	t_config* config_actual = config_create(this->NOMBRE_ARCHIVO);
+
     bool verifica_size, verifica_block_count, verifica_bloque;
-    verifica_size = verificar_size_correcto(this);
-    verifica_block_count = verificar_cantidad_bloques_correcto(this);
-    verifica_bloque = verificar_md5(this);
+    verifica_size = verificar_size_correcto(this, config_actual);
+    verifica_block_count = verificar_cantidad_bloques_correcto(this, config_actual);
+    verifica_bloque = verificar_md5(this, config_actual);
+
+	config_destroy(config_actual);
     
     return verifica_size|| verifica_block_count || verifica_bloque;
 }
@@ -323,13 +339,13 @@ private char* list_convert_to_string(t_list* list){
 }
 
 
-private bool verificar_size_correcto(fs_file_t* this)
+private bool verificar_size_correcto(fs_file_t* this, t_config* config_actual)
 {
 	// Acá recorro todos los bloques, y aunque encuentre el bloque con el centinela sigo recorriendo si en mi lista de bloques tengo más.
-	char** lista_bloques = config_get_array_value(this->CONFIG, "BLOCKS");
+	char** lista_bloques = config_get_array_value(config_actual, "BLOCKS");
 	uint32_t tamanio_bloques  = fs_blocks_manager_get_blocks_size();
 	t_list* lista_id_bloques = lista_id_bloques_archivo(lista_bloques);
-	uint32_t tamanio_archivo  = fs_file_get_size(this);
+	uint32_t tamanio_archivo  = config_get_int_value(config_actual, "SIZE");
 	uint32_t  cantidad_caracteres_file = 0;
 	bool estado_corrompido = false;
 
@@ -352,21 +368,23 @@ private bool verificar_size_correcto(fs_file_t* this)
 	if(cantidad_caracteres_file != tamanio_archivo)
 	{
 		char* caracter_cantidad_caracteres_file = string_itoa(cantidad_caracteres_file);
-		config_set_value(this->CONFIG, "SIZE", caracter_cantidad_caracteres_file);
+		config_set_value(config_actual, "SIZE", caracter_cantidad_caracteres_file);
 		u_free(caracter_cantidad_caracteres_file);
 		estado_corrompido = true;
+
+		U_LOG_INFO("Hubo sabotaje de SIZE en el archivo %s.", this->NOMBRE_ARCHIVO);
 	}
 	list_destroy_and_destroy_elements(lista_id_bloques, free);
 
-	config_save(this->CONFIG);
+	config_save(config_actual);
 
 	return estado_corrompido;
 }
 
-private bool verificar_cantidad_bloques_correcto(fs_file_t* this)
+private bool verificar_cantidad_bloques_correcto(fs_file_t* this, t_config* config_actual)
 {
-	char** lista_bloques = config_get_array_value(this->CONFIG, "BLOCKS");
-	uint32_t cantidad_bloques = fs_file_get_blocks_count(this);
+	char** lista_bloques = config_get_array_value(config_actual, "BLOCKS");
+	uint32_t cantidad_bloques = config_get_int_value(config_actual, "BLOCK_COUNT");
 	t_list* lista_id_bloques = lista_id_bloques_archivo(lista_bloques);
 	uint32_t cantidad_bloques_segun_lista = list_size(lista_id_bloques);
 	bool estado_corrompido = false;
@@ -374,23 +392,25 @@ private bool verificar_cantidad_bloques_correcto(fs_file_t* this)
 	if(cantidad_bloques_segun_lista != cantidad_bloques)
 	{
 		char* caracter_cantidad_bloques_segun_lista = string_itoa(cantidad_bloques_segun_lista);
-		config_set_value(this->CONFIG, "BLOCKS", caracter_cantidad_bloques_segun_lista);
+		config_set_value(config_actual, "BLOCKS", caracter_cantidad_bloques_segun_lista);
 		u_free(caracter_cantidad_bloques_segun_lista);
 		estado_corrompido= true;
+
+		U_LOG_INFO("Hubo sabotaje de BLOCK_COUNT en el archivo %s.", this->NOMBRE_ARCHIVO);
 	}
 	list_destroy_and_destroy_elements(lista_id_bloques, free);
 
-	config_save(this->CONFIG);
+	config_save(config_actual);
 
 	return estado_corrompido;
 }
 
-private bool verificar_md5(fs_file_t* this)
+private bool verificar_md5(fs_file_t* this, t_config* config_actual)
 {
 	//esta recuperación la llevo sin intentar obtener nuevos bloques dado que en el video dicen que solo cambian de posicion los bloques. (a validar)
-	char* hash_archivo = config_get_string_value(this->CONFIG, "MD5_ARCHIVO");
-	uint32_t tamanio_archivo = fs_file_get_size(this);
-	char** lista_bloques = config_get_array_value(this->CONFIG, "BLOCKS");
+	char* hash_archivo = config_get_string_value(config_actual, "MD5_ARCHIVO");
+	uint32_t tamanio_archivo = config_get_int_value(config_actual, "SIZE");
+	char** lista_bloques = config_get_array_value(config_actual, "BLOCKS");
 	const char* caracter_llenado = fs_file_get_fill_char(this);
 	uint32_t tamanio_bloques  = fs_blocks_manager_get_blocks_size();
 	t_list* lista_id_bloques = lista_id_bloques_archivo(lista_bloques);
@@ -403,6 +423,8 @@ private bool verificar_md5(fs_file_t* this)
         {
             bloque_invalido = *id_bloque;
             estado_corrompido = true;
+
+			U_LOG_INFO("Hubo un sabotaje en el archivo %s. Se agrego un bloque invalido.", this->NOMBRE_ARCHIVO);
         }
     }
 
@@ -419,7 +441,7 @@ private bool verificar_md5(fs_file_t* this)
 
 	char* md5_bloques_archivo = generate_md5(lista_id_bloques, tamanio_archivo, tamanio_bloques);
 
-	if(!strcmp(md5_bloques_archivo, hash_archivo))
+	if(strcmp(md5_bloques_archivo, hash_archivo))
 	{
 		uint32_t tamanio_aux = tamanio_archivo;
 		uint32_t caracteres_escritos;
@@ -438,16 +460,21 @@ private bool verificar_md5(fs_file_t* this)
 		// acá por ahí podríamos verificar si el md5 está bien ahora
 		//luego libero la lista.
 		estado_corrompido = true;
+
+		U_LOG_INFO("Hubo un sabotaje en el archivo %s. Se cambio el orden de los bloques.", this->NOMBRE_ARCHIVO);
+		char* md5_recuperado = generate_md5(lista_id_bloques, tamanio_archivo, fs_blocks_manager_get_blocks_size());
+		U_LOG_INFO("MD5 Anterior: %s | MD5 Actual: %s", hash_archivo, md5_recuperado);
+		u_free(md5_recuperado);
 	}
 
 	char* string_cant_bloques = string_itoa(list_size(lista_id_bloques));
-    config_set_value(this->CONFIG, "BLOCK_COUNT",string_cant_bloques);
+    config_set_value(config_actual, "BLOCK_COUNT",string_cant_bloques);
 
     char* string_lista = list_convert_to_string(lista_id_bloques);
-    config_set_value(this->CONFIG, "BLOCKS", string_lista);
+    config_set_value(config_actual, "BLOCKS", string_lista);
 
 
-    config_save(this->CONFIG);
+    config_save(config_actual);
 
     list_destroy_and_destroy_elements(lista_id_bloques, free);
     free(md5_bloques_archivo);

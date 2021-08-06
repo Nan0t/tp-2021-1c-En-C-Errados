@@ -16,7 +16,11 @@ app_attr_t get_app_setup(void)
         .config_file_path   = "config/I-Mongo-Store.conf",
         .log_active_console = true,
         .log_file_path      = "I-Mongo-Store.log",
+#ifdef NDEBUG
+        .log_level          = U_LOG_LEVEL_INFO
+#else
         .log_level          = U_LOG_LEVEL_TRACE
+#endif
     };
 }
 

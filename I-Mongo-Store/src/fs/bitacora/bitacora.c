@@ -36,12 +36,14 @@ fs_bitacora_t* fs_bitacora_create(const char* path, uint32_t tid)
 		u_free(block_list);
 	}
 
+	U_LOG_INFO("Se creo la bitacora del tripulante %d.", this->TID);
 
     return this;
 }
 
 //Elimina la estructura de la bitacora y libera los bloques que tenga asignados.
 void fs_bitacora_delete(fs_bitacora_t* this){
+	U_LOG_INFO("Se elimina la bitacora del tripulante %d.", this->TID);
 
 	char** block_list = config_get_array_value(this->CONFIG, "BLOCKS");
 	t_list* tblock = lista_id_bloques_bitacora(block_list);
@@ -109,6 +111,8 @@ void fs_bitacora_add_content(fs_bitacora_t* this, const char* content){
 	u_free(string_de_bloques);
 
 	list_destroy_and_destroy_elements(blocks_tlist, free);
+
+	U_LOG_INFO("Nuevo log del tripulante %d: %s", this->TID, content);
 }
 
 
