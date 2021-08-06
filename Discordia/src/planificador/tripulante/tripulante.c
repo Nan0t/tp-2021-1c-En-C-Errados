@@ -41,6 +41,7 @@ tripulante_t* tripulante_create(uint32_t pid, uint32_t tid, const u_pos_t* pos, 
     this->pos.y        = pos->y;
     this->quatum       = quantum;
     this->curr_state   = TRIP_STATE_NEW;
+    this->es_primera_ejecucion_en_cpu = true;
     this->terminate    = false;
     this->bloquear     = false;
     this->tarea_actual = NULL;
@@ -159,11 +160,17 @@ private bool tripulante_check_tarea_actual(tripulante_t* this)
     {
         if(this->tarea_actual->is_blocking)
         {
-            discordia_iniciar_tarea(this->tid, this->tarea_actual->tarea);
             this->bloquear = true;
+            discordia_iniciar_tarea(this->tid, this->tarea_actual->tarea);
         }
         else
         {
+            if(this->es_primera_ejecucion_en_cpu)
+            {
+              discordia_iniciar_tarea(this->tid, this->tarea_actual->tarea);
+              this->es_primera_ejecucion_en_cpu = false;
+            }
+
             this->tarea_actual->tiempo_bloqueado --;
             U_LOG_INFO("Tripulante %d ejecuta tarea %s. Tiempo restante: %d",
                 this->tid, this->tarea_actual->tarea, this->tarea_actual->tiempo_bloqueado);
@@ -172,8 +179,11 @@ private bool tripulante_check_tarea_actual(tripulante_t* this)
 
             if(this->tarea_actual->is_finished)
             {
+                discordia_finalizar_tarea(this->tid, this->tarea_actual->tarea);
                 if(!tripulante_obtener_proxima_tarea(this))
                     discordia_expulsar_tripulante(this->tid);
+
+                this->es_primera_ejecucion_en_cpu = true;
                     
                 return false;
             }

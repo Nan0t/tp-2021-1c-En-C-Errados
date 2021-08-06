@@ -46,6 +46,7 @@ typedef struct
 
     bool            terminate;
     bool            bloquear;
+    bool            es_primera_ejecucion_en_cpu;
 
     sem_t           sem_sync;
     sem_t           sem_end_exec;
