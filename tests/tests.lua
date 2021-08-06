@@ -8,6 +8,7 @@ project "tests"
 
     files {
         "%{wks.location}/Discordia/src/console/parser.c",
+        "%{wks.location}/Discordia/src/planificador/tripulante/tareas.c",
         "%{wks.location}/I-Mongo-Store/src/fs/blocks/blocks_manager.c",
         "%{wks.location}/I-Mongo-Store/src/fs/file/files_manager.c",
         "%{wks.location}/I-Mongo-Store/src/fs/bitacora/bitacoras_manager.c",

@@ -2,6 +2,7 @@
 #include "utils/msg_test.h"
 
 #include "discordia/parser_test.h"
+#include "discordia/tripulante_test.h"
 
 #include "fs/block_manager_test.h"
 #include "fs/block_tests.h"
@@ -24,6 +25,7 @@ typedef struct {
 
 static void utils_tests(void);
 static void discordia_tests(void);
+static void tripulante_test(void);
 static void fs_tests(void);
 
 int main(int argc, char** argv)
@@ -35,6 +37,7 @@ int main(int argc, char** argv)
     {
         utils_tests();
         discordia_tests();
+        tripulante_test();
         fs_tests();
     }
     else
@@ -131,6 +134,27 @@ static void discordia_tests(void)
         FUNCTION_TEST(test_valid_listar_tripulantes),
         FUNCTION_TEST(test_valid_iniciar_planificacion),
         FUNCTION_TEST(test_valid_pausar_planificacion)
+    };
+
+    ADD_TEST_TO_TEST_SUITE(parser_test_suite, parser_test_cases)
+}
+
+
+static void tripulante_test(void)
+{
+    CU_pSuite parser_test_suite = CU_add_suite_with_setup_and_teardown(
+        "Discordia Tripulante Test Suite",
+        NULL,
+        NULL,
+        NULL,
+        NULL
+    );
+    test_case_t parser_test_cases[] =
+    {
+        FUNCTION_TEST(test_valid_parsear_tarea_con_parametro_bloqueante),
+        FUNCTION_TEST(test_valid_parsear_tarea_sin_parametro_bloqueante),
+        FUNCTION_TEST(test_valid_parsear_tarea_sin_parametro_no_bloqueante)
+
     };
 
     ADD_TEST_TO_TEST_SUITE(parser_test_suite, parser_test_cases)
