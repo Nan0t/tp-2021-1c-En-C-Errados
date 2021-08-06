@@ -1,13 +1,17 @@
 #include "bitacora.h"
 #include "fs/blocks/blocks_manager.h"
 #include <commons/config.h>
+
+#include <pthread.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 
 struct fs_bitacora_t{
-    uint32_t	TID;
-    t_config* 	CONFIG;
-    char *		PATH;
+    uint32_t	    TID;
+    t_config* 	    CONFIG;
+    char *		    PATH;
+	pthread_mutex_t MX;
 };
 
 private t_list* lista_id_bloques_bitacora(char** lista_bloques);
@@ -22,6 +26,8 @@ fs_bitacora_t* fs_bitacora_create(const char* path, uint32_t tid)
 	this->TID    = tid;
 	this->CONFIG = config_create((char*)path);
 	this->PATH   = strdup(path);
+
+	pthread_mutex_init(&this->MX, NULL);
 
 	if(tid != 0)
 	{
@@ -55,7 +61,7 @@ void fs_bitacora_delete(fs_bitacora_t* this){
 
 	list_destroy_and_destroy_elements(tblock, (void*)_releasa_blocks);
 	config_destroy(this->CONFIG);
-
+	pthread_mutex_destroy(&this->MX);
 	remove(this->PATH);
 
 	u_free(this->PATH);
@@ -69,6 +75,7 @@ void fs_bitacora_delete(fs_bitacora_t* this){
 // todo el contenido en el nuevo bloque, seguir pidiendo bloqueas hasta terminar de escribir
 // todo el contenido.
 void fs_bitacora_add_content(fs_bitacora_t* this, const char* content){
+	pthread_mutex_lock(&this->MX);
 	char** blocks = config_get_array_value(this->CONFIG, "BLOCKS");
 	t_list* blocks_tlist = lista_id_bloques_bitacora(blocks);
 	
@@ -113,6 +120,7 @@ void fs_bitacora_add_content(fs_bitacora_t* this, const char* content){
 	list_destroy_and_destroy_elements(blocks_tlist, free);
 
 	U_LOG_INFO("Nuevo log del tripulante %d: %s", this->TID, content);
+	pthread_mutex_unlock(&this->MX);
 }
 
 
@@ -133,6 +141,8 @@ t_list* fs_bitacora_get_blocks(const fs_bitacora_t* this)
 
 //Devuelve contenido de la bitácora leyendo los bloques de la bitácora.
 char* fs_bitacora_get_content(const fs_bitacora_t* this){ //devuelve un string enorme basicamente
+	pthread_mutex_lock(&this->MX);
+
 	char** blocks = config_get_array_value(this->CONFIG, "BLOCKS");
 	uint32_t tamanio_bitacora = fs_bitacora_get_size(this);
 	t_list* lista_id_bloques = lista_id_bloques_bitacora(blocks);
@@ -145,6 +155,8 @@ char* fs_bitacora_get_content(const fs_bitacora_t* this){ //devuelve un string e
 	list_iterate(lista_id_bloques, (void*)_append_from_log);
 	list_destroy_and_destroy_elements(lista_id_bloques, free);
 	bitacora[tamanio_bitacora] = '\0';
+
+	pthread_mutex_unlock(&this->MX);
 	
     return bitacora;
 }

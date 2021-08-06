@@ -12,6 +12,7 @@
 struct fs_file_t{
 	char*			NOMBRE_ARCHIVO;
     t_config* 		CONFIG;
+	pthread_t       MX;
 };
 private t_list* lista_id_bloques_archivo(char** lista_bloques);
 private char* generate_md5(t_list* lista_bloques, uint32_t tamanio_a_leer, uint32_t tamanio_bloques);
@@ -28,6 +29,8 @@ fs_file_t* fs_file_create(const char* file_path, char* fill_char){
 
 	this->NOMBRE_ARCHIVO = strdup(file_path);
 	this->CONFIG         = config_create((char*)file_path);
+
+	pthread_mutex_init(&this->MX, NULL);
 
 	if(fill_char)
 	{
@@ -69,6 +72,7 @@ void fs_file_delete(fs_file_t* this){
 		free(block_list[i]);
 	}
 
+	pthread_mutex_destroy(&this->MX);
 	config_destroy(this->CONFIG);
 	remove(this->NOMBRE_ARCHIVO);
 	
@@ -85,6 +89,7 @@ void fs_file_delete(fs_file_t* this){
 // todo el contenido en el nuevo bloque, seguir pidiendo bloqueas hasta terminar de escribir
 // la cantidad total de caracteres. Al final pone un centinela
 void fs_file_add_fill_char(fs_file_t* this, uint32_t amount){
+	pthread_mutex_lock(&this->MX);
 	uint32_t req_amount = amount;
 
 	if(amount == 0){
@@ -149,6 +154,8 @@ void fs_file_add_fill_char(fs_file_t* this, uint32_t amount){
 	u_free(lista_a_string);
 	u_free(cantidad_bloques_string);
 	u_free(md5_actualizado);
+
+	pthread_mutex_unlock(&this->MX);
 }
 
 //Elimina la cantidad especificada por "amount" de caracteres de llenado en el file.
@@ -161,6 +168,8 @@ void fs_file_add_fill_char(fs_file_t* this, uint32_t amount){
 // los últimos 2 bloques (llamando a la función "fs_blocks_manager_release_block(num_bloque)")
 //escribo como último caracter el centinela
 void fs_file_remove_fill_char(fs_file_t* this, uint32_t amount){
+	pthread_mutex_lock(&this->MX);
+
 	uint32_t req_amount = amount;
 	//reduzco tamaño del archivo
 	uint32_t size_archivo = fs_file_get_size(this);
@@ -217,6 +226,8 @@ void fs_file_remove_fill_char(fs_file_t* this, uint32_t amount){
 	u_free(md5_actualizado);
 	u_free(string_tamanio_archivo);
 	u_free(string_cantidad_bloques);
+
+	pthread_mutex_unlock(&this->MX);
 }
 
 bool fs_file_check_integrity(fs_file_t* this){
