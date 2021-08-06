@@ -1,8 +1,11 @@
 #include <utils/entry_point.h>
-#include "servidor/servidor.h"
 #include <utils/utils.h>
+
+#include "servidor/servidor.h"
 #include "memoria/esquemas/esquema_memoria.h"
 #include "map/map.h"
+
+#include <stdlib.h>
 
 app_attr_t get_app_setup(void)
 {
@@ -11,7 +14,11 @@ app_attr_t get_app_setup(void)
         .config_file_path   = "config/Mi-RAM-HQ.conf",
         .log_active_console = false,
         .log_file_path      = "Mi-RAM-HQ.log",
+#ifdef NDEBUG
+        .log_level          = U_LOG_LEVEL_INFO
+#else
         .log_level          = U_LOG_LEVEL_TRACE
+#endif
     };
 }
 
@@ -19,7 +26,7 @@ __attribute__((noreturn))
 private void setup()
 {
     esquema_memoria_init();
-    //map_init();
+    map_init();
 
     if(servidor_init(u_config_get_string_value("PUERTO")))
         exit(-1);
