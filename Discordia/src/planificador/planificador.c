@@ -599,8 +599,8 @@ private void ds_planificador_move_from_exec_to_blocked_by_sabotage()
 
 private tripulante_t* ds_planificador_find_tripulante_closer_to_sabotage(const uint32_t pos_unificado_sabotaje) 
 {
-    uint32_t pos_minima;
-    uint32_t tid;
+    uint32_t pos_minima = 0xffffffff;
+    uint32_t tid = 0;
 
     ds_queue_mt_t* bloqueo_sabotaje = ds_queue_manager_hold(DS_QUEUE_SABOTAGE);
     DS_QUEUE_MT_FOREACH(bloqueo_sabotaje)
