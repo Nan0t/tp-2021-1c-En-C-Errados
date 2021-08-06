@@ -147,6 +147,8 @@ private void tripulante_mover(tripulante_t* this, const u_pos_t* pos)
 	}
 
     discordia_mover_tripulante(this->pid, this->tid, &this->pos);
+    discordia_desplazamiento_tripulante(this->tid, &prev_pos, &this->pos);
+    
     U_LOG_INFO("Tripulante %d se mueve de { %d, %d } a { %d, %d }",
         this->tid, prev_pos.x, prev_pos.y, this->pos.x, this->pos.y);
 }
