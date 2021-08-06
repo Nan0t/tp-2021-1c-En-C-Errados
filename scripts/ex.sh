@@ -13,7 +13,7 @@ function print_help {
     echo "Usage: ./ex <PROJECT-NAME> [OPTIONS] [ARGS]"
     echo ""
     echo "Options:"
-    echo "--cfg             Target proyect configuration to execute. One of debug|release"
+    echo "--cfg             Target proyect configuration to execute. One of Debug|Release"
     echo "--debug-tool      Debuggin tool to attach. One of gdb|valgrind|helgrind"
     echo "--args            Arguments of the executable"
     echo "--arch            Current target architecture"
@@ -22,7 +22,7 @@ function print_help {
 }
 
 function set_cfg {
-    if [ "$1" == "debug" ]||[ "$1" == "release" ];then
+    if [ "$1" == "Debug" ]||[ "$1" == "Release" ];then
         CONFIG=$1
     else
         echo "Invalid configuration."
