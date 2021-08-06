@@ -48,7 +48,7 @@
      */
     void _u__assert_impl(const char* file, const char* function, int line, const char* msg, ...);
 #else
-    #define U_ASSERT(exp, ...) (exp)
+    #define U_ASSERT(exp, ...) (void)(exp)
 #endif
 
 #endif
