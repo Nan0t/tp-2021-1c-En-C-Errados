@@ -12,7 +12,7 @@
 struct fs_file_t{
 	char*			NOMBRE_ARCHIVO;
     t_config* 		CONFIG;
-	pthread_t       MX;
+	pthread_mutex_t MX;
 };
 private t_list* lista_id_bloques_archivo(char** lista_bloques);
 private char* generate_md5(t_list* lista_bloques, uint32_t tamanio_a_leer, uint32_t tamanio_bloques);
