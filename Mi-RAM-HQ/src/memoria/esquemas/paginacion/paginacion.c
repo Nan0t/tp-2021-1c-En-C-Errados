@@ -122,26 +122,29 @@ bool paginacion_memoria_inicializar_patota(uint32_t pid, uint32_t cant_tripulant
     int frames_necesarios = paginacion_frames_necesarios(tamanio_data);
     U_LOG_TRACE("Frames necesarios %d", frames_necesarios);
 
-    pthread_mutex_lock(&lista_frames_memoria_mx);
     pthread_mutex_lock(&lista_frames_swap_mx);
+    pthread_mutex_lock(&lista_frames_memoria_mx);
     if(!paginacion_tiene_frames_libres_totales(frames_necesarios)){  
-        pthread_mutex_unlock(&lista_frames_swap_mx);
         pthread_mutex_unlock(&lista_frames_memoria_mx);
+        pthread_mutex_unlock(&lista_frames_swap_mx);
         return false; 
     }
     U_LOG_TRACE("Hay frames necesarios en swap"); //Chequear 
     p_patota_y_tabla_t* patota = paginacion_agregar_patota_a_listado(pid, frames_necesarios, strlen(tareas)+1);
-    pthread_mutex_unlock(&lista_frames_swap_mx);
+
+    bool result = paginacion_agregar_patota_en_memoria_swap(pid, cant_tripulantes, tareas, patota);
+
     pthread_mutex_unlock(&lista_frames_memoria_mx);
-   // paginacion_mostrar_frames(tamanio_swap/tamanio_pagina, MEMORIA_SWAP); //agregado
+    pthread_mutex_unlock(&lista_frames_swap_mx);
 
-    return paginacion_agregar_patota_en_memoria_swap(pid, cant_tripulantes, tareas, patota);
-
+    return result;
 }
 
 bool paginacion_memoria_inicializar_tripulante(uint32_t pid, uint32_t tid, u_pos_t pos)
 {
-    
+    pthread_mutex_lock(&lista_frames_swap_mx);
+    pthread_mutex_lock(&lista_frames_memoria_mx);
+
     p_patota_y_tabla_t* patota = buscar_patota_por_pid(pid);
     uint32_t escritos = patota->tripulantes_escritos;
     int direccion_logica = 8 + 21 * escritos; //correspondientes a la estructura del pcb y los tripulantes escritos en memoria;  
@@ -175,11 +178,17 @@ bool paginacion_memoria_inicializar_tripulante(uint32_t pid, uint32_t tid, u_pos
     patota->tripulantes_escritos = escritos + 1;
     U_LOG_TRACE("Tripulante con tid %d guardado correctamente", tid);
     
+    pthread_mutex_unlock(&lista_frames_memoria_mx);
+    pthread_mutex_unlock(&lista_frames_swap_mx);
+
     return true;
 }
 
 bool paginacion_memoria_actualizar_posicion_tripulante(uint32_t pid, uint32_t tid, u_pos_t pos)
 {
+    pthread_mutex_lock(&lista_frames_swap_mx);
+    pthread_mutex_lock(&lista_frames_memoria_mx);
+
     p_patota_y_tabla_t* patota = buscar_patota_por_pid(pid);
 
     int direccion_logica = paginacion_buscar_tid_en_tabla_de_paginas(tid, patota);
@@ -206,11 +215,16 @@ bool paginacion_memoria_actualizar_posicion_tripulante(uint32_t pid, uint32_t ti
 
     U_LOG_INFO("Actualizado posicion de tid: %d", tid);
 
+    pthread_mutex_unlock(&lista_frames_memoria_mx);
+    pthread_mutex_unlock(&lista_frames_swap_mx);
+
     return true;
 }
 
 bool paginacion_memoria_actualizar_estado_tripulante(uint32_t pid, uint32_t tid, char estado)
 {
+    pthread_mutex_lock(&lista_frames_swap_mx);
+    pthread_mutex_lock(&lista_frames_memoria_mx);
     p_patota_y_tabla_t* patota = buscar_patota_por_pid(pid);
 
     int direccion_logica = paginacion_buscar_tid_en_tabla_de_paginas(tid, patota);
@@ -243,11 +257,17 @@ bool paginacion_memoria_actualizar_estado_tripulante(uint32_t pid, uint32_t tid,
 
     U_LOG_INFO("Actualizado estado de tid: %d", tid);
     
+    pthread_mutex_unlock(&lista_frames_memoria_mx);
+    pthread_mutex_unlock(&lista_frames_swap_mx);
+
     return true;
 }
 
 char* paginacion_memoria_obtener_proxima_tarea(uint32_t pid, uint32_t tid)
 {
+    pthread_mutex_lock(&lista_frames_swap_mx);
+    pthread_mutex_lock(&lista_frames_memoria_mx);
+    
     uint32_t direccion_inicio_tareas = paginacion_obtener_direccion_inicio_tareas(pid);
     U_LOG_TRACE("TAREAS RECUPERADAS direccion: %d", direccion_inicio_tareas);
     
@@ -257,25 +277,38 @@ char* paginacion_memoria_obtener_proxima_tarea(uint32_t pid, uint32_t tid)
 
     char* tarea = paginacion_traer_tarea_buscada(numero_de_tarea, direccion_inicio_tareas, pid);
     if(tarea==NULL){
+        pthread_mutex_unlock(&lista_frames_memoria_mx);
+        pthread_mutex_unlock(&lista_frames_swap_mx);
         return tarea;
     }
     paginacion_modificar_proxima_tarea_tripulante(pid, tid);
-
     
     U_LOG_TRACE("TAREA RECUPERADA %s", tarea);
+
+    pthread_mutex_unlock(&lista_frames_memoria_mx);
+    pthread_mutex_unlock(&lista_frames_swap_mx);
+    
     return tarea;
 }
 
 tripulantes_t* paginacion_memoria_obtener_info_tripulante(uint32_t pid, uint32_t tid)
 {
-   
+    pthread_mutex_lock(&lista_frames_swap_mx);
+    pthread_mutex_lock(&lista_frames_memoria_mx);
+
     tripulantes_t* tripulante = paginacion_obtener_tcb(pid, tid);
+
+    pthread_mutex_unlock(&lista_frames_memoria_mx);
+    pthread_mutex_unlock(&lista_frames_swap_mx);
 
     return tripulante;
 }
 
 t_list*        paginacion_memoria_obtener_todos_los_tripulantes(void)
 {
+    pthread_mutex_lock(&lista_frames_swap_mx);
+    pthread_mutex_lock(&lista_frames_memoria_mx);
+
     t_list* lista_de_todos_los_tripulantes = list_create();
     pthread_mutex_lock(&listado_patotas_mx);
     int cantidad_patotas = list_size(listado_patotas);
@@ -296,11 +329,17 @@ t_list*        paginacion_memoria_obtener_todos_los_tripulantes(void)
         pthread_mutex_unlock(&patota->direcciones_logicas_mx);
     }
     pthread_mutex_unlock(&listado_patotas_mx);
+
+    pthread_mutex_unlock(&lista_frames_memoria_mx);
+    pthread_mutex_unlock(&lista_frames_swap_mx);
+
     return lista_de_todos_los_tripulantes;
 }
 
 bool           paginacion_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid)
 {
+    pthread_mutex_lock(&lista_frames_swap_mx);
+    pthread_mutex_lock(&lista_frames_memoria_mx);
 
     p_patota_y_tabla_t* patota = buscar_patota_por_pid(pid);
     int direccion_logica = paginacion_buscar_tid_en_tabla_de_paginas(tid, patota);
@@ -342,6 +381,9 @@ bool           paginacion_memoria_expulsar_tripulante(uint32_t pid, uint32_t tid
         list_remove_and_destroy_by_condition(listado_patotas, (void*)pid_buscado, destructor_patota); 
         pthread_mutex_unlock(&listado_patotas_mx);
     }
+
+    pthread_mutex_unlock(&lista_frames_memoria_mx);
+    pthread_mutex_unlock(&lista_frames_swap_mx);
     
     return true;
 }
@@ -361,10 +403,10 @@ private void paginacion_inicializar_frames(int cantidad_paginas, t_list* lista_f
 private void paginacion_mostrar_frames(int paginas, p_tipo_memoria_e tipo_de_memoria){
     t_list* lista;
     if(tipo_de_memoria == MEMORIA_SWAP){
-        pthread_mutex_lock(&lista_frames_swap_mx);
+        // pthread_mutex_lock(&lista_frames_swap_mx);
         lista = lista_frames_swap;
     }else{
-        pthread_mutex_lock(&lista_frames_memoria_mx);
+        // pthread_mutex_lock(&lista_frames_memoria_mx);
         lista= lista_frames_memoria;
     }
     int i;
@@ -373,9 +415,9 @@ private void paginacion_mostrar_frames(int paginas, p_tipo_memoria_e tipo_de_mem
         U_LOG_TRACE("Frame: %d, ocupado: %d", i, frame_a_mostrar->ocupado);
     }
     if(tipo_de_memoria == MEMORIA_SWAP){
-        pthread_mutex_unlock(&lista_frames_swap_mx);
+        // pthread_mutex_unlock(&lista_frames_swap_mx);
     }else{
-        pthread_mutex_unlock(&lista_frames_memoria_mx);
+        // pthread_mutex_unlock(&lista_frames_memoria_mx);
     }
 }
 
@@ -485,7 +527,7 @@ private bool paginacion_agregar_patota_en_memoria_swap(uint32_t pid, uint32_t ca
 
 
 private void paginacion_modificar_frame(int32_t numero_de_frame, p_tipo_escritura_e escritura, p_patota_y_tabla_t* patota){
-    pthread_mutex_lock(&lista_frames_memoria_mx);
+    // pthread_mutex_lock(&lista_frames_memoria_mx);
     p_frame_t* frame = list_get(lista_frames_memoria, numero_de_frame);
     p_fila_tabla_de_paginas_t* fila_tabla = buscar_fila_por_frame(patota->tabla, numero_de_frame, MEMORIA_FISICA);
 
@@ -509,11 +551,11 @@ private void paginacion_modificar_frame(int32_t numero_de_frame, p_tipo_escritur
     }
     pthread_mutex_unlock(&contador_memoria_mx);
     pthread_mutex_unlock(&fila_tabla->mx);
-    pthread_mutex_unlock(&lista_frames_memoria_mx);
+    // pthread_mutex_unlock(&lista_frames_memoria_mx);
 }
 
 private void paginacion_modificar_frame_de_swap(int numero_de_frame, p_tipo_escritura_e escritura, p_patota_y_tabla_t* patota){
-    pthread_mutex_lock(&lista_frames_swap_mx);
+    // pthread_mutex_lock(&lista_frames_swap_mx);
     p_frame_t* frame = list_get(lista_frames_swap, numero_de_frame);
     p_fila_tabla_de_paginas_t* fila_tabla = buscar_fila_por_frame(patota->tabla, numero_de_frame, MEMORIA_SWAP);
     pthread_mutex_lock(&fila_tabla->mx);
@@ -528,7 +570,7 @@ private void paginacion_modificar_frame_de_swap(int numero_de_frame, p_tipo_escr
             break;
     }
     pthread_mutex_unlock(&fila_tabla->mx);
-    pthread_mutex_unlock(&lista_frames_swap_mx);
+    // pthread_mutex_unlock(&lista_frames_swap_mx);
 }
 
 
@@ -714,8 +756,8 @@ private int paginacion_buscar_tid_en_tabla_de_paginas(uint32_t tid, p_patota_y_t
 }
 
 private int paginacion_page_fault(int pagina, p_patota_y_tabla_t* patota){
-    pthread_mutex_lock(&lista_frames_memoria_mx);  
-    pthread_mutex_lock(&lista_frames_swap_mx);
+    // pthread_mutex_lock(&lista_frames_memoria_mx);  
+    // pthread_mutex_lock(&lista_frames_swap_mx);
     if(paginacion_tiene_frames_libres(1, lista_frames_memoria)){
         return paginacion_copiar_frame_de_swap_a_memoria(pagina, patota);
     }
@@ -734,8 +776,8 @@ private int paginacion_copiar_frame_de_swap_a_memoria(int pagina, p_patota_y_tab
     paginacion_modificar_frame_y_tabla_de_paginas(frame_memoria, patota, pagina);
     paginacion_marcar_como_liberado(frame_swap, lista_frames_swap);
     
-    pthread_mutex_unlock(&lista_frames_swap_mx);
-    pthread_mutex_unlock(&lista_frames_memoria_mx);
+    // pthread_mutex_unlock(&lista_frames_swap_mx);
+    // pthread_mutex_unlock(&lista_frames_memoria_mx);
     return paginacion_buscar_direccion_en_tabla_de_paginas(pagina * tamanio_pagina, patota);
 
     
@@ -1066,8 +1108,8 @@ private int paginacion_copiar_paginas(int pagina, p_fila_tabla_de_paginas_t* fil
     frame_donde_escribo_swap->ocupado = 1;
     pthread_mutex_unlock(&fila_de_tabla->mx);
     //--------------------------------------------------------------------------------------------------------------------------
-    pthread_mutex_unlock(&lista_frames_swap_mx);
-    pthread_mutex_unlock(&lista_frames_memoria_mx);
+    // pthread_mutex_unlock(&lista_frames_swap_mx);
+    // pthread_mutex_unlock(&lista_frames_memoria_mx);
     return paginacion_buscar_direccion_en_tabla_de_paginas(pagina * tamanio_pagina, patota);
 }
 
@@ -1158,19 +1200,19 @@ private void paginacion_marcar_como_expulsado(p_patota_y_tabla_t* patota, int pa
     if(fila_tabla->ocupantes_pagina == 0){
         p_frame_t* frame_a_modificar;
         if(fila_tabla->frame_memoria == -1){
-            pthread_mutex_lock(&lista_frames_swap_mx);
+            // pthread_mutex_lock(&lista_frames_swap_mx);
             frame_a_modificar = list_get(lista_frames_swap, fila_tabla->frame_swap);
             fila_tabla->frame_swap = -1;
             U_LOG_TRACE("Liberado frame %d de memoria swap", frame_a_modificar->num_frame);
             frame_a_modificar->ocupado = 0;
-            pthread_mutex_unlock(&lista_frames_swap_mx);
+            // pthread_mutex_unlock(&lista_frames_swap_mx);
         }else{
-            pthread_mutex_lock(&lista_frames_memoria_mx);
+            // pthread_mutex_lock(&lista_frames_memoria_mx);
             frame_a_modificar = list_get(lista_frames_memoria, fila_tabla->frame_memoria);
             fila_tabla->frame_memoria = -1;
             U_LOG_TRACE("Liberado frame %d de memoria real", frame_a_modificar->num_frame);
             frame_a_modificar->ocupado = 0;
-            pthread_mutex_unlock(&lista_frames_memoria_mx);
+            // pthread_mutex_unlock(&lista_frames_memoria_mx);
         }
     }
     pthread_mutex_unlock(&fila_tabla->mx);
@@ -1202,18 +1244,18 @@ private void paginacion_liberar_todas_las_paginas(p_patota_y_tabla_t* patota){
         pthread_mutex_lock(&pagina->mx);
         p_frame_t* frame_a_modificar;
         if(pagina->frame_memoria != -1){
-            pthread_mutex_lock(&lista_frames_memoria_mx);
+            // pthread_mutex_lock(&lista_frames_memoria_mx);
             frame_a_modificar = list_get(lista_frames_memoria, pagina->frame_memoria);
             frame_a_modificar->ocupado = 0;
             pagina->frame_memoria = -1;
-            pthread_mutex_unlock(&lista_frames_memoria_mx);
+            // pthread_mutex_unlock(&lista_frames_memoria_mx);
         }
         if(pagina->frame_swap != -1){   //se hace otro if, porq la pagina ya podria estar liberada. 
-            pthread_mutex_lock(&lista_frames_swap_mx);
+            // pthread_mutex_lock(&lista_frames_swap_mx);
             frame_a_modificar = list_get(lista_frames_swap, pagina->frame_swap);
             frame_a_modificar->ocupado = 0;
             pagina->frame_swap = -1;
-            pthread_mutex_unlock(&lista_frames_swap_mx);
+            // pthread_mutex_unlock(&lista_frames_swap_mx);
         }
         pthread_mutex_unlock(&pagina->mx);
     }
