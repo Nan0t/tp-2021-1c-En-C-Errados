@@ -314,7 +314,7 @@ private void ds_planificador_init_devices(void)
     pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);
 
     for(uint32_t i = 0; i < p_planificador->cant_cpu; i ++)
-        U_ASSERT(pthread_create(&thread_id, &thread_attr, (void*)cpu_init, &p_planificador->cant_cpu) != -1,
+        U_ASSERT(pthread_create(&thread_id, &thread_attr, (void*)cpu_init, NULL) != -1,
             "No se pudo crear el hilo del CPU %d: %s", i, strerror(errno));
 
     U_ASSERT(pthread_create(&thread_id, &thread_attr, (void*)io_init, NULL) != -1,

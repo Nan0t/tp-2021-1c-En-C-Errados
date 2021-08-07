@@ -7,6 +7,6 @@
  * @NAME: cpu_init
  * @DESC: inicializa una instancia de CPU. Debe llamarse en un hilo a parte.
  */
-void cpu_init(uint32_t* grado_multiprocesamiento);
+void cpu_init(void);
 
 #endif
