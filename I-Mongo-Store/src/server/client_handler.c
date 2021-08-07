@@ -29,7 +29,7 @@ private void fs_client_handler_task(int32_t* client_sock)
 {
     u_opcode_e opcode;
     
-    if(u_socket_recv(*client_sock, &opcode, sizeof(uint32_t)))
+    while(u_socket_recv(*client_sock, &opcode, sizeof(uint32_t)))
         fs_client_handler_check_opcode(*client_sock, opcode);
 
     u_socket_close(*client_sock);

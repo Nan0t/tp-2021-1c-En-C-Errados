@@ -1,4 +1,5 @@
 #include "discordia/discordia.h"
+#include "discordia/connection_handler.h"
 
 #include "console.h"
 #include "parser.h"
@@ -50,6 +51,8 @@ void ds_console_init(void)
     ds_print("Bienvenido a la consola del Discordiador.\n");
     ds_print("Para salir: Ctrl + C o SALIR\n\n");
 
+    ds_connection_handler_create_connection(0);
+    
     bool should_exit = false;
 
     u_console_set_commands(COMMANDS);

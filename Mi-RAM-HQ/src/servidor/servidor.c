@@ -69,9 +69,8 @@ private void cliente_thread(int32_t sock_client)
     uint32_t op_code; 
     uint32_t msg_length;
 
-    if(u_socket_recv(sock_client, &op_code, sizeof(uint32_t)))
+    while(u_socket_recv(sock_client, &op_code, sizeof(uint32_t)))
     {
-
         if(op_code == OBTENER_TRIPULANTES)
             client_handler_manage_opcode(sock_client, op_code, NULL);
         else
@@ -89,6 +88,7 @@ private void cliente_thread(int32_t sock_client)
             }
         }
     }
+
     u_socket_close(sock_client);
 }
 
