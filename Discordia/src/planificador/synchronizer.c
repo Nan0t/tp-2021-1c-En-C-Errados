@@ -13,6 +13,8 @@ typedef struct
     pthread_mutex_t devices_notifier_mx;
     uint32_t        devices_notifier;
 
+    pthread_cond_t devices_notifier_cond;
+
     uint32_t cycle_delay;
 
     sem_t*   devices_sems;
@@ -37,6 +39,8 @@ void ds_synchronizer_init(uint32_t devices_count)
 
     p_synchronizer_instance->devices_notifier = 0;
     pthread_mutex_init(&p_synchronizer_instance->devices_notifier_mx, NULL);
+
+    pthread_cond_init(&p_synchronizer_instance->devices_notifier_cond, NULL);
 
     p_synchronizer_instance->cycle_delay = u_config_get_int_value("RETARDO_CICLO_CPU");
 
@@ -76,10 +80,7 @@ void ds_synchronizer_notify_end_of_cicle(void)
     p_synchronizer_instance->devices_notifier ++;
 
     if(p_synchronizer_instance->devices_notifier == p_synchronizer_instance->devices_count)
-    {
-        p_synchronizer_instance->devices_notifier = 0;
-        sem_post(&p_synchronizer_instance->start_cycle_sem);
-    }
+        pthread_cond_broadcast(&p_synchronizer_instance->devices_notifier_cond);
 
     pthread_mutex_unlock(&p_synchronizer_instance->devices_notifier_mx);
 }
@@ -90,5 +91,10 @@ void ds_synchronizer_execute_next_cicle(void)
         sem_post(&p_synchronizer_instance->devices_sems[i]);
 
     sleep(p_synchronizer_instance->cycle_delay);
-    sem_wait(&p_synchronizer_instance->start_cycle_sem);
+    // sem_wait(&p_synchronizer_instance->start_cycle_sem);
+    pthread_mutex_lock(&p_synchronizer_instance->devices_notifier_mx);
+    if(p_synchronizer_instance->devices_notifier != p_synchronizer_instance->devices_count)
+        pthread_cond_wait(&p_synchronizer_instance->devices_notifier_cond, &p_synchronizer_instance->devices_notifier_mx);
+    p_synchronizer_instance->devices_notifier = 0;
+    pthread_mutex_unlock(&p_synchronizer_instance->devices_notifier_mx);
 }
