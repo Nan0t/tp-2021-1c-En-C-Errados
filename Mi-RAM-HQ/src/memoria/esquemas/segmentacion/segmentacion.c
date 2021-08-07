@@ -130,6 +130,7 @@ bool segmentacion_memoria_inicializar_tripulante(uint32_t pid, uint32_t tid, u_p
     	aux4 = list_get(listado_segmentos, s);
 		if(aux4->inicio_segmento==aux3->inicio_segmento_tcb){
 			aux4->id_propietario=aux3->tid;
+			U_LOG_INFO("SE ASIGNA EL SEGMENTO %d AL TRIPULANTE %d", s, aux3->tid);
 		}
     }
 	pthread_mutex_unlock(&listado_segmentos_mx);
@@ -531,6 +532,7 @@ private bool segmentacion_hay_segmento_libre(int tamanio_lista,int tamanio_segme
 }
 
 private void segmentacion_compactar(void){
+	U_LOG_INFO("COMENZANDO LA COMPACTACION");
 	int compacto = 0;
 	while(compacto == 0){
 		if (segmentacion_esta_compactado()){
@@ -540,7 +542,7 @@ private void segmentacion_compactar(void){
         segmentacion_reasignar_segmento();
 		}
 	}
-
+	U_LOG_INFO("LA COMPACTACION HA FINALIZADO");
 }
 
 private int segmentacion_buscar_segmento(int tamanio_lista,int tamanio_segmento, int tipo_segmento, uint32_t pid){
@@ -588,6 +590,12 @@ private int segmentacion_buscar_segmento(int tamanio_lista,int tamanio_segmento,
 	aux->tipo_segmento=tipo_segmento;
 	if((tipo_segmento==0)||(tipo_segmento==1)){
 		  aux->id_propietario=pid;
+		  if(tipo_segmento==0){
+		  		  U_LOG_INFO("SE ASIGNA EL SEGMENTO %d A LA PATOTA %d", indice_segmento_encontrado, pid);
+		  }
+		  if(tipo_segmento==1){
+		  		  U_LOG_INFO("SE ASIGNA EL SEGMENTO %d A LAS TAREAS DE LA PATOTA %d", indice_segmento_encontrado, pid);
+		  }
 	}
 	if(!(aux->tamanio_segmento==tamanio_segmento)){
 	      s_segmento_t* segmento = u_malloc(sizeof(s_segmento_t));
@@ -628,9 +636,9 @@ private bool segmentacion_agregar_patota_en_memoria(uint32_t pid,const char* tar
 	int offset_tareas = 0;
 	while(offset_tareas < strlen(tareas)+1){
 		    memcpy(esquema_memoria_mfisica + offset_general, &tareas[offset_tareas], sizeof(char));
+		    U_LOG_TRACE("Escrito caracter: %c", tareas[offset_tareas]);
             offset_tareas++;
             offset_general++;
-            U_LOG_TRACE("Escrito caracter: %d", i);
 	}
 	pthread_mutex_unlock(&esquema_memoria_mfisica_mx);
 	return true;
