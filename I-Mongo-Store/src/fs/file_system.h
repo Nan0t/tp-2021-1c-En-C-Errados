@@ -17,7 +17,6 @@ void  file_system_inicio_tarea(uint32_t tid, const char* tarea);
 void  file_system_finalizacion_tarea(uint32_t tid, const char* tarea);
 void  file_system_atiende_sabotaje(uint32_t tid);
 void  file_system_resuelve_sabotaje(uint32_t tid);
-void  file_system_eliminar_tripulante(uint32_t tid);
 char* file_system_obtener_bitacora(uint32_t tid);
 
 #endif

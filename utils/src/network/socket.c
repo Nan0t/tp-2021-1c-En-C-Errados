@@ -178,7 +178,7 @@ bool u_socket_recv(int32_t sock, void* data, int64_t size)
     int64_t bytes;
     U_ASSERT(data, "data is NULL");
 
-    bytes = recv(sock, data, size, 0);
+    bytes = recv(sock, data, size, MSG_WAITALL);
 
     if(bytes <= 0)
     {

@@ -1,58 +1,47 @@
 #include "admin_memoria.h"
-#include <stdlib.h>
-#include <time.h>
+#include "esquemas/esquema_memoria.h"
+#include "map/map.h"
 
-bool admin_memoria_iniciar_patota(uint32_t pid, const char* lista_tareas)
+void admin_memoria_init(void)
 {
-    return true;
+    esquema_memoria_init();
 }
 
-bool admin_memoria_iniciar_tripulante(uint32_t pid, uint32_t tid,  u_pos_t pos)//cambiado const u_pos_t*
+bool admin_memoria_iniciar_patota(uint32_t pid, uint32_t cant_tripulantes, const char* lista_tareas)
 {
-    return true;
+    return esquema_memoria_inicializar_patota(pid, cant_tripulantes, lista_tareas);
 }
 
-void admin_memoria_mover_tripulante(uint32_t tid, u_pos_t pos)//cambiado const u_pos_t*
+bool admin_memoria_iniciar_tripulante(uint32_t pid, uint32_t tid, u_pos_t pos)
 {
-
+    map_add_trip(tid, &pos);
+    return esquema_memoria_inicializar_tripulante(pid, tid, pos);
 }
 
-char* admin_memoria_obtener_proxima_tarea(uint32_t tid)
+bool admin_memoria_mover_tripulante(uint32_t pid, uint32_t tid, u_pos_t pos)
 {
-    return string_duplicate("GENERAR_OXIGENO 12;2;3;5");
+    map_move_trip(tid, &pos);
+    return esquema_memoria_actualizar_posicion_tripulante(pid, tid, pos);
 }
 
-void admin_memoria_tripulante_nuevo_estado(uint32_t tid, char estado)
+char* admin_memoria_obtener_proxima_tarea(uint32_t pid, uint32_t tid)
 {
-
+    return esquema_memoria_obtener_proxima_tarea(pid, tid);
 }
 
-void admin_memoria_eliminar_tripulante(uint32_t tid)
+bool admin_memoria_tripulante_nuevo_estado(uint32_t pid, uint32_t tid, char estado)
 {
+    return esquema_memoria_actualizar_estado_tripulante(pid, tid, estado);
+}
 
+bool admin_memoria_eliminar_tripulante(uint32_t pid, uint32_t tid)
+{
+    map_del_trip(tid);
+    return esquema_memoria_expulsar_tripulante(pid, tid);
 }
 
 t_list* admin_memoria_obtener_tripulantes(void)
 {
-    t_list* tripulantes = list_create();
-    tripulantes_t* trip = NULL;
-
-    srand(time(NULL));
-
-    const char states[] = { 'R', 'B', 'E' };
-
-    for(uint32_t i = 0; i < 5; i ++)
-    {
-        trip = u_malloc(sizeof(tripulantes_t));
-
-        trip->pid = 10;
-        trip->tid = 10 + i;
-        trip->pos.x = rand() % 10;
-        trip->pos.y = rand() % 10;
-        trip->estado = states[rand() % 3];
-
-        list_add(tripulantes, trip);
-    }
-
-    return tripulantes;
+    return esquema_memoria_obtener_todos_los_tripulantes();
 }
+

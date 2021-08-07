@@ -3,20 +3,18 @@
 #include <CUnit/Basic.h>
 #include <console/parser.h>
 
-#define ARRAY_LENGTH(array) (sizeof((array)) / sizeof(*(array)))
 
 void test_invalid_cant_args_iniciar_patota(void)
 {
 // Arrange
 //--------
     char* args[]  = { "INICIAR_PATOTA", "5" };
-    uint32_t argc = ARRAY_LENGTH(args);
 
     ds_parser_result_t result = { 0 };
 
 // Act
 //----
-    ds_parse(argc, args, &result);
+    ds_parse(args, &result);
 
 // Assert
 //-------
@@ -33,13 +31,12 @@ void test_invalid_cant_trips_iniciar_patota(void)
 // Arrange
 //--------
     char* args[]  = { "INICIAR_PATOTA", "Cinco", "Ruta/A/Tareas", "3|3", "4|3" };
-    uint32_t argc = ARRAY_LENGTH(args);
 
     ds_parser_result_t result = { 0 };
 
 // Act
 //----
-    ds_parse(argc, args, &result);
+    ds_parse(args, &result);
 
 // Assert.
 //--------
@@ -56,18 +53,16 @@ void test_invalid_positions_iniciar_patota(void)
 // Arrange
 //--------
     char* invalid_args1[]  = { "INICIAR_PATOTA", "5", "Ruta/A/Tareas", "3;3", "4|3" };
-    uint32_t invalid_argc1 = ARRAY_LENGTH(invalid_args1);
 
     char* invalid_args2[]  = { "INICIAR_PATOTA", "5", "Ruta/A/Tareas", "|3|3", "4|3" };
-    uint32_t invalid_argc2 = ARRAY_LENGTH(invalid_args1);
 
     ds_parser_result_t result1 = { 0 };
     ds_parser_result_t result2 = { 0 };
 
 // Act
 //----
-    ds_parse(invalid_argc1, invalid_args1, &result1);
-    ds_parse(invalid_argc2, invalid_args2, &result2);
+    ds_parse(invalid_args1, &result1);
+    ds_parse(invalid_args2, &result2);
 
 // Assert.
 //--------
@@ -90,13 +85,12 @@ void test_valid_iniciar_patota_sin_posiciones(void)
 // Arrange
 //--------
     char* args[]  = { "INICIAR_PATOTA", "10", "Ruta/A/Tareas" };
-    uint32_t argc = ARRAY_LENGTH(args);
 
     ds_parser_result_t result = { 0 };
 
 // Act
 //----
-    ds_parse(argc, args, &result);
+    ds_parse(args, &result);
 
 // Assert.
 //--------
@@ -117,7 +111,6 @@ void test_valid_iniciar_patota_con_posiciones(void)
 // Arrange
 //--------
     char* args[]  = { "INICIAR_PATOTA", "10", "Ruta/A/Tareas", "3|3", "3|4", "5|10" };
-    uint32_t argc = ARRAY_LENGTH(args);
 
     const u_pos_t expected_positions[] =
     {
@@ -137,7 +130,7 @@ void test_valid_iniciar_patota_con_posiciones(void)
 
 // Act
 //----
-    ds_parse(argc, args, &result);
+    ds_parse(args, &result);
 
 // Assert.
 //--------
@@ -158,13 +151,12 @@ void test_invalid_cant_args_expulsar_tripulante(void)
 // Arrange
 //--------
     char* args[]  = { "EXPULSAR_TRIPULANTE" };
-    uint32_t argc = ARRAY_LENGTH(args);
 
     ds_parser_result_t result = { 0 };
 
 // Act
 //----
-    ds_parse(argc, args, &result);
+    ds_parse(args, &result);
 
 // Assert
 //-------
@@ -181,13 +173,12 @@ void test_invalid_expulsar_tripulante(void)
 // Arrange
 //--------
     char* args[]  = { "EXPULSAR_TRIPULANTE", "UNO" };
-    uint32_t argc = ARRAY_LENGTH(args);
 
     ds_parser_result_t result = { 0 };
 
 // Act
 //----
-    ds_parse(argc, args, &result);
+    ds_parse(args, &result);
 
 // Assert
 //-------
@@ -204,13 +195,12 @@ void test_valid_expulsar_tripulante(void)
 // Arrange
 //--------
     char* args[]  = { "EXPULSAR_TRIPULANTE", "1" };
-    uint32_t argc = ARRAY_LENGTH(args);
 
     ds_parser_result_t result = { 0 };
 
 // Act
 //----
-    ds_parse(argc, args, &result);
+    ds_parse(args, &result);
 
 // Assert
 //-------
@@ -225,13 +215,12 @@ void test_invalid_cant_args_obtener_bitacora(void)
 // Arrange
 //--------
     char* args[]  = { "OBTENER_BITACORA" };
-    uint32_t argc = ARRAY_LENGTH(args);
 
     ds_parser_result_t result = { 0 };
 
 // Act
 //----
-    ds_parse(argc, args, &result);
+    ds_parse(args, &result);
 
 // Assert
 //-------
@@ -248,13 +237,12 @@ void test_invalid_obtener_bitacora(void)
 // Arrange
 //--------
     char* args[]  = { "OBTENER_BITACORA", "UNO" };
-    uint32_t argc = ARRAY_LENGTH(args);
 
     ds_parser_result_t result = { 0 };
 
 // Act
 //----
-    ds_parse(argc, args, &result);
+    ds_parse(args, &result);
 
 // Assert
 //-------
@@ -271,13 +259,12 @@ void test_valid_obtener_bitacora(void)
 // Arrange
 //--------
     char* args[]  = { "OBTENER_BITACORA", "1" };
-    uint32_t argc = ARRAY_LENGTH(args);
 
     ds_parser_result_t result = { 0 };
 
 // Act
 //----
-    ds_parse(argc, args, &result);
+    ds_parse(args, &result);
 
 // Assert
 //-------
@@ -292,13 +279,12 @@ void test_valid_listar_tripulantes(void)
 // Arrange
 //--------
     char* args[]  = { "LISTAR_TRIPULANTES" };
-    uint32_t argc = ARRAY_LENGTH(args);
 
     ds_parser_result_t result = { 0 };
 
 // Act
 //----
-    ds_parse(argc, args, &result);
+    ds_parse(args, &result);
 
 // Assert
 //-------
@@ -311,13 +297,12 @@ void test_valid_iniciar_planificacion(void)
 // Arrange
 //--------
     char* args[]  = { "INICIAR_PLANIFICACION" };
-    uint32_t argc = ARRAY_LENGTH(args);
 
     ds_parser_result_t result = { 0 };
 
 // Act
 //----
-    ds_parse(argc, args, &result);
+    ds_parse(args, &result);
 
 // Assert
 //-------
@@ -330,13 +315,12 @@ void test_valid_pausar_planificacion(void)
 // Arrange
 //--------
     char* args[]  = { "PAUSAR_PLANIFICACION" };
-    uint32_t argc = ARRAY_LENGTH(args);
 
     ds_parser_result_t result = { 0 };
 
 // Act
 //----
-    ds_parse(argc, args, &result);
+    ds_parse(args, &result);
 
 // Assert
 //-------

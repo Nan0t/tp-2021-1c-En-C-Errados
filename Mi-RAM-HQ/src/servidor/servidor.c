@@ -1,23 +1,18 @@
 #include "servidor.h"
 
+private void servidor_thread(int32_t* server_sock);
 private void cliente_thread(int32_t sock_client);
-void client_handler_manage_opcode(int32_t sock_client, u_opcode_e op_code, u_buffer_t* buffer);
+private void client_handler_new_conection(int32_t nuevo_cliente);
+private void client_handler_manage_opcode(int32_t sock_client, u_opcode_e op_code, u_buffer_t* buffer);
 
 bool servidor_init(const char* port)
 {
-    // Socket del servidor
     int32_t server_sock;
 
-    // Objeto que se puede usar para obtener los errores que
-    // puedan llegar a suceder al conectarse al servidor.
     u_sock_err_t* err = u_sock_err_create();
 
-    // Conectamos el servidor al puerto especificado
     server_sock = u_socket_listen(port, 128, err);
 
-    // En caso de devolver -1, el objeto err contendra tanto
-    // el código de error como una descripción del error, el cual
-    // puede ser obtenido con la funcion u_sock_err_get_description.
     if(server_sock == -1)
     {
         U_LOG_ERROR("%s", u_sock_err_get_description(err));
@@ -28,34 +23,39 @@ bool servidor_init(const char* port)
 
     U_LOG_INFO("Mi-RAM-HQ escuchando en el puerto %s...", port);
 
-    // Loop donde el servidor queda a la escucha de nuevas conexiones.
-    while(1)
-    {
-        int32_t new_client = u_socket_accept(server_sock, err);
+    int32_t* server_sock_ptr = u_malloc(sizeof(int32_t));
+    *server_sock_ptr = server_sock;
 
-        if(new_client == -1)
-            U_LOG_ERROR("%s", u_sock_err_get_description(err));
-        else
-        {
-            // Agregamos un nuevo cliente al administrador de clientes.
-            client_handler_new_conection(new_client);
-        }
-    }
+    pthread_t server_thread;
+    U_ASSERT(pthread_create(&server_thread, NULL, (void*)servidor_thread, server_sock_ptr) != -1,
+        "No se pudo inicializar el hilo del servidor"
+    );
+
+    pthread_detach(server_thread);
+    u_sock_err_delete(err);
 
     return 0;
 }
 
-void client_handler_new_conection(int32_t nuevo_cliente){
-    U_LOG_TRACE("Nuevo cliente conectado");
-    
-   // int32_t* new_client_sock_instance = u_malloc(sizeof(int32_t));
-    //*new_client_sock_instance = nuevo_cliente;
-    
+private void servidor_thread(int32_t* server_sock)
+{
+    u_sock_err_t* err = u_sock_err_create();
 
-    // Creamos el hilo del cliente.
-    // En caso de que pthread_create devuelva -1, se logea un mensaje de error y
-    // se aborta el programa. Para mas info sobre el macro U_ASSERT, ver el archivo
-    // que se encuentra en utils/include/utils/diagnostics/assert.h
+    while(1)
+    {
+        int32_t new_client = u_socket_accept(*server_sock, err);
+
+        if(new_client == -1)
+            U_LOG_ERROR("%s", u_sock_err_get_description(err));
+        else
+            client_handler_new_conection(new_client);
+    }
+}
+
+private void client_handler_new_conection(int32_t nuevo_cliente)
+{
+    U_LOG_TRACE("Nuevo cliente conectado");
+
     pthread_t client_thread_id;
     U_ASSERT(
         pthread_create(&client_thread_id, NULL, (void*)cliente_thread, (void*)nuevo_cliente) != -1,
@@ -69,45 +69,41 @@ private void cliente_thread(int32_t sock_client)
     uint32_t op_code; 
     uint32_t msg_length;
 
-    // Quedamos a la escucha de que el cliente envie un
-    // mensaje. En caso de que u_socket_recv devuelva false, significara que se
-    // perdio la conexion con el cliente, por lo que el hilo del cliente terminará.
-
-    if(u_socket_recv(sock_client, &op_code, sizeof(uint32_t)))  //if en lugar de while
+    while(u_socket_recv(sock_client, &op_code, sizeof(uint32_t)))
     {
-
         if(op_code == OBTENER_TRIPULANTES)
             client_handler_manage_opcode(sock_client, op_code, NULL);
         else
         {
-            // Si el primer recv tiene éxito, habremos obtenido el op_code
-            // Volvemos a hacer otro recv para recibir el tamaño del msj.
             u_socket_recv(sock_client, &msg_length, sizeof(uint32_t));
-
-            //Recibido el msj lo pasamos a una estructura buffer para deserializarlo
             
             void* msg = u_malloc(msg_length);
-            if(u_socket_recv(sock_client, msg, msg_length)){
-            //    u_socket_recv(sock_client, &msg, msg_length);
+            if(u_socket_recv(sock_client, msg, msg_length))
+            {
                 u_buffer_t* buffer = u_buffer_create();
                 u_buffer_write(buffer, msg, msg_length);
                 u_free(msg);
                 client_handler_manage_opcode(sock_client, op_code, buffer);
+                u_buffer_delete(buffer);
             }
         }
     }
+
     u_socket_close(sock_client);
 }
 
-void client_handler_manage_opcode(int32_t sock_client, u_opcode_e op_code, u_buffer_t* buffer){
-    switch(op_code){
-        case INICIAR_PATOTA: ;
+private void client_handler_manage_opcode(int32_t sock_client, u_opcode_e op_code, u_buffer_t* buffer){
+    switch(op_code)
+    {
+        case INICIAR_PATOTA:
+        {
             u_msg_iniciar_patota_t* patota = u_msg_iniciar_patota_deserializar(buffer);
             
-            U_LOG_TRACE("Recibido msg INICIAR_PATOTA");
-            U_LOG_TRACE("pid: %d, lista_tareas: %s", patota->pid, patota->lista_tareas);//para probar que llego correcto
+            char* msg_str = u_msg_iniciar_patota_to_string(patota);
+            U_LOG_TRACE("%s", msg_str);
+            u_free(msg_str);
             
-            if(admin_memoria_iniciar_patota(patota->pid, patota->lista_tareas))
+            if(admin_memoria_iniciar_patota(patota->pid, patota->cant_trips, patota->lista_tareas))
             {
                 u_opcode_e opcode = OK;
                 u_socket_send(sock_client, &opcode, sizeof(uint32_t));
@@ -130,11 +126,16 @@ void client_handler_manage_opcode(int32_t sock_client, u_opcode_e op_code, u_buf
             u_msg_iniciar_patota_eliminar(patota);
 
             break;
+        }
 
-        case INICIAR_TRIPULANTE: ;
+        case INICIAR_TRIPULANTE:
+        {
+
             u_msg_iniciar_tripulante_t* tripulante = u_msg_iniciar_tripulante_deserializar(buffer);
-            U_LOG_TRACE("Recibido msg INICIAR_TRIPULANTE");
-            U_LOG_TRACE("pid: %d, tid: %d, posx: %d, posy: %d", tripulante->patota_id, tripulante->tripulante_id, tripulante->posicion.x, tripulante->posicion.y);
+            
+            char* msg_str = u_msg_iniciar_tripulante_to_string(tripulante);
+            U_LOG_TRACE("%s", msg_str);
+            u_free(msg_str);
             
             if(admin_memoria_iniciar_tripulante(tripulante->patota_id, tripulante->tripulante_id, tripulante->posicion))
             {
@@ -155,26 +156,34 @@ void client_handler_manage_opcode(int32_t sock_client, u_opcode_e op_code, u_buf
 
             u_msg_iniciar_tripulante_eliminar(tripulante);
             break;
+        }
 
-        case MOVIMIENTO_TRIPULANTE: ;
+        case MOVIMIENTO_TRIPULANTE:
+        {
             u_msg_movimiento_tripulante_t* movimiento = u_msg_movimiento_tripulante_deserializar(buffer);
 
-            U_LOG_TRACE("Recibido msg MOVIMIENTO_TRIPULANTE");
-            U_LOG_TRACE("tid: %d, posx: %d, posy: %d", movimiento->tid, movimiento->pos.x, movimiento->pos.y);
+            char* msg_str = u_msg_movimiento_tripulante_to_string(movimiento);
+            U_LOG_TRACE("%s", msg_str);
+            u_free(msg_str);
 
-            admin_memoria_mover_tripulante(movimiento->tid, movimiento->pos);
+            admin_memoria_mover_tripulante(movimiento->pid, movimiento->tid, movimiento->pos);
             u_msg_movimiento_tripulante_eliminar(movimiento);
 
+            u_opcode_e resp_opcode = OK;
+            u_socket_send(sock_client, &resp_opcode, sizeof(uint32_t));
+
             break;
+        }
 
         case PROXIMA_TAREA:
         {
             u_msg_proxima_tarea_t* tarea_msg = u_msg_proxima_tarea_deserializar(buffer);
             
-            U_LOG_TRACE("Recibido msg PROXIMA_TAREA");
-            U_LOG_TRACE("tid: %d", tarea_msg->tripulante_id);
+            char* msg_str = u_msg_proxima_tarea_to_string(tarea_msg);
+            U_LOG_TRACE("%s", msg_str);
+            u_free(msg_str);
 
-            char* tarea = admin_memoria_obtener_proxima_tarea(tarea_msg->tripulante_id);
+            char* tarea = admin_memoria_obtener_proxima_tarea(tarea_msg->pid, tarea_msg->tid);
             u_msg_proxima_tarea_eliminar(tarea_msg);
 
             u_msg_nueva_tarea_t* msg = u_msg_nueva_tarea_crear(tarea);
@@ -190,35 +199,46 @@ void client_handler_manage_opcode(int32_t sock_client, u_opcode_e op_code, u_buf
             u_buffer_delete(package_ser);
             u_package_delete(package);
 
-            u_free(tarea);
+            if(tarea)
+                u_free(tarea);
 
             break;
         }
 
-        case TRIPULANTE_NUEVO_ESTADO: ;
+        case TRIPULANTE_NUEVO_ESTADO:
+        {
             u_msg_tripulante_nuevo_estado_t* nuevo_estado = u_msg_tripulante_nuevo_estado_deserializar(buffer);
             
-            U_LOG_TRACE("Recibido msg TRIPULANTE_NUEVO_ESTADO");
-            U_LOG_TRACE("tid: %d, estado nuevo: %c", nuevo_estado->tripulante_id, nuevo_estado->nuevo_estado);
+            char* msg_str = u_msg_tripulante_nuevo_estado_to_string(nuevo_estado);
+            U_LOG_TRACE("%s", msg_str);
+            u_free(msg_str);
 
-            admin_memoria_tripulante_nuevo_estado(nuevo_estado->tripulante_id, nuevo_estado->nuevo_estado);
+            admin_memoria_tripulante_nuevo_estado(nuevo_estado->pid, nuevo_estado->tid, nuevo_estado->nuevo_estado);
             u_msg_tripulante_nuevo_estado_eliminar(nuevo_estado);
 
-            break; 
+            u_opcode_e resp_opcode = OK;
+            u_socket_send(sock_client, &resp_opcode, sizeof(uint32_t));
 
-        case ELIMINAR_TRIPULANTE: ;
+            break; 
+        }
+
+        case ELIMINAR_TRIPULANTE:
+        {
             u_msg_eliminar_tripulante_t* eliminar = u_msg_eliminar_tripulante_deserializar(buffer);
  
-            U_LOG_TRACE("Recibido msg ELIMINAR_TRIPULANTE");
-            U_LOG_TRACE("tid: %d", eliminar->tripulante_id);
+            char* msg_str = u_msg_eliminar_tripulante_to_string(eliminar);
+            U_LOG_TRACE("%s", msg_str);
+            u_free(msg_str);
             
-            admin_memoria_eliminar_tripulante(eliminar->tripulante_id);
+            admin_memoria_eliminar_tripulante(eliminar->pid, eliminar->tid);
             u_msg_eliminar_tripulante_eliminar(eliminar);
 
             break;
+        }
 
         case OBTENER_TRIPULANTES:
         {
+            U_LOG_TRACE("MSG_OBTENER_TRIPULANTES");
             t_list* tripulantes = admin_memoria_obtener_tripulantes();
 
             t_list_iterator* it = list_iterator_create(tripulantes);
@@ -232,9 +252,10 @@ void client_handler_manage_opcode(int32_t sock_client, u_opcode_e op_code, u_buf
                     .pid = trip->pid,
                     .estado = trip->estado
                 };
-
+                U_LOG_TRACE("ENVIADO TRIPULANTE tid: %d, pid: %d, posx: %d, posy: %d, estado: %c", trip->tid, trip->pid, trip->pos.x, trip->pos.y, trip->estado);
                 u_msg_lista_tripulantes_agregar(msg, trip_info);
             }
+            list_iterator_destroy(it);
 
             u_buffer_t*  buffer      = u_msg_lista_tripulantes_serialize(msg);
             u_package_t* package     = u_package_create(LISTA_TRIPULANTES, buffer);
@@ -263,6 +284,5 @@ void client_handler_manage_opcode(int32_t sock_client, u_opcode_e op_code, u_buf
 
             u_socket_send(sock_client, u_buffer_get_content(package_ser), u_buffer_get_size(package_ser));
         }
-    } 
-
+    }
 }

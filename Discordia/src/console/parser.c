@@ -21,14 +21,6 @@ private bool                ds_is_valid_position(const char* pos_str);
 
 private void ds_command_iniciar_patota_delete(ds_command_iniciar_patota_t* command);
 
-#ifndef NDEBUG
-private void ds_command_desplazar_tripulante_delete(ds_command_desplazamiento_tripulante_t* command);
-private void ds_command_iniciar_tarea_delete(ds_command_iniciar_tarea_t* command);
-private void ds_command_finalizar_tarea_delete(ds_command_finalizar_tarea_t* command);
-private void ds_command_mover_tripulante_delete(ds_command_mover_tripulante_t* command);
-private void ds_command_tripulante_nuevo_estado(ds_command_tripulante_nuevo_estado_t* command);
-#endif
-
 private void ds_parser_write_error(ds_parser_result_t* result, const char* msg_format, ...);
 private void ds_parser_not_enough_args_error(ds_parser_result_t* result, const char* hint);
 private void ds_parser_tid_error(ds_parser_result_t* result, const char* actual_tid);
@@ -41,49 +33,8 @@ private void ds_parser_obtener_bitacora(uint32_t argc, char** argv, ds_parser_re
 
 private void ds_parser_dummy_func(uint32_t argc, char** argv, ds_parser_result_t* result);
 
-#ifndef NDEBUG
-
-#define DS_DESPLAZAMIENTO_TRIPULANTE__CANT_ARGS     4
-#define DS_DESPLAZAMIENTO_TRIPULANTE__TID_INDEX     1
-#define DS_DESPLAZAMIENTO_TRIPULANTE__ORIGEN_INDEX  2
-#define DS_DESPLAZAMIENTO_TRIPULANTE__DESTINO_INDEX 3
-
-#define DS_INICIAR_TAREA__CANT_ARGS   3
-#define DS_INICIAR_TAREA__TID_INDEX   1
-#define DS_INICIAR_TAREA__TAREA_INDEX 2
-
-#define DS_FINALIZAR_TAREA__CANT_ARGS   3
-#define DS_FINALIZAR_TAREA__TID_INDEX   1
-#define DS_FINALIZAR_TAREA__TAREA_INDEX 2
-
-#define DS_TRIP_ATIENDE_SABOTAJE__CANT_ARGS 2
-#define DS_TRIP_ATIENDE_SABOTAJE__TID_INDEX 1
-
-#define DS_TRIP_RESUELVE_SABOTAJE__CANT_ARGS 2
-#define DS_TRIP_RESUELVE_SABOTAJE__TID_INDEX 1
-
-#define DS_MOVER_TRIPULANTE__CANT_ARGS 3
-#define DS_MOVER_TRIPULANTE__TID_INDEX 1
-#define DS_MOVER_TRIPULANTE__POS       2
-
-#define DS_PROXIMA_TAREA__CANT_ARGS 2
-#define DS_PROXIMA_TAREA__TID_INDEX 1
-
-#define DS_TRIP_NUEVO_ESTADO__CANT_ARGS    3
-#define DS_TRIP_NUEVO_ESTADO__TID_INDEX    1
-#define DS_TRIP_NUEVO_ESTADO__ESTADO_INDEX 2
-
-private void ds_parser_desplazamiento_tripulante(uint32_t argc, char** argv, ds_parser_result_t* result);
-private void ds_parser_iniciar_tarea(uint32_t argc, char** argv, ds_parser_result_t* result);
-private void ds_parser_finalizar_tarea(uint32_t argc, char** argv, ds_parser_result_t* result);
-private void ds_parser_trip_atiende_sabotaje(uint32_t argc, char** argv, ds_parser_result_t* result);
-private void ds_parser_trip_resuelve_sabotaje(uint32_t argc, char** argv, ds_parser_result_t* result);
-
-private void ds_parser_mover_tripulante(uint32_t argc, char** argv, ds_parser_result_t* result);
-private void ds_parser_proxima_tarea(uint32_t argc, char** argv, ds_parser_result_t* result);
-private void ds_parser_trip_nuevo_estado(uint32_t argc, char** argv, ds_parser_result_t* result);
-
-#endif
+private uint32_t ds_parser_args_count(char** args);
+private void     ds_parser_delete_args(char** args);
 
 typedef void(*ds_parser_func_t)(uint32_t, char**, ds_parser_result_t*);
 
@@ -96,24 +47,18 @@ private ds_parser_func_t PARSER_FUNC_ARRAY[] =
     ds_parser_expulsar_tripulante,
     ds_parser_dummy_func,
     ds_parser_dummy_func,
-    ds_parser_obtener_bitacora,
-#ifndef NDEBUG
-    ds_parser_desplazamiento_tripulante,
-    ds_parser_iniciar_tarea,
-    ds_parser_finalizar_tarea,
-    ds_parser_trip_atiende_sabotaje,
-    ds_parser_trip_resuelve_sabotaje,
-
-    ds_parser_mover_tripulante,
-    ds_parser_proxima_tarea,
-    ds_parser_trip_nuevo_estado,
-#endif
+    ds_parser_obtener_bitacora
 };
 
-void ds_parse(uint32_t argc, char** argv, ds_parser_result_t* result)
+void ds_parse(const char* command, ds_parser_result_t* result)
 {
+    char**   argv = string_split((char*)command, " ");
+    uint32_t argc = ds_parser_args_count(argv);
+
     result->command = ds_command_str_to_enum(argv[DS_COMMAND_INDEX]);
     PARSER_FUNC_ARRAY[((int)(result->command)) + 1](argc, argv, result);
+
+    ds_parser_delete_args(argv);
 }
 
 void ds_parser_result_free(ds_parser_result_t* result)
@@ -129,34 +74,6 @@ void ds_parser_result_free(ds_parser_result_t* result)
     case DS_INVALID_COMMAND:
         u_free(result->data);
         break;
-
-#ifndef NDEBUG
-    case _DEBUG_DS_DESPLAZAMIENTO_TRIPULANTE:
-        ds_command_desplazar_tripulante_delete((ds_command_desplazamiento_tripulante_t*)result->data);
-        break;
-
-    case _DEBUG_DS_INICIAR_TAREA:
-        ds_command_iniciar_tarea_delete((ds_command_iniciar_tarea_t*)result->data);
-        break;
-
-    case _DEBUG_DS_FINALIZAR_TAREA:
-        ds_command_finalizar_tarea_delete((ds_command_finalizar_tarea_t*)result->data);
-        break;
-    
-    case _DEBUG_DS_MOVER_TRIPULANTE:
-        ds_command_mover_tripulante_delete((ds_command_mover_tripulante_t*)result->data);
-        break;
-
-    case _DEBUG_DS_TRIPULANTE_NUEVO_ESTADO:
-        ds_command_tripulante_nuevo_estado((ds_command_tripulante_nuevo_estado_t*)result->data);
-        break;
-
-    case _DEBUG_DS_TRIPULANTE_ATIENDE_SABOTAJE:
-    case _DEBUG_DS_TRIPULANTE_RESUELVE_SABOTAJE:
-    case _DEBUG_DS_PROXIMA_TAREA:
-        u_free(result->data);
-        break;
-#endif
 
     default:
         break;
@@ -179,25 +96,7 @@ private ds_parser_command_e ds_command_str_to_enum(const char* command_str)
         return DS_OBTENER_BITACORA;
     else if(!strcmp(command_str, "SALIR"))
         return DS_SALIR;
-#ifndef NDEBUG
-    else if(!strcmp(command_str, "DESPLAZAMIENTO_TRIPULANTE"))
-        return _DEBUG_DS_DESPLAZAMIENTO_TRIPULANTE;
-    else if(!strcmp(command_str, "INICIAR_TAREA"))
-        return _DEBUG_DS_INICIAR_TAREA;
-    else if(!strcmp(command_str, "FINALIZAR_TAREA"))
-        return _DEBUG_DS_FINALIZAR_TAREA;
-    else if(!strcmp(command_str, "TRIPULANTE_ATIENDE_SABOTAJE"))
-        return _DEBUG_DS_TRIPULANTE_ATIENDE_SABOTAJE;
-    else if(!strcmp(command_str, "TRIPULANTE_RESUELVE_SABOTAJE"))
-        return _DEBUG_DS_TRIPULANTE_RESUELVE_SABOTAJE;
-    else if(!strcmp(command_str, "MOVER_TRIPULANTE"))
-        return _DEBUG_DS_MOVER_TRIPULANTE;
-    else if(!strcmp(command_str, "PROXIMA_TAREA"))
-        return _DEBUG_DS_PROXIMA_TAREA;
-    else if(!strcmp(command_str, "TRIPULANTE_NUEVO_ESTADO"))
-        return _DEBUG_DS_TRIPULANTE_NUEVO_ESTADO;
-#endif
-    
+
     return DS_INVALID_COMMAND;
 }
 
@@ -237,37 +136,6 @@ private void ds_command_iniciar_patota_delete(ds_command_iniciar_patota_t* comma
 
     u_free(command);
 }
-
-#ifndef NDEBUG
-
-private void ds_command_desplazar_tripulante_delete(ds_command_desplazamiento_tripulante_t* command)
-{
-    u_free(command);
-}
-
-private void ds_command_iniciar_tarea_delete(ds_command_iniciar_tarea_t* command)
-{
-    u_free(command->tarea);
-    u_free(command);
-}
-
-private void ds_command_finalizar_tarea_delete(ds_command_finalizar_tarea_t* command)
-{
-    u_free(command->tarea);
-    u_free(command);
-}
-
-private void ds_command_mover_tripulante_delete(ds_command_mover_tripulante_t* command)
-{
-    u_free(command);
-}
-
-private void ds_command_tripulante_nuevo_estado(ds_command_tripulante_nuevo_estado_t* command)
-{
-    u_free(command);
-}
-
-#endif
 
 private void ds_parser_write_error(ds_parser_result_t* result, const char* msg_format, ...)
 {
@@ -410,217 +278,18 @@ private void ds_parser_dummy_func(uint32_t argc, char** argv, ds_parser_result_t
     (void)result;
 }
 
-#ifndef NDEBUG
-
-private void ds_parser_desplazamiento_tripulante(uint32_t argc, char** argv, ds_parser_result_t* result)
+private uint32_t ds_parser_args_count(char** args)
 {
-    if(argc < DS_DESPLAZAMIENTO_TRIPULANTE__CANT_ARGS)
-    {
-        ds_parser_not_enough_args_error(result, "DESPLAZAMIENTO_TRIPULANTE [TID] [ORIGEN] [DESTION]");
-        return;
-    }
+    uint32_t count = 0;
+    for(char** arg = args; *arg != NULL; arg ++, count ++);
 
-    if(!ds_is_valid_number(argv[DS_DESPLAZAMIENTO_TRIPULANTE__TID_INDEX]))
-    {
-        ds_parser_tid_error(result, argv[DS_DESPLAZAMIENTO_TRIPULANTE__TID_INDEX]);
-        return;
-    }
-
-    if(!ds_is_valid_position(argv[DS_DESPLAZAMIENTO_TRIPULANTE__ORIGEN_INDEX]))
-    {
-        ds_parser_pos_error(result, argv[DS_DESPLAZAMIENTO_TRIPULANTE__ORIGEN_INDEX]);
-        return;
-    }
-
-    if(!ds_is_valid_position(argv[DS_DESPLAZAMIENTO_TRIPULANTE__DESTINO_INDEX]))
-    {
-        ds_parser_pos_error(result, argv[DS_DESPLAZAMIENTO_TRIPULANTE__DESTINO_INDEX]);
-        return;
-    }
-
-    uint32_t tid = atoi(argv[DS_DESPLAZAMIENTO_TRIPULANTE__TID_INDEX]);
-    char** origen_coords = string_split(argv[DS_DESPLAZAMIENTO_TRIPULANTE__ORIGEN_INDEX], "|");
-    char** destion_coords = string_split(argv[DS_DESPLAZAMIENTO_TRIPULANTE__DESTINO_INDEX], "|");
-
-    ds_command_desplazamiento_tripulante_t* command =
-        u_malloc(sizeof(ds_command_desplazamiento_tripulante_t));
-
-    command->tid = tid;
-
-    command->origen.x = atoi(origen_coords[0]);
-    command->origen.y = atoi(origen_coords[1]);
-
-    command->destion.x = atoi(destion_coords[0]);
-    command->destion.y = atoi(destion_coords[1]);
-
-    result->data = command;
-
-    u_free(origen_coords[0]);
-    u_free(origen_coords[1]);
-    u_free(origen_coords);
-
-    u_free(destion_coords[0]);
-    u_free(destion_coords[1]);
-    u_free(destion_coords);
+    return count;
 }
 
-private void ds_parser_iniciar_tarea(uint32_t argc, char** argv, ds_parser_result_t* result)
+private void ds_parser_delete_args(char** args)
 {
-    if(argc < DS_INICIAR_TAREA__CANT_ARGS)
-    {
-        ds_parser_not_enough_args_error(result, "INICIAR_TAREA [TID] [TAREA]");
-        return;
-    }
+    for(char** arg = args; *arg != NULL; arg ++)
+        u_free(*arg);
 
-    if(!ds_is_valid_number(argv[DS_INICIAR_TAREA__TID_INDEX]))
-    {
-        ds_parser_tid_error(result, argv[DS_INICIAR_TAREA__TID_INDEX]);
-        return;
-    }
-
-    ds_command_iniciar_tarea_t* command = u_malloc(sizeof(ds_command_iniciar_tarea_t));
-
-    command->tid   = atoi(argv[DS_INICIAR_TAREA__TID_INDEX]);
-    command->tarea = string_duplicate(argv[DS_INICIAR_TAREA__TAREA_INDEX]);
-
-    result->data = command;
+    u_free(args);
 }
-
-private void ds_parser_finalizar_tarea(uint32_t argc, char** argv, ds_parser_result_t* result)
-{
-    if(argc < DS_FINALIZAR_TAREA__CANT_ARGS)
-    {
-        ds_parser_not_enough_args_error(result, "FINALIZAR_TAREA [TID] [TAREA]");
-        return;
-    }
-
-    if(!ds_is_valid_number(argv[DS_FINALIZAR_TAREA__TID_INDEX]))
-    {
-        ds_parser_tid_error(result, argv[DS_FINALIZAR_TAREA__TID_INDEX]);
-        return;
-    }
-
-    ds_command_iniciar_tarea_t* command = u_malloc(sizeof(ds_command_iniciar_tarea_t));
-
-    command->tid   = atoi(argv[DS_FINALIZAR_TAREA__TID_INDEX]);
-    command->tarea = string_duplicate(argv[DS_FINALIZAR_TAREA__TAREA_INDEX]);
-
-    result->data = command;
-}
-
-private void ds_parser_trip_atiende_sabotaje(uint32_t argc, char** argv, ds_parser_result_t* result)
-{
-    if(argc < DS_TRIP_ATIENDE_SABOTAJE__CANT_ARGS)
-    {
-        ds_parser_not_enough_args_error(result, "TRIPULANTE_ATIENDE_SABOTAJE [TID]");
-        return;
-    }
-
-    if(!ds_is_valid_number(argv[DS_TRIP_ATIENDE_SABOTAJE__TID_INDEX]))
-    {
-        ds_parser_tid_error(result, argv[DS_TRIP_ATIENDE_SABOTAJE__TID_INDEX]);
-        return;
-    }
-
-    result->data = u_malloc(sizeof(uint32_t));
-    *(uint32_t*)(result->data) = atoi(argv[DS_TRIP_ATIENDE_SABOTAJE__TID_INDEX]);
-}
-
-private void ds_parser_trip_resuelve_sabotaje(uint32_t argc, char** argv, ds_parser_result_t* result)
-{
-    if(argc < DS_TRIP_RESUELVE_SABOTAJE__CANT_ARGS)
-    {
-        ds_parser_not_enough_args_error(result, "TRIPULANTE_RESUELVE_SABOTAJE [TID]");
-        return;
-    }
-
-    if(!ds_is_valid_number(argv[DS_TRIP_RESUELVE_SABOTAJE__TID_INDEX]))
-    {
-        ds_parser_tid_error(result, argv[DS_TRIP_ATIENDE_SABOTAJE__TID_INDEX]);
-        return;
-    }
-
-    result->data = u_malloc(sizeof(uint32_t));
-    *(uint32_t*)(result->data) = atoi(argv[DS_TRIP_RESUELVE_SABOTAJE__TID_INDEX]);
-}
-
-private void ds_parser_mover_tripulante(uint32_t argc, char** argv, ds_parser_result_t* result)
-{
-    if(argc < DS_MOVER_TRIPULANTE__CANT_ARGS)
-    {
-        ds_parser_not_enough_args_error(result, "MOVER_TRIPULANTE [TID] [POS]");
-        return;
-    }
-
-    if(!ds_is_valid_number(argv[DS_MOVER_TRIPULANTE__TID_INDEX]))
-    {
-        ds_parser_tid_error(result, argv[DS_MOVER_TRIPULANTE__TID_INDEX]);
-        return;
-    }
-
-    if(!ds_is_valid_position(argv[DS_MOVER_TRIPULANTE__POS]))
-    {
-        ds_parser_pos_error(result, argv[DS_MOVER_TRIPULANTE__POS]);
-        return;
-    }
-
-    ds_command_mover_tripulante_t* command = u_malloc(sizeof(ds_command_mover_tripulante_t));
-
-    command->tid = atoi(argv[DS_MOVER_TRIPULANTE__TID_INDEX]);
-
-    char** pos_coords = string_split(argv[DS_MOVER_TRIPULANTE__POS], "|");
-    
-    command->pos.x = atoi(pos_coords[0]);
-    command->pos.y = atoi(pos_coords[1]);
-
-    result->data = command;
-
-    u_free(pos_coords[0]);
-    u_free(pos_coords[1]);
-    u_free(pos_coords);
-}
-
-private void ds_parser_proxima_tarea(uint32_t argc, char** argv, ds_parser_result_t* result)
-{
-    if(argc < DS_PROXIMA_TAREA__CANT_ARGS)
-    {
-        ds_parser_not_enough_args_error(result, "PROXIMA_TAREA [TID]");
-        return;
-    }
-
-    uint32_t* tid = u_malloc(sizeof(uint32_t));
-    *tid = atoi(argv[DS_PROXIMA_TAREA__TID_INDEX]);
-
-    result->data = tid;
-}
-
-__attribute__((always_inline)) inline
-private bool _is_valid_state(char s)
-{
-    return (s == 'E' || s == 'R' || s == 'B');
-}
-
-private void ds_parser_trip_nuevo_estado(uint32_t argc, char** argv, ds_parser_result_t* result)
-{
-    if(argc < DS_TRIP_NUEVO_ESTADO__CANT_ARGS)
-    {
-        ds_parser_not_enough_args_error(result, "TRIPULANTE_NUEVO_ESTADO [TID] [ESTADO]");
-        return;
-    }
-
-    if(!_is_valid_state(argv[DS_TRIP_NUEVO_ESTADO__ESTADO_INDEX][0]))
-    {
-        ds_parser_write_error(result, "Se ingreso un estado invalido: %s", argv[DS_TRIP_NUEVO_ESTADO__ESTADO_INDEX]);
-        return;
-    }
-
-    ds_command_tripulante_nuevo_estado_t* command =
-        u_malloc(sizeof(ds_command_tripulante_nuevo_estado_t));
-
-    command->tid    = atoi(argv[DS_TRIP_NUEVO_ESTADO__TID_INDEX]);
-    command->estado = argv[DS_TRIP_NUEVO_ESTADO__ESTADO_INDEX][0];
-
-    result->data = command;
-}
-
-#endif

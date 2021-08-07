@@ -5,8 +5,6 @@
 #include <pthread.h>
 #include "../memoria/admin_memoria.h"
 
-
 bool servidor_init(const char* port);
-void client_handler_new_conection(int32_t);
 
 #endif

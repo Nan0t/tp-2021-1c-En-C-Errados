@@ -8,6 +8,16 @@ project "tests"
 
     files {
         "%{wks.location}/Discordia/src/console/parser.c",
+        "%{wks.location}/Discordia/src/planificador/tripulante/tareas.c",
+        "%{wks.location}/I-Mongo-Store/src/fs/blocks/blocks_manager.c",
+        "%{wks.location}/I-Mongo-Store/src/fs/file/files_manager.c",
+        "%{wks.location}/I-Mongo-Store/src/fs/bitacora/bitacoras_manager.c",
+        "%{wks.location}/I-Mongo-Store/src/fs/blocks/block.c",
+        "%{wks.location}/I-Mongo-Store/src/fs/disk/disk.c",
+        "%{wks.location}/I-Mongo-Store/src/fs/file/file.c",
+        "%{wks.location}/I-Mongo-Store/src/fs/bitacora/bitacora.c",
+        "%{wks.location}/I-Mongo-Store/src/fs/blocks/block.c",
+        "%{wks.location}/I-Mongo-Store/src/fs/task_parser/task_parser.c",
         "%{prj.location}/src/**.h",
         "%{prj.location}/src/**.c"
     }
@@ -16,6 +26,7 @@ project "tests"
         "%{CommonLocations.Commons.IncludeDir}",
         "%{CommonLocations.Utils.IncludeDir}",
         "%{wks.location}/Discordia/src",
+        "%{wks.location}/I-Mongo-Store/src",
         "%{prj.location}/src"
     }
 
@@ -24,7 +35,10 @@ project "tests"
         "commons",
         "cunit",
         "pthread",
-        "readline"
+        "readline",
+        "m",
+        "crypto",
+        "ssl"
     }
     
     filter "configurations:Debug"

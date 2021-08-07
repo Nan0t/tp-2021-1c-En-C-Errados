@@ -3,6 +3,10 @@
 
 #include <utils/utils.h>
 
+/**
+ * @NAME: ds_parser_command_e
+ * @DESC: posibles commandos devueltos por el parser de la consola.
+ */
 typedef enum
 {
     DS_INVALID_COMMAND = -1,
@@ -13,25 +17,29 @@ typedef enum
     DS_INICIAR_PLANIFICACION,
     DS_PAUSAR_PLANIFICACION,
     DS_OBTENER_BITACORA,
-#ifndef NDEBUG
-    _DEBUG_DS_DESPLAZAMIENTO_TRIPULANTE,
-    _DEBUG_DS_INICIAR_TAREA,
-    _DEBUG_DS_FINALIZAR_TAREA,
-    _DEBUG_DS_TRIPULANTE_ATIENDE_SABOTAJE,
-    _DEBUG_DS_TRIPULANTE_RESUELVE_SABOTAJE,
-
-    _DEBUG_DS_MOVER_TRIPULANTE,
-    _DEBUG_DS_PROXIMA_TAREA,
-    _DEBUG_DS_TRIPULANTE_NUEVO_ESTADO
-#endif
 } ds_parser_command_e;
 
+/**
+ * @NAME: ds_parser_result_t
+ * @DESC: estructura que contendra información sobre un comando ingresado por la consola.
+ * @ATTR:
+ *  ds_parser_command_e command - tipo de comando ingresado.
+ *  void*               data    - informacion extra que dependera del comando obtenido.
+ */
 typedef struct
 {
     ds_parser_command_e command;
     void*               data;
 } ds_parser_result_t;
 
+/**
+ * @NAME: ds_command_iniciar_patota_t
+ * @DESC: estructura que contiene informacion sobre un comando INICIAR_PATOTA
+ * @ATTR:
+ *  uint32_t    cant_trip      - cantidad de tripulantes especificado.
+ *  const char* ruta_tareas    - ruta al archivo de tareas de la patota.
+ *  t_list*     trip_positions - lista de estructuras u_pos_t que contiene las posiciones iniciales de los tripulantes
+ */
 typedef struct
 {
     uint32_t     cant_trip;
@@ -39,40 +47,21 @@ typedef struct
     t_list*      trip_positions;
 } ds_command_iniciar_patota_t;
 
-#ifndef NDEBUG
-typedef struct
-{
-    uint32_t tid;
-    u_pos_t  origen;
-    u_pos_t  destion;
-} ds_command_desplazamiento_tripulante_t;
+/**
+ * @NAME: ds_parse
+ * @DESC: parsea un comando ingresado por consola.
+ * @PARAMS:
+ *  [in] const char*          command - string del comando ingresado.
+ *  [out] ds_parser_result_t* result  - estructura donde se almacenara el resultado del parser.
+ */
+void ds_parse(const char* command, ds_parser_result_t* result);
 
-typedef struct
-{
-    uint32_t tid;
-    char*    tarea;
-} ds_command_iniciar_tarea_t;
-
-typedef struct
-{
-    uint32_t tid;
-    char*    tarea;
-} ds_command_finalizar_tarea_t;
-
-typedef struct
-{
-    uint32_t tid;
-    u_pos_t  pos;
-} ds_command_mover_tripulante_t;
-
-typedef struct
-{
-    uint32_t tid;
-    char     estado;
-} ds_command_tripulante_nuevo_estado_t;
-#endif
-
-void ds_parse(uint32_t argc, char** argv, ds_parser_result_t* result);
+/**
+ * @NAME: ds_parser_result_free
+ * @DESC: libera la memoria utilizada por el resultado del parser.
+ * @PARAMS:
+ *  [in] ds_parser_result_t* result - estructura a liberar.
+ */
 void ds_parser_result_free(ds_parser_result_t* result);
 
 #endif

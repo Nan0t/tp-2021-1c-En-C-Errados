@@ -1,0 +1,8 @@
+#ifndef TESTS_DISCORDIA_TRIPULANTE_TEST_H
+#define TESTS_DISCORDIA_TRIPULANTE_TEST_H
+
+void test_valid_parsear_tarea_con_parametro_bloqueante(void);
+void test_valid_parsear_tarea_sin_parametro_bloqueante(void);
+void test_valid_parsear_tarea_sin_parametro_no_bloqueante(void);
+
+#endif

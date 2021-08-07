@@ -1,7 +1,11 @@
 #include "fs/file_system.h"
+#include "fs/blocks/blocks_manager.h"
+
 #include "server/server.h"
 
 #include <utils/entry_point.h>
+
+#include <unistd.h>
 
 #include <stdlib.h>
 
@@ -12,7 +16,11 @@ app_attr_t get_app_setup(void)
         .config_file_path   = "config/I-Mongo-Store.conf",
         .log_active_console = true,
         .log_file_path      = "I-Mongo-Store.log",
-        .log_level          = U_LOG_LEVEL_TRACE
+#ifdef NDEBUG
+        .log_level          = U_LOG_LEVEL_INFO
+#else
+        .log_level          = U_LOG_LEVEL_INFO
+#endif
     };
 }
 
@@ -30,6 +38,14 @@ int entry_point(int argc, char** argv)
     });
 
     fs_server_init(u_config_get_string_value("PUERTO"));
+
+    while(1)
+    {
+        uint32_t sync_time = u_config_get_int_value("TIEMPO_SINCRONIZACION");
+        sleep(sync_time);
+
+        fs_blocks_manager_sync();
+    }
 
     return 0;
 }

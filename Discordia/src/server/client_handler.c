@@ -3,41 +3,18 @@
 #include <pthread.h>
 #include <stdlib.h>
 
-// Lista de clientes conectados al servidor. Como se puede acceder
-// a la lista desde distintos hilos, necesitamos un mutex para la lista
-// de clientes.
-private t_list*         client_list    = NULL;
-private pthread_mutex_t client_list_mx = PTHREAD_MUTEX_INITIALIZER;
-
 // Helper functions. Se describen mas abajo.
 private void client_thread(int32_t* sock_client);
-private void client_delete_from_list(int32_t sock_client);
 private void discordiador_client_handler_manage_buffer_sabotaje(int32_t _sock_client);
 private void discordiador_client_handler_manage_opcode(int32_t _sock_client, u_opcode_e _opcode);
 
 void client_handler_new_connection(int32_t new_client)
 {
-    // Si la lista esta vacia, inicializarla.
-    if(client_list == NULL)
-        client_list = list_create();
-
     U_LOG_TRACE("New client connected");
 
-    // Tenemos que reservar memoria para guardar el socket del nuevo cliente
-    // dentro de la lista de conexiones, ya que los t_list de las commons solo
-    // pueden guardar punteros.
     int32_t* new_client_sock_instance = u_malloc(sizeof(int32_t));
     *new_client_sock_instance = new_client;
 
-    // Agregamos la nueva conexion a la lista.
-    pthread_mutex_lock(&client_list_mx);
-    list_add(client_list, new_client_sock_instance);
-    pthread_mutex_unlock(&client_list_mx);
-
-    // Creamos el hilo del cliente.
-    // En caso de que pthread_create devuelva -1, se logea un mensaje de error y
-    // se aborta el programa. Para mas info sobre el macro U_ASSERT, ver el archivo
-    // que se encuentra en utils/include/utils/diagnostics/assert.h
     pthread_t client_thread_id;
     U_ASSERT(
         pthread_create(&client_thread_id, NULL, (void*)client_thread, new_client_sock_instance) != -1,
@@ -53,30 +30,7 @@ private void client_thread(int32_t* sock_client)
     if(u_socket_recv(*sock_client, &opcode, sizeof(uint32_t))){
         discordiador_client_handler_manage_opcode(*sock_client, opcode);
     }
-
-    client_delete_from_list(*sock_client);
 }
-
-private void client_delete_from_list(int32_t sock_client)
-{
-    // Funcion que se usa para comparar cada uno de los sockets
-    // en la lista de conexiones con el sock_client.
-    bool _find_client_to_delete(const int32_t* client) {
-        return *client == sock_client;
-    };
-
-    // Funcion para eliminar una conexion.
-    void _client_delete(int32_t* client) {
-        u_socket_close(*client);
-        u_free(client);
-    };
-
-    // Buscamos el socket_cliente y lo eliminamos.
-    pthread_mutex_lock(&client_list_mx);
-    list_remove_and_destroy_by_condition(client_list, (void*)_find_client_to_delete, (void*)_client_delete);
-    pthread_mutex_unlock(&client_list_mx);
-}
-
 
 private void discordiador_client_handler_manage_opcode(int32_t _sock_client, u_opcode_e _opcode){
     switch (_opcode)
@@ -88,6 +42,9 @@ private void discordiador_client_handler_manage_opcode(int32_t _sock_client, u_o
     case INFORMAR_SABOTAJE :
         discordiador_client_handler_manage_buffer_sabotaje(_sock_client);
         break;
+
+    default:
+        U_LOG_ERROR("Opcode incorrecto o invalido: #(%d)", _opcode);
     }
 }
 
