@@ -19,7 +19,7 @@ app_attr_t get_app_setup(void)
 #ifdef NDEBUG
         .log_level          = U_LOG_LEVEL_INFO
 #else
-        .log_level          = U_LOG_LEVEL_TRACE
+        .log_level          = U_LOG_LEVEL_INFO
 #endif
     };
 }
