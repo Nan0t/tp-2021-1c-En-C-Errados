@@ -28,10 +28,7 @@ private void setup()
     esquema_memoria_init();
     map_init();
 
-    if(servidor_init(u_config_get_string_value("PUERTO")))
-        exit(-1);
-
-    while(1);
+    servidor_init(u_config_get_string_value("PUERTO"));
 }
 
 int entry_point(int argc, char** argv)

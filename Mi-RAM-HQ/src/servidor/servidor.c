@@ -31,7 +31,7 @@ bool servidor_init(const char* port)
         "No se pudo inicializar el hilo del servidor"
     );
 
-    pthread_detach(server_thread);
+    pthread_join(server_thread, NULL);
     u_sock_err_delete(err);
 
     return 0;
