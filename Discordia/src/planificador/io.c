@@ -2,6 +2,7 @@
 #include "synchronizer.h"
 #include "queues/queue_manager.h"
 #include "planificador.h"
+#include "discordia/discordia.h"
 
 #include <pthread.h>
 
@@ -79,7 +80,8 @@ private void manejo_de_bloqueado_por_io(tripulante_t* tripulante)
 private void mover_tripulante_terminado(tripulante_t* tripulante) 
 {
         tripulante->tarea_actual->is_finished = true;
-        
+        discordia_finalizar_tarea(tripulante->tid, tripulante->tarea_actual->tarea);
+
         if(tripulante_obtener_proxima_tarea(tripulante))
         {
             tripulante_change_state(tripulante, TRIP_STATE_READY);
