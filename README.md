@@ -1,5 +1,5 @@
 # TP S.O 2021: I-MongOS
-Trabajo práctico de Sistemas Operativos, asignatura dada en la UTN FRBA. El TP no esta exentos de errores que podrían haber quedado consecuencia del último tramo de la cursada, donde el tiempo apremia... y las cosas las atamos con alambre.
+Trabajo práctico de Sistemas Operativos, asignatura dada en la UTN FRBA en el primer cuatrimestre del 2021. El TP no está exentos de errores que podrían haber quedado consecuencia del último tramo de la cursada, donde el tiempo apremia... y las cosas las atamos con alambre.
 
 ## Motivación del repo y la documentación
 La principal motivación de hacer esta doc es para _orientar_ aquellas personas que estén cursando la asignatura a como se vería un TP _aprobable_, ademas de mostrar la resolución de uno de los tantos TPs que hay dando vuelta. La idea es que puedan llevarse conceptos de cómo (y cuanto) de la teoría se puede trasladar al trabajo práctico, como así también ver cosas mas técnicas como sintaxis de C y el uso de diferentes APIs de Linux (sockets, pthreads, etc).
@@ -9,7 +9,7 @@ Dicho esto, la idea no es que el que llegue a este repo copie y pegue código qu
 ## Disclaimer: Mi-RAM HQ
 Si bien el TP fue aprobado, los módulos mas probados son el **Discordiador** y el **I-Mongos Store**. El módulo **Mi-RAM HQ** tuvo un esfuerzo grande por parte de dos de nuestros compañeros, pero poseen demasiadas prácticas _oscuras_, por lo que es dificil documentar algo que de por sí no es muy recomendable hacer. Ademas de que existe un error (no demasiado grabe, pero que de haberse notado en nuestra entrega nos podría haber costado la cursada) el cual consiste en que el área de swaping no esta mapeado a un archivo en disco.
 
-No esta en los planes hacer un refactory del módulo, aunque si se llega a dar se documentará que es lo que se hizo.
+No esta en los planes hacer un refactory del módulo, aunque si se llega a dar se documentará qué es lo que se hizo.
 
 ## Módulos
 * [Módulo Discordiador (work in progress)](./doc/Discordiador.md)
@@ -19,7 +19,7 @@ No esta en los planes hacer un refactory del módulo, aunque si se llega a dar s
 ## Clonación, compilación y uso de los scripts
 El TP lo organizamos usando una herramienta llamada **Premake**. [Este repo]() explica que es premake y como se usa. Decidimos usar esta herramienta para generar nuestros makefiles ya que nos daba la libertad de trabajar tanto en Eclipse como con VSCode (para aquellos que quisieran usar vscode).
 
-Dentro del repo estan resueltas las dependencias sobre las commons y el el mapa otorgado por la cátedra. Ademas de que esta agregado como submódulo el repo con las pruebas finales del TP.
+Dentro del repo estan resueltas las dependencias sobre las commons y el mapa otorgado por la cátedra. Además de que esta agregado como submódulo el repo con las pruebas finales del TP.
 
 Para clonar el repo: `git clone --recursive https://github.com/Nan0t/tp-2021-1c-En-C-Errados.git`
 
@@ -29,16 +29,16 @@ Para generar los makefiles, parados en el directorio principal del TP, se puede 
 
 Una vez generado los makefiles, se puede hacer `make`. Esto compilará todos los proyectos.
 
-Una vez compilados, se puede hacer `./scripts/ex.sh [NOMBRE_DEL_MÓDULO]` para ejecutar uno de los módulos. Los nombre validos son:
+Una vez compilados, se puede hacer `./scripts/ex.sh [NOMBRE_DEL_MÓDULO]` para ejecutar uno de los módulos. Los nombre válidos son:
 
-* Discordia.
-* Mi-RAM-HQ.
-* I-Mongo-Store.
-* tests.
+* Discordia
+* Mi-RAM-HQ
+* I-Mongo-Store
+* tests
 
-El script `ex.sh` también tiene algunas opciones para ejecutar los proyectos con valgrind|helgrind|gdb. Para ver la lista de opciones, ejecutar `ex.sh --help`.
+El script `ex.sh` también tiene algunas opciones para ejecutar los proyectos con valgrind | helgrind | gdb. Para ver la lista de opciones, ejecutar `ex.sh --help`.
 
 ## Y ¡Buena Suerte!
-El TP es bastante demandante y va a necesitar de toda la puesta y organización del grupo. Mi humilde recomendación: arranquen a practicar desde el día 0 y no paren de comunicarse. Parece algo que se repite por todos lados, pero una buena comunicación (mas haya de las skills de cada uno) puede sacar el TP adelante.
+El TP es bastante demandante y va a necesitar de toda la puesta y organización del grupo. Mi humilde recomendación: arranquen a practicar desde el día 0 y no paren de comunicarse. Parece algo que se repite por todos lados, pero una buena comunicación (más allá de las skills de cada uno) puede sacar el TP adelante. Se aconseja también utilizar y visitar el foro de issues de la cátedra de forma constante porque se aclaran cosas que a veces no llegan a una nueva versión del enunciado, ante una duda buscar en los issues cerrados y si no encontrás lo que te genera dudas lo preguntás (esto termina ayudando a otros con la misma duda).
 
 Mucha Suerte!
