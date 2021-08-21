@@ -98,7 +98,7 @@ private void fs_client_handler_task(int32_t* client_sock)
 
 * En el Discordiador, se creo un administrador de conexiones el cual mantenia los sockets tanto de la consola como de los distintos tripulantes. Cada par de sockets (uno para Mi-RAM HQ y otro para I-Mongo Store) correspondientes a un tripulante se los identifica con el TID del tripulante. Por lo que no hizo falta hacer grandes cambios dentro del Discordiador.
 
-El cambio completo se hizo en [este commit](#4579a287f2c6cf1f614e3220d6ca4aae5793504a).
+El cambio completo se hizo en [este commit](https://github.com/Nan0t/tp-2021-1c-En-C-Errados/commit/4579a287f2c6cf1f614e3220d6ca4aae5793504a).
 
 Lo importante de todo esto (y que puede llegar a servir a los que estén planeando sus módelos de conexiones) es:
 
