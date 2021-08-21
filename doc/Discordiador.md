@@ -28,7 +28,7 @@ La gran complejidad del módulo se encuentra en el **Planificador**. Este debe c
 - Se debe poder pausar la planificación en cualquier momento.
 - Se debe ejecutar una rutína de sabotaje (especificada en el enunciado), la cual altera la planificación de todos los tripulantes.
 
-Con todo esto en mente, tratamos de hacer el módulo lo mas parecido a la teoría como fuera posible. Con esto en mente, identificamos las siguientes entidades como parte del submódulo planificador:
+Con todo esto en mente, tratamos de hacer el módulo lo mas parecido a la teoría como fuera posible. Dicho esto, identificamos las siguientes entidades como parte del submódulo planificador:
 
 - CPUs.
 - Dispositivo I/O.
@@ -48,7 +48,60 @@ El siguiente diagrama muestra un gráfico reducido de la lógica detras de la ar
 ![ArqPlanificador](./img/ArqPlanificador.png)
 _Nota: Las lineas puteadas representan algun mecanismo de sincronización (semaforos, condicionales, etc)._
 
-Para ver una versión mas detallada del diagrama anterior (y capaz algo desorganizado), [este diagrama en lucidchart](https://lucid.app/lucidchart/invitations/accept/inv_bf9e5e5b-9775-494b-a634-5d3ebddb9672?viewport_loc=-78%2C328%2C4489%2C1984%2C0_0) se expande mas, incluyendo en él los hilos de los tripulantes.
+Para ver una versión mas detallada del diagrama anterior (y capaz algo desorganizado), [este diagrama en lucidchart](https://lucid.app/lucidchart/invitations/accept/inv_bf9e5e5b-9775-494b-a634-5d3ebddb9672?viewport_loc=-78%2C328%2C4489%2C1984%2C0_0) se expande mas, incluyendo en él los hilos de los tripulantes y las condiciones para el sabotaje.
 
+## Modelo de conexiones
 
+Como se ve en el primer diagrama, todas las comunicaciones de los distintos submodulos del Discordiador pasan primero por el Discordiador. Esto significa que las conexiones son administradas por el Discordiador y no por los submodulos. Esto permite abstraer el modelo de conexiones de los distintos submódulos (y que fue de gran ayuda para el tramo final del TP).
 
+Al comienzo, planteamos hacer conexiones "no vivas". Es decir, cada solicitud que se hacía a Mi-RAM HQ o al I-Mongo Store se hacia levantando un socket, enviando el mensaje y cerrando el socket una vez recibida la respuesta (en caso que aplicara).
+
+Al principio no supuso ningun inconveniente, pero en la recta final, cuando empezamos a realizar pruebas mas integradores y bajo mas carga sobre los módulos, empezamos a tener problemas con las conexiones.
+
+Especificamente, el error que nos encontramos es que los procesos llegaban al límite de file descriptors que podian mantener abierto (cosa que nos extrañó mucho ya que se supone que las conexiones se cerraban apenas terminaban las request). Intentamos aumentar el número de conexiones que podían recibir los servidores, pero solo logramos que el sistema terminara de crashear un rato después.
+
+Finalmente decidimos cambiar el módelo de conexiones y realizar conexiones "vivas". Es decir, cuando se inicia un Tripulante, se crean las conexiones con Mi-RAM y el I-Mongo Store para ese tripulante y se mantienen hasta que el tripulante finaliza.
+
+Por suerte, y gracias a que abstraimos la lógica de las conexiones dentro del Discordiador, el cambio fue bastante rápido. 
+
+Los cambios fueron:
+
+* En los servidores de los módulos, se cambio (literalmente) un if por un while:
+
+_Antes_
+```C
+private void fs_client_handler_task(int32_t* client_sock)
+{
+    u_opcode_e opcode;
+    
+    if(u_socket_recv(*client_sock, &opcode, sizeof(uint32_t)))
+        fs_client_handler_check_opcode(*client_sock, opcode);
+
+    u_socket_close(*client_sock);
+    u_free(client_sock);
+}
+```
+
+_Despues_
+```C
+private void fs_client_handler_task(int32_t* client_sock)
+{
+    u_opcode_e opcode;
+    
+    while(u_socket_recv(*client_sock, &opcode, sizeof(uint32_t)))
+        fs_client_handler_check_opcode(*client_sock, opcode);
+
+    u_socket_close(*client_sock);
+    u_free(client_sock);
+}
+```
+
+* En el Discordiador, se creo un administrador de conexiones el cual mantenia los sockets tanto de la consola como de los distintos tripulantes. Cada par de sockets (uno para Mi-RAM HQ y otro para I-Mongo Store) correspondientes a un tripulante se los identifica con el TID del tripulante. Por lo que no hizo falta hacer grandes cambios dentro del Discordiador.
+
+El cambio completo se hizo en [este commit](4579a287f2c6cf1f614e3220d6ca4aae5793504a).
+
+Lo importante de todo esto (y que puede llegar a servir a los que estén planeando sus módelos de conexiones) es:
+
+* En lo posible, usen conexiones vivas.
+* Si quieren probar con otro modelo de conexiones, asegurencen de probarlo bajo mucho stress (y que los errores de conexión no salgan en las últimas 8 horas antes de la entrega).
+* Abstraigan lo mas que puedan la lógica de las conexiones de la lógica de los módulos (de esta manera, si surge un imprevisto como el nuestro, no van a necesitar repensar todo el módulo).
