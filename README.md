@@ -12,8 +12,8 @@ Si bien el TP fue aprobado, los módulos mas probados son el **Discordiador** y 
 No esta en los planes hacer un refactory del módulo, aunque si se llega a dar se documentará qué es lo que se hizo.
 
 ## Módulos
-* [Módulo Discordiador (work in progress)](./doc/Discordiador.md)
-* Módulo I-Mongo Store (proximamente).
+* [Módulo Discordiador](./doc/Discordiador.md)
+* [Módulo I-Mongo Store (work in progress)](./doc/I-Mongo-Store.md).
 * Módulo Mi-RAM HQ (Posiblemente nunca).
 
 ## Clonación, compilación y uso de los scripts
