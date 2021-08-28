@@ -17,7 +17,7 @@ No esta en los planes hacer un refactory del módulo, aunque si se llega a dar s
 * Módulo Mi-RAM HQ (Posiblemente nunca).
 
 ## Clonación, compilación y uso de los scripts
-El TP lo organizamos usando una herramienta llamada **Premake**. [Este repo]() explica que es premake y como se usa. Decidimos usar esta herramienta para generar nuestros makefiles ya que nos daba la libertad de trabajar tanto en Eclipse como con VSCode (para aquellos que quisieran usar vscode).
+El TP lo organizamos usando una herramienta llamada **Premake**. [Este repo](https://github.com/int0x80-sys/Premake-Example) explica que es premake y como se usa. Decidimos usar esta herramienta para generar nuestros makefiles ya que nos daba la libertad de trabajar tanto en Eclipse como con VSCode (para aquellos que quisieran usar vscode).
 
 Dentro del repo estan resueltas las dependencias sobre las commons y el mapa otorgado por la cátedra. Además de que esta agregado como submódulo el repo con las pruebas finales del TP.
 
